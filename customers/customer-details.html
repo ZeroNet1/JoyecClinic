@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل العميل - مركز التجميل</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            direction: rtl;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* الهيدر */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: clamp(18px, 4vw, 26px);
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #userName {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* التبويبات */
+        .tabs-container {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px 18px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #555;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background: #e9ecef;
+            color: #2c3e50;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+            font-weight: 700;
+        }
+
+        .tabs-content {
+            padding: 0;
+        }
+
+        .tab-pane {
+            display: none;
+            padding: 0;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* بطاقة العميل */
+        .customer-card {
+            padding: 28px;
+        }
+
+        .customer-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .customer-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .customer-main-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .customer-main-info h2 {
+            margin: 0 0 6px 0;
+            color: #1a1a1a;
+            font-size: 23px;
+            font-weight: 700;
+        }
+
+        .customer-main-info p {
+            margin: 0;
+            color: #555;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .customer-meta {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .customer-id-label {
+            font-weight: 700;
+            color: #555;
+        }
+
+        .customer-id-value {
+            font-family: "Courier New", Courier, monospace;
+            background: #f1f3f5;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 2px solid #e6e9eb;
+            color: #1a1a1a;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .customer-stats {
+            display: flex;
+            gap: 28px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 23px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        /* قسم الرصيد */
+        .balance-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            border: 2px solid #e9ecef;
+        }
+
+        .balance-info h3 {
+            margin: 0 0 12px 0;
+            color: #1a1a1a;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .balance-amount {
+            font-size: 27px;
+            font-weight: 700;
+            color: #28a745;
+        }
+
+        .balance-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .recharge-btn, .edit-btn {
+            padding: 11px 22px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .recharge-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .recharge-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .edit-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* نموذج شحن الرصيد */
+        .recharge-form {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 22px;
+            margin-top: 20px;
+        }
+
+        .recharge-form h4 {
+            margin: 0 0 18px 0;
+            color: #1a1a1a;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 12px;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .save-btn, .cancel-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* تبويب الزيارات */
+        .visits-header, .transactions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 26px 26px 18px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .visits-header h3, .transactions-header h3 {
+            margin: 0;
+            color: #1a1a1a;
+            font-weight: 700;
+            font-size: 19px;
+        }
+
+        .add-visit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .add-visit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* قوائم */
+        .visits-list, .transactions-list {
+            padding: 0 26px 26px;
+        }
+
+        .visit-item, .transaction-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 14px;
+            border-right: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .visit-item:hover, .transaction-item:hover {
+            transform: translateX(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .visit-header, .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .visit-date, .transaction-date {
+            font-weight: 700;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .visit-amount, .transaction-amount {
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .visit-amount.positive, .transaction-amount.positive {
+            color: #28a745;
+        }
+
+        .visit-amount.negative, .transaction-amount.negative {
+            color: #dc3545;
+        }
+
+        .visit-details, .transaction-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .visit-details strong, .transaction-details strong {
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+
+        .visit-notes, .transaction-notes {
+            grid-column: 1 / -1;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid #e9ecef;
+            color: #555;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .transaction-type-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .transaction-type-badge.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .transaction-type-badge.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .transaction-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .print-receipt-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .print-receipt-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* ملخص المعاملات */
+        .transactions-summary {
+            display: flex;
+            gap: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            background: white;
+            padding: 14px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 2px solid #f0f0f0;
+        }
+
+        .summary-item span:first-child {
+            display: block;
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .summary-item span:last-child {
+            display: block;
+            font-weight: 700;
+            color: #1a1a1a;
+            font-size: 16px;
+        }
+
+        /* المودال */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+            background: #f8f9fa;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #1a1a1a;
+            font-weight: 700;
+            font-size: 19px;
+        }
+
+        .close-btn {
+            background: #f0f0f0;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .close-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .modal .input-group {
+            padding: 0 20px;
+        }
+
+        .modal .form-actions {
+            padding: 20px;
+            border-top: 2px solid #e9ecef;
+            margin-top: 20px;
+        }
+
+        /* حالات فارغة وتحميل */
+        .loading, .empty-state, .error {
+            text-align: center;
+            padding: 50px 20px;
+            color: #555;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            color: #7f8c8d;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        /* الخفاء */
+        .hidden {
+            display: none !important;
+        }
+
+        /* ========== Responsive Design ========== */
+
+        @media (max-width: 991px) {
+            .customer-header {
+                flex-wrap: wrap;
+            }
+
+            .customer-stats {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 16px;
+            }
+
+            .header h1 {
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #userName {
+                text-align: center;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .back-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .customer-card {
+                padding: 20px;
+            }
+
+            .customer-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .customer-stats {
+                gap: 20px;
+            }
+
+            .balance-section {
+                flex-direction: column;
+                gap: 18px;
+                text-align: center;
+            }
+
+            .balance-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .recharge-btn, .edit-btn {
+                width: 100%;
+            }
+
+            .tabs-header {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                padding: 12px 15px;
+            }
+
+            .visits-header, .transactions-header {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .add-visit-btn {
+                width: 100%;
+            }
+
+            .visits-list, .transactions-list {
+                padding: 0 20px 20px;
+            }
+
+            .transactions-summary {
+                flex-direction: column;
+            }
+
+            .visit-details, .transaction-details {
+                grid-template-columns: 1fr;
+            }
+
+            .modal .form-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            #userName {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+
+            .back-btn {
+                font-size: 12px;
+                padding: 6px 14px;
+            }
+
+            .customer-card {
+                padding: 16px;
+            }
+
+            .customer-avatar {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+
+            .customer-main-info h2 {
+                font-size: 20px;
+            }
+
+            .customer-main-info p {
+                font-size: 14px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .balance-amount {
+                font-size: 24px;
+            }
+
+            .visit-item, .transaction-item {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="pageTitle">تفاصيل العميل</h1>
+        <div class="user-info">
+            <span id="userName">المستخدم</span>
+            <div class="header-actions">
+                <button onclick="window.location.href='customer-list.html'" class="back-btn">قائمة العملاء</button>
+                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- التبويبات -->
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="info">المعلومات الأساسية</button>
+                <button class="tab-btn" data-tab="visits">سجل الزيارات</button>
+                <button class="tab-btn" data-tab="transactions">الحركات المالية</button>
+            </div>
+            
+            <div class="tabs-content">
+                <!-- تبويب المعلومات الأساسية -->
+                <div id="info-tab" class="tab-pane active">
+                    <div class="customer-card">
+                        <div class="customer-header">
+                            <div class="customer-avatar">
+                                <span>👤</span>
+                            </div>
+                            <div class="customer-main-info">
+                                <h2 id="customerNameDisplay">-</h2>
+                                <p id="customerPhoneDisplay">-</p>
+                                <div class="customer-meta">
+                                    <span class="customer-id-label">معرّف العميل:</span>
+                                    <span id="customerIdDisplay" class="customer-id-value">-</span>
+                                </div>
+                            </div>
+                            <div class="customer-stats">
+                                <div class="stat">
+                                    <div class="stat-value" id="visitCount">0</div>
+                                    <div class="stat-label">عدد الزيارات</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value" id="totalSpent">0.00</div>
+                                    <div class="stat-label">إجمالي الإنفاق</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="balance-section">
+                            <div class="balance-info">
+                                <h3>الرصيد الحالي</h3>
+                                <div class="balance-amount" id="currentBalance">0.00 جنيه</div>
+                            </div>
+                            <div class="balance-actions">
+                                <button class="recharge-btn" id="rechargeBtn">شحن الرصيد</button>
+                                <button class="edit-btn" id="editCustomerBtn">تعديل البيانات</button>
+                            </div>
+                        </div>
+                        
+                        <!-- نموذج شحن الرصيد -->
+                        <div class="recharge-form hidden" id="rechargeForm">
+                            <h4>شحن الرصيد</h4>
+                            <form id="rechargeBalanceForm">
+                                <div class="input-group">
+                                    <label for="rechargeAmount">المبلغ:</label>
+                                    <input type="number" id="rechargeAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="paymentMethod">طريقة الدفع:</label>
+                                    <select id="paymentMethod" required>
+                                        <!-- سيتم ملؤه -->
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="rechargeNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="rechargeNotes" placeholder="ملاحظات حول الشحن"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">تأكيد الشحن</button>
+                                    <button type="button" class="cancel-btn" id="cancelRecharge">إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- تبويب سجل الزيارات -->
+                <div id="visits-tab" class="tab-pane">
+                    <div class="visits-header">
+                        <h3>سجل الزيارات</h3>
+                        <button class="add-visit-btn" id="addVisitBtn">+ إضافة زيارة جديدة</button>
+                    </div>
+                    
+                    <div id="visitsList" class="visits-list">
+                        <div class="loading">جاري تحميل الزيارات...</div>
+                    </div>
+                </div>
+                
+                <!-- تبويب الحركات المالية -->
+                <div id="transactions-tab" class="tab-pane">
+                    <div class="transactions-header">
+                        <h3>الحركات المالية</h3>
+                        <div class="transactions-summary">
+                            <div class="summary-item">
+                                <span>إجمالي الإيداعات:</span>
+                                <span id="totalDeposits">0.00 جنيه</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>إجمالي الخصومات:</span>
+                                <span id="totalWithdrawals">0.00 جنيه</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="transactionsList" class="transactions-list">
+                        <div class="loading">جاري تحميل الحركات المالية...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نموذج إضافة زيارة -->
+    <div id="addVisitModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إضافة زيارة جديدة</h3>
+                <button class="close-btn" id="closeVisitModal">✕</button>
+            </div>
+            <form id="addVisitForm">
+                <div class="input-group">
+                    <label for="visitDate">تاريخ الزيارة:</label>
+                    <input type="datetime-local" id="visitDate" required>
+                </div>
+                <div class="input-group">
+                    <label for="visitDoctor">الدكتور:</label>
+                    <select id="visitDoctor" required>
+                        <option value="">اختر الدكتور</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="visitService">الخدمة:</label>
+                    <select id="visitService" required>
+                        <option value="">اختر الخدمة</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="visitAmount">المبلغ المدفوع:</label>
+                    <input type="number" id="visitAmount" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="input-group">
+                    <label for="visitNotes">ملاحظات:</label>
+                    <textarea id="visitNotes" placeholder="ملاحظات حول الزيارة"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="save-btn">حفظ الزيارة</button>
+                    <button type="button" class="cancel-btn" id="cancelVisit">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="customer-details.js"></script>
+</body>
+</html>

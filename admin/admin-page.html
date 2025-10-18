@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدمن - إدارة الموظفين والأرباح</title>
+    <link rel="stylesheet" href="../styles/admin-styles.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- الهيدر -->
+        <header class="admin-header">
+            <div class="header-content">
+                <h1>لوحة الإدمن - إدارة الموظفين والأرباح</h1>
+                <div class="user-info">
+                    <span id="adminName">مدير النظام</span>
+                    <button onclick="logout()" class="logout-btn">تسجيل الخروج</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- محتوى الصفحة -->
+        <main class="admin-main">
+            <!-- إحصائيات سريعة -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalEmployees">0</div>
+                        <div class="stat-label">إجمالي الموظفين</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👨‍⚕️</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalDoctors">0</div>
+                        <div class="stat-label">عدد الدكاترة</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalSalaries">0</div>
+                        <div class="stat-label">إجمالي المرتبات</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قائمة الموظفين -->
+            <div class="employees-section">
+                <div class="section-header">
+                    <h2>قائمة الموظفين</h2>
+                    <div class="section-actions">
+                        <input type="text" id="searchEmployees" placeholder="بحث عن موظف..." class="search-input">
+                        <select id="roleFilter" class="filter-select">
+                            <option value="all">جميع الصلاحيات</option>
+                            <option value="admin">مدير النظام</option>
+                            <option value="doctor">دكتور</option>
+                            <option value="skin_doctor">دكتور جلدية</option>
+                            <option value="reception">موظف استقبال</option>
+                            <option value="accountant">محاسب</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="employees-grid" id="employeesGrid">
+                    <!-- سيتم ملؤها بالبيانات -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- مودال تفاصيل الموظف -->
+    <div id="employeeModal" class="modal hidden">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3 id="employeeModalTitle">تفاصيل الموظف</h3>
+                <button class="close-btn" onclick="closeEmployeeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="employeeDetailsContent">
+                    <!-- سيتم ملؤها بالبيانات -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال حساب الأرباح -->
+    <div id="profitModal" class="modal hidden">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3 id="profitModalTitle">حساب الأرباح</h3>
+                <button class="close-btn" onclick="closeProfitModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="profitCalculationContent">
+                    <!-- سيتم ملؤها بالبيانات -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تحديد المرتب -->
+    <div id="salaryModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تحديد المرتب</h3>
+                <button class="close-btn" onclick="closeSalaryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="salaryForm">
+                    <div class="form-group">
+                        <label for="employeeName">اسم الموظف:</label>
+                        <input type="text" id="employeeName" readonly class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeRole">الدور:</label>
+                        <input type="text" id="employeeRole" readonly class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="monthlySalary">المرتب الشهري (جنيه):</label>
+                        <input type="number" id="monthlySalary" min="0" step="0.01" class="form-input" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" onclick="closeSalaryModal()">إلغاء</button>
+                        <button type="submit" class="save-btn">حفظ المرتب</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="admin-page.js"></script>
+</body>
+</html>

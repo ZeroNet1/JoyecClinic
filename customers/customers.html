@@ -1,0 +1,103 @@
+//customers.html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>إدارة العملاء - مركز التجميل</title>
+
+    <!-- ستايلات عامة ومخصصة -->
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="customers.css" />
+
+    <style>
+      /* تحسين طفيف لعرض select داخل الفورم (اختياري) */
+      select#customerPaymentMethod {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        background: white;
+      }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>إدارة العملاء</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <button onclick="window.location.href='../main.html'" class="back-btn">العودة للرئيسية</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- قسم إضافة عميل جديد -->
+        <div class="form-section">
+            <h2>تسجيل عميل جديد</h2>
+            <form id="addCustomerForm" autocomplete="off">
+                <div class="input-group">
+                    <label for="customerName">الاسم الكامل:</label>
+                    <input type="text" id="customerName" required placeholder="أدخل الاسم الكامل" />
+                </div>
+                <div class="input-group">
+                    <label for="customerPhone">رقم الهاتف:</label>
+                    <input type="tel" id="customerPhone" required placeholder="مثال: 01012345678" />
+                </div>
+                <div class="input-group">
+                    <label for="customerBalance">الرصيد المبدئي (اختياري):</label>
+                    <input type="number" id="customerBalance" step="0.01" min="0" placeholder="0.00" />
+                </div>
+
+                <!-- خيار طريقة الدفع الافتراضية -->
+                <div class="input-group">
+                    <label for="customerPaymentMethod">طريقة الدفع الافتراضية:</label>
+                    <select id="customerPaymentMethod" aria-label="طريقة الدفع الافتراضية">
+                        <option value="نقدي">نقدي</option>
+                        <option value="كاش">كاش</option>
+                        <option value="فيزا">فيزا</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="save-btn">حفظ العميل</button>
+                    <button type="button" class="view-customers-btn" onclick="window.location.href='customer-list.html'">
+                        العملاء الحاليين
+                    </button>
+                </div>
+            </form>
+
+            <div id="message" class="message" aria-live="polite"></div>
+        </div>
+        
+        <!-- إحصائيات سريعة -->
+        <div class="stats-section">
+            <h2>إحصائيات سريعة</h2>
+            <div class="stats-grid">
+                <div class="stat-card" title="إجمالي عدد العملاء">
+                    <div class="stat-number" id="totalCustomers">0</div>
+                    <div class="stat-label">إجمالي العملاء</div>
+                </div>
+                <div class="stat-card" title="مجموع أرصدة العملاء">
+                    <div class="stat-number" id="totalBalance">0.00</div>
+                    <div class="stat-label">إجمالي الأرصدة (جنيه)</div>
+                </div>
+                <div class="stat-card" title="عدد العملاء الجدد اليوم">
+                    <div class="stat-number" id="newCustomers">0</div>
+                    <div class="stat-label">عملاء جدد اليوم</div>
+                </div>
+            </div>
+
+            <!-- رابط سريع لإدارة باقي العملاء -->
+            <div style="margin-top:18px; text-align:center;">
+                <button class="view-customers-btn" onclick="window.location.href='customer-list.html'">
+                    عرض قائمة العملاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- سكربت التطبيق -->
+    <script type="module" src="customers.js"></script>
+</body>
+</html>

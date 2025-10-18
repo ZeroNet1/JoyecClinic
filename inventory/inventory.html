@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المخزون - مركز التجميل</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="inventory.css">
+</head>
+<body>
+    <div class="header">
+        <h1>إدارة المخزون</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <button onclick="window.location.href='../main.html'" class="back-btn">العودة للرئيسية</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="form-section">
+            <h2>إضافة منتج جديد</h2>
+            <form id="addProductForm">
+                <div class="input-group">
+                    <label for="productName">اسم المنتج:</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="input-group">
+                    <label for="quantity">العدد:</label>
+                    <input type="number" id="quantity" min="0" required>
+                </div>
+                <div class="input-group">
+                    <label for="unitPrice">سعر الوحدة:</label>
+                    <input type="number" id="unitPrice" min="0" step="0.01" required>
+                </div>
+                <button type="submit">إضافة المنتج</button>
+            </form>
+            <div id="message" class="message"></div>
+        </div>
+        
+        <div class="inventory-section">
+            <h2>قائمة المنتجات</h2>
+            <div class="inventory-table-container">
+                <table id="inventoryTable" class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>اسم المنتج</th>
+                            <th>العدد</th>
+                            <th>سعر الوحدة</th>
+                            <th>السعر الكلي</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- سيتم ملء الجدول بالمنتجات -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="inventory.js"></script>
+</body>
+</html>

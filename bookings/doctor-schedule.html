@@ -1,0 +1,141 @@
+/*doctor-schedule.html*/
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول الدكتور - مركز التجميل</title>
+    <link rel="stylesheet" href="doctor-schedule.css">
+</head>
+<body>
+    <div class="header">
+        <h1 id="pageTitle">جدول الدكتور</h1>
+        <div>
+            <span id="userName"></span>
+            <button onclick="window.location.href='bookings.html'" class="back-btn">قائمة الدكاترة</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <label>دكتور: <strong id="doctorName"></strong></label>
+            <input type="date" id="scheduleDate">
+            <button class="add-booking-btn" id="addBookingBtn">+ إضافة حجز جديد</button>
+        </div>
+
+        <div class="bookings-cards" id="bookingsCards">
+            <!-- سيتم ملء الحجوزات هنا -->
+        </div>
+    </div>
+
+    <!-- مودال إضافة حجز -->
+    <div id="addBookingModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إضافة حجز جديد</h3>
+                <button class="close-btn" id="closeBookingModal">✕</button>
+            </div>
+            
+            <form id="addBookingForm">
+                <!-- اختيار نوع العميل -->
+                <div class="input-group">
+                    <label>نوع العميل:</label>
+                    <select id="customerType" required>
+                        <option value="existing">عميل حالي</option>
+                        <option value="new">عميل جديد</option>
+                    </select>
+                </div>
+
+                <!-- قسم العميل الجديد -->
+                <div id="newCustomerSection" class="hidden">
+                    <div class="input-group">
+                        <label>الاسم:</label>
+                        <input type="text" id="newCustomerName" placeholder="أدخل اسم العميل">
+                    </div>
+                    <div class="input-group">
+                        <label>رقم الهاتف:</label>
+                        <input type="tel" id="newCustomerPhone" placeholder="01012345678">
+                    </div>
+                </div>
+
+                <!-- قسم العميل الحالي -->
+                <div id="existingCustomerSection">
+                    <div class="input-group">
+                        <label>البحث عن عميل:</label>
+                        <input type="text" id="customerSearch" placeholder="ابحث بالاسم أو الهاتف أو الرقم التعريفي">
+                        <div id="customerResults" class="hidden"></div>
+                    </div>
+                    
+                    <div id="selectedCustomerInfo" class="hidden">
+                        <p><strong>العميل المختار:</strong> <span id="selectedCustomerName"></span></p>
+                        <p><strong>الرصيد:</strong> <span id="selectedCustomerBalance"></span> جنيه</p>
+                    </div>
+                </div>
+
+                <!-- صندوق معلومات الرصيد -->
+                <div id="customerBalanceInfo" class="balance-info-box hidden">
+                    <h4>💰 معلومات الرصيد</h4>
+                    <div class="balance-row">
+                        <span class="balance-label">الرصيد الحالي:</span>
+                        <span class="balance-value" id="currentCustomerBalance">0.00</span>
+                    </div>
+                    <div class="balance-row">
+                        <span class="balance-label">تكلفة الحجز:</span>
+                        <span class="balance-value" id="bookingCostDisplay">0.00</span>
+                    </div>
+                    <div class="balance-row">
+                        <span class="balance-label">الرصيد بعد الحجز:</span>
+                        <span class="balance-value" id="remainingBalanceAfter">0.00</span>
+                    </div>
+                    <button type="button" class="recharge-btn hidden" id="rechargeBalanceBtn">
+                        ⚡ شحن الرصيد الآن
+                    </button>
+                </div>
+
+                <!-- عدد الخدمات -->
+                <div class="input-group">
+                    <label>عدد الخدمات:</label>
+                    <select id="servicesCount" required>
+                        <option value="1">خدمة واحدة</option>
+                        <option value="2">خدمتين</option>
+                        <option value="3">3 خدمات</option>
+                        <option value="4">4 خدمات</option>
+                        <option value="5">5 خدمات</option>
+                    </select>
+                </div>
+
+                <!-- حقول الخدمات -->
+                <div id="servicesInputs"></div>
+
+                <!-- وقت الحجز -->
+                <div class="input-group">
+                    <label>وقت الحجز:</label>
+                    <input type="time" id="bookingTime" required>
+                </div>
+
+                <!-- الملخص -->
+                <div class="summary-box">
+                    <h4>ملخص الحجز</h4>
+                    <div class="summary-item">
+                        <span>التكلفة الإجمالية:</span>
+                        <strong><span id="totalCost">0.00</span> جنيه</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>المدة الكلية:</span>
+                        <strong><span id="totalDuration">0</span> دقيقة</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>وقت الانتهاء:</span>
+                        <strong><span id="endTime">--:--</span></strong>
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn">حفظ الحجز</button>
+                <button type="button" class="cancel-btn" id="cancelBooking" style="margin-top:10px;">إلغاء</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="doctor-schedule.js"></script>
+</body>
+</html>

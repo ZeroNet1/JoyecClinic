@@ -1,0 +1,55 @@
+//customer-list.html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة العملاء - مركز التجميل</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="customer-list.css">
+</head>
+<body>
+    <div class="header">
+        <h1>قائمة العملاء</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <div class="header-actions">
+                <button onclick="window.location.href='customers.html'" class="back-btn">العودة</button>
+                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- شريط البحث والتصفية -->
+        <div class="filter-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو رقم الهاتف...">
+                <button id="clearSearch" class="clear-btn">✕</button>
+            </div>
+            <div class="filter-controls">
+                <select id="sortSelect">
+                    <option value="newest">الأحدث أولاً</option>
+                    <option value="oldest">الأقدم أولاً</option>
+                    <option value="name">حسب الاسم</option>
+                    <option value="balance">أعلى رصيد</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- قائمة العملاء -->
+        <div class="customers-list-section">
+            <div class="section-header">
+                <h2>العملاء المسجلين</h2>
+                <div class="customers-count" id="customersCount">0 عميل</div>
+            </div>
+            
+            <div id="customersList" class="customers-list">
+                <!-- سيتم ملء هذه القائمة بالعملاء -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="customer-list.js"></script>
+</body>
+</html>

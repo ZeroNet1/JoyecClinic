@@ -1,0 +1,682 @@
+bookings.html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الحجوزات - مركز التجميل</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            direction: rtl;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* الهيدر */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: clamp(20px, 4vw, 28px);
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #userName {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .back-btn, .cancelled-btn {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .cancelled-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .back-btn:hover, .cancelled-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .cancelled-btn:hover {
+            opacity: 0.9;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+
+        /* عناصر التحكم */
+        .controls-row {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 20px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .left-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .left-controls label {
+            font-weight: 700;
+            color: #1a1a1a;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .left-controls input[type="date"] {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .left-controls input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .right-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .right-controls input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 0;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .right-controls input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .right-controls input::placeholder {
+            color: #95a5a6;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        /* Grid الدكاترة */
+        .doctors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        /* بطاقات الدكاترة */
+        .doctor-card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            border: 2px solid #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doctor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .doctor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            border-color: #667eea;
+        }
+
+        .doctor-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 18px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .doctor-avatar {
+            font-size: 44px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .doctor-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .doctor-name {
+            font-size: 19px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doctor-specialty {
+            font-size: 13px;
+            color: #555;
+            background: #f8f9fa;
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .doctor-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .stat:hover {
+            background: #e9ecef;
+            transform: scale(1.05);
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .doctor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-schedule-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .view-schedule-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* حالات التحميل */
+        .loading, .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            grid-column: 1 / -1;
+        }
+
+        .loading {
+            color: #555;
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .empty-state.hidden {
+            display: none;
+        }
+
+        .empty-icon {
+            font-size: 70px;
+            margin-bottom: 18px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .empty-state p {
+            color: #7f8c8d;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* ========== Responsive Design ========== */
+
+        /* أجهزة اللاب توب الكبيرة */
+        @media (min-width: 1400px) {
+            .doctors-grid {
+                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            }
+        }
+
+        /* أجهزة اللاب توب العادية */
+        @media (max-width: 1199px) {
+            .container {
+                padding: 12px;
+            }
+
+            .doctors-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        /* التابلت الأفقي */
+        @media (max-width: 1023px) {
+            .controls-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .left-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .left-controls input[type="date"] {
+                width: 100%;
+            }
+
+            .doctors-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+        }
+
+        /* التابلت العمودي */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 16px;
+            }
+
+            .header h1 {
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #userName {
+                text-align: center;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .back-btn, .cancelled-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .controls-row {
+                padding: 15px;
+            }
+
+            .right-controls {
+                flex-direction: column;
+            }
+
+            .right-controls input {
+                width: 100%;
+            }
+
+            .clear-btn {
+                width: 100%;
+            }
+
+            .doctors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .doctor-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .stat {
+                padding: 10px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+        }
+
+        /* الموبايل الكبير */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 12px;
+                border-radius: 10px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            #userName {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+
+            .back-btn, .cancelled-btn {
+                font-size: 12px;
+                padding: 6px 14px;
+            }
+
+            .controls-row {
+                padding: 12px;
+            }
+
+            .left-controls label {
+                font-size: 13px;
+            }
+
+            .doctor-card {
+                padding: 18px;
+            }
+
+            .doctor-top {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .doctor-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 38px;
+            }
+
+            .doctor-name {
+                font-size: 17px;
+                white-space: normal;
+            }
+
+            .doctor-specialty {
+                font-size: 12px;
+            }
+
+            .doctor-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .stat {
+                padding: 8px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .view-schedule-btn {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .empty-icon {
+                font-size: 60px;
+            }
+
+            .empty-state h3 {
+                font-size: 20px;
+            }
+
+            .empty-state p {
+                font-size: 14px;
+            }
+        }
+
+        /* الموبايل الصغير جداً */
+        @media (max-width: 360px) {
+            .container {
+                padding: 8px;
+            }
+
+            .header {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .doctor-card {
+                padding: 14px;
+            }
+        }
+
+        /* تحسينات للطباعة */
+        @media print {
+            .header-actions, .controls-row {
+                display: none;
+            }
+
+            .doctors-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .doctor-card {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+
+            .doctor-card:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .view-schedule-btn {
+                display: none;
+            }
+        }
+
+        /* تحسينات Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>إدارة الحجوزات</h1>
+        <div class="user-info">
+            <span id="userName">المستخدم</span>
+            <div class="header-actions">
+                <button onclick="window.location.href='cancelled-bookings.html'" class="cancelled-btn">
+                    📋 الحجوزات الملغية
+                </button>
+                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- شريط التحكم -->
+        <div class="controls-row">
+            <div class="left-controls">
+                <label for="filterDate">التاريخ:</label>
+                <input type="date" id="filterDate">
+            </div>
+
+            <div class="right-controls">
+                <input id="doctorSearch" type="text" placeholder="🔍 ابحث عن دكتور أو تخصص...">
+                <button id="clearSearch" class="clear-btn">✕</button>
+            </div>
+        </div>
+
+        <!-- شبكة بطاقات الدكاترة -->
+        <div class="doctors-grid" id="doctorsGrid">
+            <div class="loading">جاري تحميل الدكاترة...</div>
+        </div>
+        
+        <!-- حالة عدم وجود دكاترة -->
+        <div class="empty-state hidden" id="emptyState">
+            <div class="empty-icon">👨‍⚕️</div>
+            <h3>لا يوجد دكاترة مسجلين</h3>
+            <p>يجب تسجيل الدكاترة أولاً في نظام إدارة الحسابات</p>
+        </div>
+    </div>
+
+    <script type="module" src="bookings.js"></script>
+</body>
+</html>

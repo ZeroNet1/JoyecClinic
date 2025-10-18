@@ -1,0 +1,1129 @@
+/* cancelled-bookings.css - نسخة محسّنة ومتجاوبة تماماً */
+
+:root {
+    --primary-color: #dc3545;
+    --secondary-color: #17a2b8;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    width: 100%;
+}
+
+/* الهيدر */
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 25px;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.user-info span {
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 15px;
+    border-radius: 25px;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* زر القائمة للموبايل */
+.mobile-menu-btn {
+    display: none;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+/* عناصر التحكم */
+.controls {
+    background: white;
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: end;
+    margin-bottom: 30px;
+    transition: var(--transition);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 14px;
+}
+
+.filter-group input {
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: var(--transition);
+    width: 100%;
+    background: var(--light-color);
+}
+
+.filter-group input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+    background: white;
+}
+
+.filter-btn {
+    background: var(--success-color);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: var(--transition);
+    white-space: nowrap;
+    height: fit-content;
+}
+
+.filter-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+.clear-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: var(--transition);
+    white-space: nowrap;
+    height: fit-content;
+}
+
+.clear-btn:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* قائمة الحجوزات الملغية */
+.cancelled-bookings-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 25px;
+}
+
+.cancelled-booking-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--box-shadow);
+    border-right: 5px solid var(--primary-color);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.cancelled-booking-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.cancelled-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: var(--primary-color);
+    color: white;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 2;
+}
+
+.booking-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.customer-name {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--dark-color);
+    margin-bottom: 8px;
+}
+
+.doctor-name {
+    color: #666;
+    font-size: 15px;
+}
+
+.booking-details {
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.detail-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+.services-list {
+    background: var(--light-color);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.services-list strong {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--dark-color);
+    font-size: 15px;
+}
+
+.service-item {
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 8px;
+    font-size: 14px;
+    border-left: 3px solid var(--secondary-color);
+}
+
+.cancel-reason {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: #856404;
+    font-size: 14px;
+    border-left: 4px solid var(--warning-color);
+}
+
+.booking-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.reschedule-btn, .delete-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    font-size: 14px;
+}
+
+.reschedule-btn {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.reschedule-btn:hover {
+    background: #138496;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(23, 162, 184, 0.3);
+}
+
+.delete-btn {
+    background: var(--danger-color);
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(220, 53, 69, 0.3);
+}
+
+/* تصميم الموبايل للبطاقات */
+.cancelled-booking-card.mobile-card {
+    padding: 20px;
+}
+
+.mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.mobile-customer {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--dark-color);
+    flex: 1;
+    margin-right: 10px;
+}
+
+.mobile-card-body {
+    margin-bottom: 15px;
+}
+
+.mobile-detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.mobile-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.mobile-value {
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+.mobile-card-footer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.mobile-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 13px;
+}
+
+.mobile-expand-btn {
+    text-align: center;
+    padding: 10px;
+    background: var(--light-color);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--secondary-color);
+    font-weight: 600;
+    transition: var(--transition);
+    margin-bottom: 10px;
+}
+
+.mobile-expand-btn:hover {
+    background: #e9ecef;
+}
+
+.mobile-expanded-details {
+    display: none;
+    background: var(--light-color);
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+/* المودال */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px;
+    border-bottom: 2px solid #f0f0f0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--dark-color);
+    font-weight: 700;
+}
+
+.close-btn {
+    background: #f0f0f0;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    transition: var(--transition);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: var(--danger-color);
+    color: white;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.booking-info {
+    background: var(--light-color);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.booking-info h4 {
+    margin: 0 0 15px 0;
+    color: var(--dark-color);
+    font-size: 18px;
+}
+
+.booking-info p {
+    margin: 8px 0;
+    color: #666;
+    font-size: 15px;
+}
+
+.input-group {
+    margin-bottom: 25px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 15px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: var(--transition);
+    background: var(--light-color);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+    background: white;
+}
+
+/* مجموعة إدخال الوقت مع زر */
+.time-input-group {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.time-input-group input {
+    flex: 1;
+}
+
+.show-slots-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--transition);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.show-slots-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* الأوقات المتاحة */
+.available-slots {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 12px;
+    background: var(--light-color);
+    padding: 15px;
+    border: 2px dashed #dee2e6;
+}
+
+.available-slots-header {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 12px;
+    font-size: 15px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.time-suggestion {
+    color: var(--success-color);
+    font-size: 14px;
+    padding: 12px;
+    text-align: center;
+    background: white;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #d4edda;
+}
+
+.slot-item {
+    background: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.slot-item.occupied {
+    border-left: 4px solid var(--danger-color);
+    opacity: 0.8;
+}
+
+.slot-item.suggested {
+    border-left: 4px solid var(--success-color);
+    cursor: pointer;
+}
+
+.slot-item.suggested:hover {
+    background: #e8f5e8;
+    transform: translateX(-5px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+.slot-time {
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.slot-customer {
+    color: #666;
+    font-size: 13px;
+}
+
+.slot-action {
+    color: var(--success-color);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border: 2px solid var(--warning-color);
+    padding: 18px;
+    border-radius: 10px;
+    margin-top: 20px;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.warning-box p {
+    margin: 0;
+    color: #856404;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.modal-footer {
+    padding: 25px;
+    border-top: 2px solid #f0f0f0;
+    display: flex;
+    gap: 15px;
+    background: #f8f9fa;
+    border-radius: 0 0 20px 20px;
+}
+
+.save-btn, .cancel-btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    font-size: 15px;
+}
+
+.save-btn {
+    background: var(--success-color);
+    color: white;
+}
+
+.save-btn:hover:not(:disabled) {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+.save-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.cancel-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* حالات التحميل والرسائل */
+.loading, .empty-state, .error {
+    text-align: center;
+    padding: 80px 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--box-shadow);
+    grid-column: 1 / -1;
+}
+
+.loading {
+    color: #666;
+    font-size: 18px;
+}
+
+.empty-state {
+    color: #999;
+}
+
+.empty-state .icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.empty-state p {
+    font-size: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.error {
+    color: var(--danger-color);
+    font-size: 18px;
+}
+
+.loading-slots, .error-slots {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+    font-size: 15px;
+}
+
+.error-slots {
+    color: var(--danger-color);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ========== وسائط الاستجابة ========== */
+
+/* شاشات كبيرة (1200px فما فوق) */
+@media (min-width: 1200px) {
+    .cancelled-bookings-list {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+}
+
+/* أجهزة اللاب توب (1024px - 1199px) */
+@media (max-width: 1199px) {
+    .container {
+        padding: 20px;
+    }
+    
+    .cancelled-bookings-list {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* أجهزة اللاب توب الصغيرة والتابلت (768px - 1023px) */
+@media (max-width: 1023px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .header {
+        padding: 15px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .controls {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        padding: 20px;
+        gap: 15px;
+    }
+    
+    .cancelled-bookings-list {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 18px;
+    }
+    
+    .cancelled-booking-card {
+        padding: 20px;
+    }
+    
+    .modal-content {
+        width: 95%;
+    }
+}
+
+/* التابلت والأجهزة المتوسطة (601px - 767px) */
+@media (max-width: 767px) {
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .user-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .controls {
+        grid-template-columns: 1fr;
+        padding: 15px;
+        gap: 15px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .controls.mobile-open {
+        max-height: 500px;
+    }
+    
+    .filter-group input {
+        width: 100%;
+    }
+    
+    .filter-btn, .clear-btn {
+        width: 100%;
+    }
+    
+    .cancelled-bookings-list {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .cancelled-booking-card {
+        padding: 18px;
+    }
+    
+    .customer-name {
+        font-size: 20px;
+    }
+    
+    .booking-actions {
+        flex-direction: column;
+    }
+    
+    .reschedule-btn, .delete-btn {
+        width: 100%;
+    }
+    
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-content {
+        width: 100%;
+        max-height: 95vh;
+        border-radius: 15px;
+    }
+    
+    .modal-header {
+        padding: 20px;
+    }
+    
+    .modal-header h3 {
+        font-size: 20px;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        padding: 20px;
+        gap: 10px;
+    }
+    
+    .save-btn, .cancel-btn {
+        width: 100%;
+    }
+    
+    .time-input-group {
+        flex-direction: column;
+    }
+    
+    .show-slots-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .available-slots {
+        max-height: 250px;
+    }
+    
+    .slot-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* الموبايل (480px فما دون) */
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .header {
+        padding: 12px;
+        border-radius: 12px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .user-info span {
+        font-size: 14px;
+        padding: 6px 12px;
+    }
+    
+    .back-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    
+    .controls {
+        padding: 12px;
+        border-radius: 12px;
+    }
+    
+    .filter-group label {
+        font-size: 13px;
+    }
+    
+    .filter-group input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .filter-btn, .clear-btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .cancelled-booking-card {
+        padding: 15px;
+        border-radius: 12px;
+    }
+    
+    .cancelled-badge {
+        font-size: 11px;
+        padding: 5px 12px;
+    }
+    
+    .customer-name {
+        font-size: 18px;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .services-list, .cancel-reason {
+        padding: 12px;
+    }
+    
+    .service-item {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .modal-header {
+        padding: 15px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .booking-info {
+        padding: 15px;
+    }
+    
+    .booking-info h4 {
+        font-size: 16px;
+    }
+    
+    .booking-info p {
+        font-size: 14px;
+    }
+    
+    .input-group input {
+        padding: 12px;
+    }
+    
+    .available-slots {
+        max-height: 200px;
+        padding: 12px;
+    }
+    
+    .slot-item {
+        padding: 12px;
+    }
+    
+    .loading, .empty-state, .error {
+        padding: 60px 20px;
+    }
+    
+    .empty-state .icon {
+        font-size: 60px;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+    }
+}
+
+/* شاشات صغيرة جداً (360px فما دون) */
+@media (max-width: 360px) {
+    .container {
+        padding: 8px;
+    }
+    
+    .header {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+    }
+    
+    .cancelled-booking-card {
+        padding: 12px;
+    }
+    
+    .mobile-card-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .mobile-customer {
+        margin-right: 0;
+        text-align: center;
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    .modal-header, .modal-body, .modal-footer {
+        padding: 12px;
+    }
+}
+
+/* تحسينات للطباعة */
+@media print {
+    .header, .controls, .booking-actions, .mobile-menu-btn {
+        display: none;
+    }
+    
+    .cancelled-booking-card {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+    
+    .container {
+        max-width: none;
+        padding: 0;
+    }
+    
+    body {
+        background: white;
+    }
+}

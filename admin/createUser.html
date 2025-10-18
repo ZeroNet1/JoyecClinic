@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الحسابات - مركز التجميل</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="header">
+        <h1>إدارة الحسابات</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <button onclick="window.location.href='../main.html'" class="back-btn">العودة للرئيسية</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="form-section">
+            <h2>إنشاء حساب جديد</h2>
+            <form id="createUserForm">
+                <div class="input-group">
+                    <label for="name">الاسم:</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="input-group">
+                    <label for="email">البريد الإلكتروني:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">كلمة السر:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="input-group">
+                    <label for="role">نوع الحساب:</label>
+                    <select id="role" required>
+                        <option value="">اختر نوع الحساب</option>
+                        <option value="admin">ادمن</option>
+                        <option value="reception">استقبال</option>
+                        <option value="accountant">محاسب</option>
+                        <option value="doctor">دكتور</option>
+                        <option value="skin_doctor">دكتور جلد وعلاج طبيعي</option>
+                    </select>
+                </div>
+                <button type="submit">إنشاء الحساب</button>
+            </form>
+            <div id="message" class="message"></div>
+        </div>
+        
+        <div class="users-section">
+            <h2>الحسابات الموجودة</h2>
+            <div id="usersList" class="users-list">
+                <!-- سيتم ملء هذه القائمة بالحسابات الموجودة -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="createUser.js"></script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مركز الجمال - الصفحة الرئيسية</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --primary-color: #d63384;
+            --secondary-color: #ff8fab;
+            --accent-color: #ffc2d1;
+            --text-dark: #590d22;
+            --text-light: #fff0f3;
+            --background: #fffafb;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--background) 0%, var(--accent-color) 100%);
+            min-height: 100vh;
+            direction: rtl;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(214, 51, 132, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 15px;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .user-role {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(214, 51, 132, 0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(214, 51, 132, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(214, 51, 132, 0.15);
+        }
+        
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .card h3 {
+            margin-bottom: 15px;
+            color: var(--text-dark);
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            padding: 40px 20px;
+            background: white;
+            margin: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .welcome-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .welcome-section p {
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .shift-status-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .shift-status-indicator.inactive {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="shift-status-indicator" id="globalShiftStatus">
+        🔄 جاري تحديث حالة الشيفت...
+    </div>
+
+    <div class="header">
+        <h1>🌸 مركز الجمال - النظام الإداري 🌸</h1>
+        <div class="user-info">
+            <div class="user-details">
+                <div id="userName" class="user-name"></div>
+                <div id="userRole" class="user-role"></div>
+            </div>
+            <button id="logoutBtn" class="logout-btn">تسجيل الخروج</button>
+        </div>
+    </div>
+    
+    <div class="welcome-section">
+        <h2>مرحباً بك في نظام إدارة مركز الجمال</h2>
+        <p>اختر الخدمة التي تريد إدارتها من البطاقات أدناه</p>
+    </div>
+    
+    <div class="dashboard">
+        <div class="card" id="accountsCard" onclick="navigateTo('admin/createUser.html')">
+            <div class="card-icon">👥</div>
+            <h3>إدارة الحسابات</h3>
+            <p>إنشاء وإدارة حسابات المستخدمين والموظفين</p>
+        </div>
+        
+        <div class="card" id="adminCard" onclick="navigateTo('admin/admin-page.html')">
+            <div class="card-icon">👑</div>
+            <h3>لوحة الإدمن</h3>
+            <p>إدارة الموظفين والأرباح والصلاحيات</p>
+        </div>
+        
+        <div class="card" id="inventoryCard" onclick="navigateTo('inventory/inventory.html')">
+            <div class="card-icon">📦</div>
+            <h3>إدارة المخزون</h3>
+            <p>إضافة وعرض المنتجات في المخزون ومتابعة الكميات</p>
+        </div>
+        
+        <div class="card" onclick="navigateTo('services/services.html')">
+            <div class="card-icon">💅</div>
+            <h3>الخدمات</h3>
+            <p>إدارة أقسام وخدمات المركز المختلفة</p>
+        </div>
+        
+        <div class="card" id="bookingsCard" onclick="checkShiftAndNavigate('bookings/bookings.html')">
+            <div class="card-icon">📅</div>
+            <h3>الحجوزات</h3>
+            <p>إدارة مواعيد العملاء والحجوزات</p>
+        </div>
+        
+        <div class="card" id="customersCard" onclick="checkShiftAndNavigate('customers/customers.html')">
+            <div class="card-icon">👥</div>
+            <h3>إدارة العملاء</h3>
+            <p>إضافة وعرض بيانات العملاء وإدارة أرصدتهم</p>
+        </div>
+        
+        <div class="card" onclick="navigateTo('shift-management/shift-management.html')">
+            <div class="card-icon">⏰</div>
+            <h3>إدارة الشيفتات</h3>
+            <p>بدء وإنهاء الشيفتات ومتابعة الإجراءات اليومية</p>
+        </div>
+        
+        <div class="card" id="doctorCard" onclick="checkShiftAndNavigate('Doctor/doctor-page.html')">
+            <div class="card-icon">👨‍⚕️</div>
+            <h3>الدكتور</h3>
+            <p>إدارة بيانات الأطباء والاستشارات</p>
+        </div>
+    </div>
+
+    <script>
+        // دالة للتنقل للصفحات
+        function navigateTo(url) {
+            if (url !== '#') {
+                window.location.href = url;
+            } else {
+                alert('هذه الخدمة قيد التطوير، ستكون متاحة قريباً!');
+            }
+        }
+
+        // دالة للتحقق من وجود شيفت نشط قبل الانتقال للصفحات المحمية
+        async function checkShiftAndNavigate(url) {
+            try {
+                // جلب بيانات المستخدم الحالي
+                const userData = await getUserData();
+                
+                // إذا كان المستخدم أدمن، اسمح بالوصول مباشرة
+                if (userData.role === 'admin') {
+                    navigateTo(url);
+                    return;
+                }
+                
+                // التحقق من وجود شيفت نشط
+                const hasActiveShift = await checkActiveShift();
+                
+                if (hasActiveShift) {
+                    navigateTo(url);
+                } else {
+                    alert('❌ لا يمكن الوصول إلى هذه الصفحة إلا أثناء الشيفت النشط أو بحساب مدير!');
+                }
+            } catch (error) {
+                console.error('خطأ في التحقق من الشيفت:', error);
+                alert('❌ حدث خطأ أثناء التحقق من الصلاحية');
+            }
+        }
+
+        // دالة محدثة للتحقق من وجود شيفت نشط
+        async function checkActiveShift() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                const q = query(
+                    collection(db, "shifts"),
+                    where("startTime", ">=", Timestamp.fromDate(today)),
+                    where("startTime", "<", Timestamp.fromDate(tomorrow)),
+                    where("status", "==", "active")
+                );
+
+                const querySnapshot = await getDocs(q);
+                return !querySnapshot.empty;
+            } catch (error) {
+                console.error("❌ خطأ في التحقق من الشيفت النشط:", error);
+                return false;
+            }
+        }
+
+        // دالة للحصول على بيانات المستخدم
+        async function getUserData() {
+            const userData = localStorage.getItem('userData');
+            return userData ? JSON.parse(userData) : null;
+        }
+
+        // تحديث حالة الشيفت العالمية
+        function updateGlobalShiftStatus(hasActiveShift, activeShifts = []) {
+            const statusElement = document.getElementById('globalShiftStatus');
+            
+            if (hasActiveShift) {
+                statusElement.textContent = `✅ الشيفت نشط - ${activeShifts.length} شيفت نشط`;
+                statusElement.classList.remove('inactive');
+                statusElement.style.display = 'block';
+            } else {
+                statusElement.textContent = '❌ لا يوجد شيفت نشط';
+                statusElement.classList.add('inactive');
+                statusElement.style.display = 'block';
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            Timestamp
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        import { startGlobalShiftListener } from "./shared/real-time-shift.js";
+
+        // تكوين Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZSMTIQ9o2Aqool263jkvVq-qzhEHEFfM",
+            authDomain: "beautycenter-6e1cf.firebaseapp.com",
+            projectId: "beautycenter-6e1cf",
+            storageBucket: "beautycenter-6e1cf.firebasestorage.app",
+            messagingSenderId: "706085429",
+            appId: "1:706085429:web:1f0ce5d3eb27c35372277c",
+            measurementId: "G-QL4LZG5KJZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // جعل db و Timestamp متاحين globally للدوال الأخرى
+        window.db = db;
+        window.Timestamp = Timestamp;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.getDocs = getDocs;
+
+        let globalShiftListener = null;
+
+        // التحقق من المصادقة وعرض معلومات المستخدم
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('userName').textContent = userData.name;
+                    document.getElementById('userRole').textContent = userData.role;
+                    
+                    // حفظ بيانات المستخدم في localStorage
+                    localStorage.setItem('userData', JSON.stringify({
+                        uid: user.uid,
+                        ...userData
+                    }));
+                    
+                    // إظهار/إخفاء البطاقات بناءً على دور المستخدم
+                    if (userData.role !== 'admin') {
+                        document.getElementById('accountsCard').classList.add('hidden');
+                        document.getElementById('adminCard').classList.add('hidden');
+                    }
+
+                    // بدء الاستماع للتغيرات في الشيفتات
+                    startGlobalShiftMonitoring();
+                } else {
+                    window.location.href = "index.html";
+                }
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // بدء مراقبة الشيفتات العالمية
+        function startGlobalShiftMonitoring() {
+            if (globalShiftListener) {
+                globalShiftListener();
+            }
+
+            globalShiftListener = startGlobalShiftListener((activeShifts) => {
+                console.log('🔄 تحديث حالة الشيفتات على الصفحة الرئيسية:', activeShifts);
+                updateGlobalShiftStatus(activeShifts.length > 0, activeShifts);
+            });
+        }
+
+        // تسجيل الخروج
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                if (globalShiftListener) {
+                    globalShiftListener();
+                }
+                signOut(auth).then(() => {
+                    localStorage.removeItem('userData');
+                    window.location.href = "index.html";
+                });
+            }
+        });
+
+        // تنظيف المستمعين عند مغادرة الصفحة
+        window.addEventListener('beforeunload', () => {
+            if (globalShiftListener) {
+                globalShiftListener();
+            }
+        });
+    </script>
+</body>
+</html>
