@@ -1,4 +1,4 @@
-// enhanced-doctor-page.js - النسخة المحسّنة والكاملة مع نظام الخدمات الإضافية المحدث
+// enhanced-doctor-page.js - النسخة المحسّنة مع نظام التقارير التفصيلية
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { 
@@ -40,6 +40,7 @@ let allServices = [];
 let allInventory = [];
 let currentBookingForService = null;
 let selectedServiceForAdd = null;
+let currentReportData = null;
 
 console.log('🚀 بدء تحميل صفحة الدكتور...');
 
@@ -162,7 +163,7 @@ async function setupRealtimeBookings() {
 }
 
 // عرض الحجوزات
-function displayBookings(bookings) {
+async function displayBookings(bookings) {
     const grid = document.getElementById('bookingsGrid');
     if (!grid) return;
 
@@ -179,21 +180,49 @@ function displayBookings(bookings) {
 
     grid.innerHTML = '';
 
-    bookings.forEach(booking => {
-        const card = createBookingCard(booking);
+    for (const booking of bookings) {
+        const card = await createBookingCard(booking);
         grid.appendChild(card);
-    });
+    }
 }
 
 // إنشاء بطاقة حجز
-function createBookingCard(booking) {
+async function createBookingCard(booking) {
     const card = document.createElement('div');
     card.className = `booking-card status-${booking.status}`;
 
     const services = booking.services || [];
-    const servicesHTML = services.map(s => `
-        <div class="service-item">📌 ${s.name} (${s.duration} دقيقة - ${s.price.toFixed(2)} جنيه)</div>
-    `).join('');
+    
+    // بناء HTML للخدمات مع أزرار التقارير
+    let servicesHTML = '';
+    for (let i = 0; i < services.length; i++) {
+        const service = services[i];
+        
+        // جلب التقرير الخاص بهذه الخدمة
+        const reportQuery = query(
+            collection(db, "serviceReports"),
+            where("bookingId", "==", booking.id),
+            where("serviceName", "==", service.name)
+        );
+        const reportSnapshot = await getDocs(reportQuery);
+        
+        const hasReport = !reportSnapshot.empty;
+        const buttonClass = hasReport ? 'add-details-btn has-report' : 'add-details-btn';
+        const buttonText = hasReport ? '📋 عرض التفاصيل' : '➕ إضافة التفاصيل';
+        
+        servicesHTML += `
+            <div class="service-item">
+                <div class="service-item-content">
+                    📌 ${service.name} (${service.duration} دقيقة - ${service.price.toFixed(2)} جنيه)
+                </div>
+                ${(booking.status === 'started' || booking.status === 'pending_payment') ? `
+                    <button class="${buttonClass}" onclick="openServiceReport('${booking.id}', '${booking.customerId}', '${service.name}', ${hasReport})">
+                        ${buttonText}
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }
 
     // جلب الخدمات الإضافية
     let additionalServicesHTML = '';
@@ -313,6 +342,161 @@ function createBookingCard(booking) {
 
     return card;
 }
+
+// فتح نموذج التقرير
+window.openServiceReport = async function(bookingId, customerId, serviceName, hasReport) {
+    try {
+        // جلب بيانات الحجز والعميل
+        const bookingDoc = await getDoc(doc(db, "bookings", bookingId));
+        const customerDoc = await getDoc(doc(db, "customers", customerId));
+        
+        if (!bookingDoc.exists() || !customerDoc.exists()) {
+            alert('❌ بيانات غير صحيحة!');
+            return;
+        }
+        
+        const bookingData = bookingDoc.data();
+        const customerData = customerDoc.data();
+        
+        if (hasReport) {
+            // عرض التقرير الموجود
+            const reportQuery = query(
+                collection(db, "serviceReports"),
+                where("bookingId", "==", bookingId),
+                where("serviceName", "==", serviceName)
+            );
+            const reportSnapshot = await getDocs(reportQuery);
+            
+            if (!reportSnapshot.empty) {
+                const report = reportSnapshot.docs[0].data();
+                
+                // ملء النموذج بالبيانات الموجودة
+                document.getElementById('reportPatientName').value = report.customerName;
+                document.getElementById('reportPatientPhone').value = report.customerPhone;
+                document.getElementById('reportDate').value = report.sessionDate;
+                document.getElementById('reportTime').value = report.sessionTime;
+                document.getElementById('reportSessionNumber').value = report.sessionNumber;
+                document.getElementById('reportSessionType').value = report.sessionType;
+                document.getElementById('reportPulseCount').value = report.pulseCount || '';
+                document.getElementById('reportPower').value = report.power || '';
+                document.getElementById('reportPulseDuration').value = report.pulseDuration || '';
+                document.getElementById('reportSpotSize').value = report.spotSize || '';
+                document.getElementById('reportSkinType').value = report.skinType || '';
+                document.getElementById('reportNotes').value = report.notes || '';
+                
+                // جعل الحقول للقراءة فقط
+                document.querySelectorAll('#serviceReportForm input, #serviceReportForm select, #serviceReportForm textarea').forEach(el => {
+                    el.setAttribute('readonly', true);
+                    el.setAttribute('disabled', true);
+                });
+                
+                currentReportData = {
+                    isViewing: true,
+                    reportId: reportSnapshot.docs[0].id
+                };
+            }
+        } else {
+            // إنشاء تقرير جديد
+            const now = new Date();
+            const sessionDate = bookingData.startedAt ? bookingData.startedAt.toDate() : now;
+            
+            document.getElementById('reportPatientName').value = customerData.name;
+            document.getElementById('reportPatientPhone').value = customerData.phone || '';
+            document.getElementById('reportDate').value = sessionDate.toISOString().split('T')[0];
+            document.getElementById('reportTime').value = sessionDate.toTimeString().slice(0, 5);
+            document.getElementById('reportSessionNumber').value = `SESS-${Date.now()}`;
+            document.getElementById('reportSessionType').value = serviceName;
+            document.getElementById('reportPulseCount').value = '';
+            document.getElementById('reportPower').value = '';
+            document.getElementById('reportPulseDuration').value = '';
+            document.getElementById('reportSpotSize').value = '';
+            document.getElementById('reportSkinType').value = '';
+            document.getElementById('reportNotes').value = '';
+            
+            // إزالة readonly من الحقول
+            document.querySelectorAll('#serviceReportForm input, #serviceReportForm select, #serviceReportForm textarea').forEach(el => {
+                el.removeAttribute('readonly');
+                el.removeAttribute('disabled');
+            });
+            
+            // جعل الاسم والهاتف للقراءة فقط
+            document.getElementById('reportPatientName').setAttribute('readonly', true);
+            document.getElementById('reportSessionType').setAttribute('readonly', true);
+            
+            currentReportData = {
+                isViewing: false,
+                bookingId,
+                customerId,
+                customerName: customerData.name,
+                customerPhone: customerData.phone,
+                serviceName
+            };
+        }
+        
+        document.getElementById('serviceReportModal').classList.remove('hidden');
+        
+    } catch (error) {
+        console.error("❌ خطأ في فتح نموذج التقرير:", error);
+        alert('❌ حدث خطأ في تحميل البيانات');
+    }
+};
+
+// حفظ التقرير
+window.saveServiceReport = async function() {
+    if (!currentReportData || currentReportData.isViewing) {
+        alert('⚠️ لا يمكن تعديل التقرير الحالي');
+        return;
+    }
+    
+    try {
+        const reportData = {
+            bookingId: currentReportData.bookingId,
+            customerId: currentReportData.customerId,
+            customerName: currentReportData.customerName,
+            customerPhone: document.getElementById('reportPatientPhone').value,
+            serviceName: currentReportData.serviceName,
+            sessionDate: document.getElementById('reportDate').value,
+            sessionTime: document.getElementById('reportTime').value,
+            sessionNumber: document.getElementById('reportSessionNumber').value,
+            sessionType: document.getElementById('reportSessionType').value,
+            pulseCount: parseInt(document.getElementById('reportPulseCount').value) || 0,
+            power: document.getElementById('reportPower').value,
+            pulseDuration: document.getElementById('reportPulseDuration').value,
+            spotSize: document.getElementById('reportSpotSize').value,
+            skinType: document.getElementById('reportSkinType').value,
+            notes: document.getElementById('reportNotes').value,
+            doctorId: currentDoctorId,
+            doctorName: currentDoctorName,
+            createdAt: Timestamp.now(),
+            createdBy: currentDoctorName
+        };
+        
+        // التحقق من الحقول المطلوبة
+        if (!reportData.sessionDate || !reportData.sessionTime || !reportData.sessionNumber) {
+            alert('⚠️ يرجى ملء جميع الحقول المطلوبة!');
+            return;
+        }
+        
+        await addDoc(collection(db, "serviceReports"), reportData);
+        
+        alert('✅ تم حفظ التقرير بنجاح!');
+        closeServiceReportModal();
+        
+        // إعادة تحميل الحجوزات لتحديث الأزرار
+        await setupRealtimeBookings();
+        
+    } catch (error) {
+        console.error("❌ خطأ في حفظ التقرير:", error);
+        alert('❌ حدث خطأ أثناء حفظ التقرير: ' + error.message);
+    }
+};
+
+// إغلاق نموذج التقرير
+window.closeServiceReportModal = function() {
+    document.getElementById('serviceReportModal').classList.add('hidden');
+    currentReportData = null;
+    document.getElementById('serviceReportForm').reset();
+};
 
 // عرض مودال إضافة خدمة
 window.showAddServiceModal = async function(bookingId, customerId) {
@@ -783,7 +967,7 @@ window.endSession = async function(bookingId) {
 
 // عرض سجل الزيارات
 window.viewCustomerHistory = function(customerId) {
-    window.location.href = `customer-history-v2..html?customerId=${customerId}`;
+    window.location.href = `customer-history-v2.html?customerId=${customerId}`;
 };
 
 // تحديث واجهة المستخدم

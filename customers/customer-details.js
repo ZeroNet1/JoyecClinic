@@ -1,4 +1,4 @@
-// customer-details.js - مع زر طباعة الإيصال
+// customer-details.js - مع نظام العروض
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getFirestore, 
@@ -33,6 +33,8 @@ const auth = getAuth(app);
 let currentCustomerId = null;
 let currentCustomerData = null;
 let currentUserName = "نظام";
+let allOffers = [];
+let customerOffers = [];
 
 function el(id) {
     return document.getElementById(id) || null;
@@ -92,6 +94,17 @@ function setupEventListeners() {
     if (cancelVisit) cancelVisit.addEventListener('click', hideAddVisitModal);
     if (addVisitForm) addVisitForm.addEventListener('submit', addVisit);
 
+    // أحداث العروض
+    const rechargeOffersBtn = el('rechargeOffersBtn');
+    const cancelOffersRecharge = el('cancelOffersRecharge');
+    const rechargeOffersForm = el('rechargeOffersBalanceForm');
+    const offerCategoryFilter = el('offerCategoryFilter');
+
+    if (rechargeOffersBtn) rechargeOffersBtn.addEventListener('click', showOffersRechargeForm);
+    if (cancelOffersRecharge) cancelOffersRecharge.addEventListener('click', hideOffersRechargeForm);
+    if (rechargeOffersForm) rechargeOffersForm.addEventListener('submit', rechargeOffersBalance);
+    if (offerCategoryFilter) offerCategoryFilter.addEventListener('change', filterOffersByCategory);
+
     const addVisitModal = el('addVisitModal');
     if (addVisitModal) {
         addVisitModal.addEventListener('click', (e) => {
@@ -121,6 +134,8 @@ async function loadCustomerData() {
         displayCustomerInfo();
         await loadVisits();
         await loadTransactions();
+        await loadOffers();
+        await loadCustomerOffers();
     } catch (error) {
         console.error("خطأ في تحميل بيانات العميل:", error);
         alert('❌ حدث خطأ في تحميل بيانات العميل');
@@ -149,6 +164,12 @@ function displayCustomerInfo() {
             balanceElement.style.color = '#6c757d';
         }
     }
+
+    // عرض رصيد العروض
+    if (el('offersBalance')) {
+        const offersBalance = currentCustomerData.offersBalance || 0;
+        el('offersBalance').textContent = `${offersBalance.toFixed(2)} جنيه`;
+    }
 }
 
 function switchTab(tabName) {
@@ -162,8 +183,13 @@ function switchTab(tabName) {
 
     if (tabName === 'visits') loadVisits();
     else if (tabName === 'transactions') loadTransactions();
+    else if (tabName === 'offers') {
+        loadOffers();
+        loadCustomerOffers();
+    }
 }
 
+// ========== دوال الرصيد العادي ==========
 function showRechargeForm() {
     const rechargeFormEl = el('rechargeForm');
     if (!rechargeFormEl) return;
@@ -257,6 +283,427 @@ async function rechargeBalance(e) {
     }
 }
 
+// ========== دوال العروض ==========
+async function loadOffers() {
+    const offersList = el('offersList');
+    if (!offersList) return;
+    
+    offersList.innerHTML = '<div class="loading">جاري تحميل العروض...</div>';
+
+    try {
+        const now = new Date();
+        const q = query(
+            collection(db, "offers"),
+            where("endDate", ">=", Timestamp.fromDate(now)),
+            orderBy("endDate", "asc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        allOffers = [];
+
+        querySnapshot.forEach(docSnap => {
+            const offer = { id: docSnap.id, ...docSnap.data() };
+            
+            // التحقق من أن العرض نشط ولم ينته
+            const startDate = offer.startDate.toDate();
+            const endDate = offer.endDate.toDate();
+            
+            if (now >= startDate && now <= endDate) {
+                allOffers.push(offer);
+            }
+        });
+
+        displayOffers();
+    } catch (error) {
+        console.error("خطأ في تحميل العروض:", error);
+        offersList.innerHTML = '<div class="error">حدث خطأ في تحميل العروض</div>';
+    }
+}
+
+function displayOffers() {
+    const offersList = el('offersList');
+    const offerCategoryFilter = el('offerCategoryFilter');
+    
+    if (!offersList) return;
+
+    // استخراج الأقسام الفريدة
+    const categories = {};
+    allOffers.forEach(offer => {
+        if (!categories[offer.categoryId]) {
+            categories[offer.categoryId] = offer.categoryName;
+        }
+    });
+
+    // تحديث قائمة الأقسام
+    if (offerCategoryFilter) {
+        offerCategoryFilter.innerHTML = '<option value="all">جميع الأقسام</option>';
+        Object.entries(categories).forEach(([id, name]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            offerCategoryFilter.appendChild(option);
+        });
+    }
+
+    filterOffersByCategory();
+}
+
+function filterOffersByCategory() {
+    const offersList = el('offersList');
+    const offerCategoryFilter = el('offerCategoryFilter');
+    
+    if (!offersList) return;
+
+    const selectedCategory = offerCategoryFilter ? offerCategoryFilter.value : 'all';
+    
+    const filteredOffers = selectedCategory === 'all' 
+        ? allOffers 
+        : allOffers.filter(o => o.categoryId === selectedCategory);
+
+    if (filteredOffers.length === 0) {
+        offersList.innerHTML = '<div class="empty-state"><p>لا توجد عروض نشطة حالياً</p></div>';
+        return;
+    }
+
+    offersList.innerHTML = '';
+
+    filteredOffers.forEach(offer => {
+        const offerCard = createOfferCard(offer);
+        offersList.appendChild(offerCard);
+    });
+}
+
+function createOfferCard(offer) {
+    const card = document.createElement('div');
+    card.className = 'offer-card';
+
+    const discount = ((offer.originalPrice - offer.offerPrice) / offer.originalPrice) * 100;
+    const endDate = offer.endDate.toDate();
+    const formattedEndDate = endDate.toLocaleDateString('ar-EG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    card.innerHTML = `
+        <div class="offer-badge ${offer.offerType}">
+            ${offer.offerType === 'package' ? '📦 باكدج' : '🏷️ تخفيض'}
+        </div>
+        
+        <div class="offer-content">
+            <h4 class="offer-service-name">${offer.serviceName}</h4>
+            <p class="offer-category-name">${offer.categoryName}</p>
+            
+            <div class="offer-pricing">
+                <div class="price-row">
+                    <span>السعر الأصلي:</span>
+                    <span class="original-price">${offer.originalPrice.toFixed(2)} جنيه</span>
+                </div>
+                <div class="price-row highlight">
+                    <span>سعر العرض:</span>
+                    <span class="offer-price">${offer.offerPrice.toFixed(2)} جنيه</span>
+                </div>
+                <div class="discount-badge">خصم ${discount.toFixed(0)}%</div>
+            </div>
+            
+            ${offer.offerType === 'package' ? `
+                <div class="offer-sessions">
+                    🎫 عدد الجلسات: ${offer.sessionsCount}
+                </div>
+            ` : ''}
+            
+            <div class="offer-validity">
+                🕐 ينتهي في: ${formattedEndDate}
+            </div>
+            
+            ${offer.notes ? `
+                <div class="offer-notes-text">
+                    ℹ️ ${offer.notes}
+                </div>
+            ` : ''}
+            
+            <button class="buy-offer-btn" onclick="buyOffer('${offer.id}')">
+                شراء العرض
+            </button>
+        </div>
+    `;
+
+    return card;
+}
+
+window.buyOffer = async function(offerId) {
+    const offer = allOffers.find(o => o.id === offerId);
+    if (!offer) {
+        alert('❌ العرض غير موجود!');
+        return;
+    }
+
+    const offersBalance = currentCustomerData.offersBalance || 0;
+
+    if (offersBalance < offer.offerPrice) {
+        const shortage = offer.offerPrice - offersBalance;
+        alert(`⚠️ رصيد العروض غير كافٍ!\n\nالرصيد الحالي: ${offersBalance.toFixed(2)} جنيه\nالمبلغ المطلوب: ${offer.offerPrice.toFixed(2)} جنيه\nالنقص: ${shortage.toFixed(2)} جنيه\n\nيرجى شحن رصيد العروض أولاً.`);
+        return;
+    }
+
+    if (!confirm(`هل تريد شراء هذا العرض؟\n\n${offer.serviceName}\n${offer.offerType === 'package' ? `عدد الجلسات: ${offer.sessionsCount}\n` : ''}السعر: ${offer.offerPrice.toFixed(2)} جنيه`)) {
+        return;
+    }
+
+    try {
+        const newOffersBalance = offersBalance - offer.offerPrice;
+
+        // تحديث رصيد العروض
+        await updateDoc(doc(db, "customers", currentCustomerId), {
+            offersBalance: newOffersBalance,
+            updatedAt: Timestamp.now()
+        });
+
+        // إضافة العرض للعميل
+        await addDoc(collection(db, "customerOffers"), {
+            customerId: currentCustomerId,
+            customerName: currentCustomerData.name,
+            offerId: offer.id,
+            offerName: offer.serviceName,
+            categoryName: offer.categoryName,
+            offerType: offer.offerType,
+            totalSessions: offer.offerType === 'package' ? offer.sessionsCount : 1,
+            remainingSessions: offer.offerType === 'package' ? offer.sessionsCount : 1,
+            purchasePrice: offer.offerPrice,
+            purchaseDate: Timestamp.now(),
+            status: 'active',
+            createdBy: currentUserName
+        });
+
+        // تسجيل في الحركات المالية
+        await addDoc(collection(db, "transactions"), {
+            customerId: currentCustomerId,
+            customerName: currentCustomerData.name,
+            type: 'withdrawal',
+            amount: offer.offerPrice,
+            previousBalance: offersBalance,
+            newBalance: newOffersBalance,
+            paymentMethod: 'رصيد العروض',
+            notes: `شراء عرض: ${offer.serviceName} - ${offer.categoryName}`,
+            createdAt: Timestamp.now(),
+            createdBy: currentUserName
+        });
+
+        // تحديث عدد المستفيدين من العرض
+        const offerRef = doc(db, "offers", offer.id);
+        const offerDoc = await getDoc(offerRef);
+        if (offerDoc.exists()) {
+            const currentCount = offerDoc.data().customersCount || 0;
+            await updateDoc(offerRef, {
+                customersCount: currentCount + 1
+            });
+        }
+
+        try {
+            const shiftModule = await import('../shift-management/shift-management.js');
+            if (shiftModule && shiftModule.addShiftAction) {
+                await shiftModule.addShiftAction(
+                    'شراء عرض',
+                    `قام ${currentCustomerData.name} بشراء عرض: ${offer.serviceName} - المبلغ: ${offer.offerPrice.toFixed(2)} جنيه`
+                );
+            }
+        } catch (shiftError) {
+            console.log('لا يمكن تسجيل إجراء الشيفت:', shiftError);
+        }
+
+        currentCustomerData.offersBalance = newOffersBalance;
+        displayCustomerInfo();
+
+        alert(`✅ تم شراء العرض بنجاح!\n\nتم خصم ${offer.offerPrice.toFixed(2)} جنيه من رصيد العروض\nالرصيد الجديد: ${newOffersBalance.toFixed(2)} جنيه`);
+
+        await loadCustomerOffers();
+        await loadTransactions();
+
+    } catch (error) {
+        console.error("خطأ في شراء العرض:", error);
+        alert('❌ حدث خطأ أثناء شراء العرض: ' + (error.message || error));
+    }
+};
+
+// شحن رصيد العروض
+function showOffersRechargeForm() {
+    const form = el('offersRechargeForm');
+    if (!form) return;
+    form.classList.remove('hidden');
+
+    const amountInput = el('offersRechargeAmount');
+    if (amountInput) amountInput.focus();
+
+    const paymentMethodSelect = el('offersPaymentMethod');
+    if (paymentMethodSelect) {
+        paymentMethodSelect.innerHTML = `
+            <option value="نقدي">نقدي</option>
+            <option value="كاش">كاش</option>
+            <option value="فيزا">فيزا</option>
+            <option value="تحويل بنكي">تحويل بنكي</option>
+            <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+        `;
+    }
+}
+
+function hideOffersRechargeForm() {
+    const form = el('offersRechargeForm');
+    if (form) form.classList.add('hidden');
+
+    const rechargeForm = el('rechargeOffersBalanceForm');
+    if (rechargeForm) rechargeForm.reset();
+}
+
+async function rechargeOffersBalance(e) {
+    e.preventDefault();
+
+    const amountInput = el('offersRechargeAmount');
+    const notesInput = el('offersRechargeNotes');
+    const paymentMethodSelect = el('offersPaymentMethod');
+
+    const amount = amountInput ? parseFloat(amountInput.value) : NaN;
+    const notes = notesInput ? notesInput.value.trim() : '';
+    const paymentMethod = paymentMethodSelect ? paymentMethodSelect.value : 'نقدي';
+
+    if (!amount || amount <= 0) {
+        alert('⚠️ يرجى إدخال مبلغ صحيح!');
+        return;
+    }
+    if (amount > 100000) {
+        alert('⚠️ المبلغ كبير جداً! يرجى إدخال مبلغ أقل من 100,000 جنيه');
+        return;
+    }
+
+    try {
+        const currentOffersBalance = currentCustomerData.offersBalance || 0;
+        const newOffersBalance = currentOffersBalance + amount;
+
+        await updateDoc(doc(db, "customers", currentCustomerId), {
+            offersBalance: newOffersBalance,
+            updatedAt: Timestamp.now()
+        });
+
+        await addDoc(collection(db, "transactions"), {
+            customerId: currentCustomerId,
+            customerName: currentCustomerData.name,
+            type: 'deposit',
+            amount: amount,
+            previousBalance: currentOffersBalance,
+            newBalance: newOffersBalance,
+            paymentMethod: paymentMethod,
+            notes: notes || `شحن رصيد عروض - ${paymentMethod}`,
+            createdAt: Timestamp.now(),
+            createdBy: currentUserName
+        });
+
+        try {
+            const shiftModule = await import('../shift-management/shift-management.js');
+            if (shiftModule && shiftModule.addShiftAction) {
+                await shiftModule.addShiftAction(
+                    'شحن رصيد عروض',
+                    `تم شحن رصيد عروض لـ ${currentCustomerData.name} - المبلغ: ${amount.toFixed(2)} جنيه - طريقة الدفع: ${paymentMethod}`
+                );
+            }
+        } catch (shiftError) {
+            console.log('لا يمكن تسجيل إجراء الشيفت:', shiftError);
+        }
+
+        currentCustomerData.offersBalance = newOffersBalance;
+        displayCustomerInfo();
+
+        alert(`✅ تم شحن ${amount.toFixed(2)} جنيه لرصيد العروض بنجاح!\nالرصيد الجديد: ${newOffersBalance.toFixed(2)} جنيه`);
+        hideOffersRechargeForm();
+        await loadTransactions();
+
+    } catch (error) {
+        console.error("خطأ في شحن رصيد العروض:", error);
+        alert('❌ حدث خطأ أثناء شحن رصيد العروض: ' + (error.message || error));
+    }
+}
+
+// تحميل عروض العميل المشتراة
+async function loadCustomerOffers() {
+    const customerOffersList = el('customerOffersList');
+    if (!customerOffersList) return;
+
+    customerOffersList.innerHTML = '<div class="loading">جاري تحميل عروضك...</div>';
+
+    try {
+        const q = query(
+            collection(db, "customerOffers"),
+            where("customerId", "==", currentCustomerId),
+            orderBy("purchaseDate", "desc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        customerOffers = [];
+
+        querySnapshot.forEach(docSnap => {
+            customerOffers.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        if (customerOffers.length === 0) {
+            customerOffersList.innerHTML = '<div class="empty-state"><p>لم تشتري أي عروض بعد</p></div>';
+            return;
+        }
+
+        customerOffersList.innerHTML = '';
+
+        customerOffers.forEach(offer => {
+            const offerItem = createCustomerOfferItem(offer);
+            customerOffersList.appendChild(offerItem);
+        });
+
+    } catch (error) {
+        console.error("خطأ في تحميل عروض العميل:", error);
+        customerOffersList.innerHTML = '<div class="error">حدث خطأ في تحميل عروضك</div>';
+    }
+}
+
+function createCustomerOfferItem(offer) {
+    const item = document.createElement('div');
+    item.className = 'customer-offer-item';
+
+    const purchaseDate = offer.purchaseDate.toDate().toLocaleDateString('ar-EG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const statusClass = offer.status === 'active' ? 'active' : 'completed';
+    const statusText = offer.status === 'active' ? '🟢 نشط' : '✅ مكتمل';
+
+    item.innerHTML = `
+        <div class="customer-offer-header">
+            <div>
+                <h4>${offer.offerName}</h4>
+                <p>${offer.categoryName}</p>
+            </div>
+            <span class="offer-status ${statusClass}">${statusText}</span>
+        </div>
+        
+        <div class="customer-offer-details">
+            <div class="detail-row">
+                <span>تاريخ الشراء:</span>
+                <span>${purchaseDate}</span>
+            </div>
+            <div class="detail-row">
+                <span>المبلغ المدفوع:</span>
+                <span class="price-highlight">${offer.purchasePrice.toFixed(2)} جنيه</span>
+            </div>
+            ${offer.offerType === 'package' ? `
+                <div class="detail-row">
+                    <span>الجلسات المتبقية:</span>
+                    <span class="sessions-count">${offer.remainingSessions} من ${offer.totalSessions}</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    return item;
+}
+
+// ========== باقي الدوال الأصلية ==========
 function showAddVisitModal() {
     const modal = el('addVisitModal');
     if (!modal) return;
@@ -464,7 +911,6 @@ async function loadVisits() {
     }
 }
 
-// ✅ تحميل الحركات المالية مع زر طباعة
 async function loadTransactions() {
     const transactionsList = el('transactionsList');
     if (!transactionsList) return;
@@ -542,7 +988,6 @@ async function loadTransactions() {
     }
 }
 
-// ✅ طباعة الإيصال
 window.printReceipt = async function(transactionId) {
     try {
         const transactionDoc = await getDoc(doc(db, "transactions", transactionId));
@@ -561,391 +1006,101 @@ window.printReceipt = async function(transactionId) {
             minute: '2-digit' 
         });
 
-        let receiptHTML = '';
-
-        // إيصال عميل جديد (دفع مقابل خدمات)
-        if (transaction.type === 'payment' && transaction.isNewCustomer) {
-            const services = transaction.services || [];
-            const servicesText = services.map(s => s.name).join(' - ');
-            
-            receiptHTML = `
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>إيصال دفع - Joyec Clinic</title>
-                    <style>
-                        body {
-                            font-family: 'Arial', sans-serif;
-                            max-width: 400px;
-                            margin: 20px auto;
-                            padding: 20px;
-                            border: 2px solid #333;
-                        }
-                        .header {
-                            text-align: center;
-                            border-bottom: 2px solid #333;
-                            padding-bottom: 15px;
-                            margin-bottom: 20px;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .header p {
-                            margin: 5px 0;
-                            font-size: 12px;
-                        }
-                        .content {
-                            line-height: 2;
-                            font-size: 14px;
-                        }
-                        .content div {
-                            margin-bottom: 10px;
-                        }
-                        .amount {
-                            font-size: 18px;
-                            font-weight: bold;
-                            color: #28a745;
-                        }
-                        .footer {
-                            margin-top: 30px;
-                            text-align: center;
-                            border-top: 2px solid #333;
-                            padding-top: 15px;
-                            font-size: 12px;
-                        }
-                        @media print {
-                            body {
-                                border: none;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Joyec Clinic</h1>
-                        <p>مركز التجميل والعناية</p>
-                        <p>📞 01028725687 - 01099776794 - 01028992800  | 📍 شارع المستشفي امام الاسعاف</p>
-                    </div>
-                    
-                    <div class="content">
-                        <div><strong>الاسم:</strong> ${transaction.customerName}</div>
-                        <div><strong>الرقم:</strong> ${currentCustomerData.id || currentCustomerId}</div>
-                        <div><strong>التاريخ:</strong> ${formattedDate}</div>
-                        <hr>
-                        <div>في يوم ${formattedDate}</div>
-                        <div>تم دفع مبلغ قدره <span class="amount">${transaction.paidAmount ? transaction.paidAmount.toFixed(2) : transaction.amount.toFixed(2)} جنيه</span></div>
-                        <div><strong>طريقة الدفع:</strong> ${transaction.paymentMethod}</div>
-                        <hr>
-                        <div><strong>مقابل خدمة:</strong> ${servicesText}</div>
-                        <div>وتم تسجيلها في حساب العميل في مركز Joyec Clinic</div>
-                        <hr>
-                        <div><strong>من قبل:</strong> ${transaction.createdBy}</div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>شكراً لزيارتكم Joyec Clinic</p>
-                        <p>نتمنى لكم دوام الصحة والعافية</p>
-                    </div>
-                </body>
-                </html>
-            `;
-        }
-        // إيصال إيداع (شحن رصيد)
-        else if (transaction.type === 'deposit') {
-            receiptHTML = `
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>إيصال إيداع - Joyec Clinic</title>
-                    <style>
-                        body {
-                            font-family: 'Arial', sans-serif;
-                            max-width: 400px;
-                            margin: 20px auto;
-                            padding: 20px;
-                            border: 2px solid #333;
-                        }
-                        .header {
-                            text-align: center;
-                            border-bottom: 2px solid #333;
-                            padding-bottom: 15px;
-                            margin-bottom: 20px;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .header p {
-                            margin: 5px 0;
-                            font-size: 12px;
-                        }
-                        .content {
-                            line-height: 2;
-                            font-size: 14px;
-                        }
-                        .content div {
-                            margin-bottom: 10px;
-                        }
-                        .amount {
-                            font-size: 18px;
-                            font-weight: bold;
-                            color: #28a745;
-                        }
-                        .footer {
-                            margin-top: 30px;
-                            text-align: center;
-                            border-top: 2px solid #333;
-                            padding-top: 15px;
-                            font-size: 12px;
-                        }
-                        @media print {
-                            body {
-                                border: none;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Joyec Clinic</h1>
-                        <p>مركز التجميل والعناية</p>
-                        <p>📞 01028725687 - 01099776794 - 01028992800  | 📍 شارع المستشفي امام الاسعاف</p>
-                    </div>
-                    
-                    <div class="content">
-                        <div><strong>الاسم:</strong> ${transaction.customerName}</div>
-                        <div><strong>الرقم:</strong> ${currentCustomerData.id || currentCustomerId}</div>
-                        <div><strong>التاريخ:</strong> ${formattedDate}</div>
-                        <hr>
-                        <div>تم إيداع مبلغ <span class="amount">${transaction.amount.toFixed(2)} جنيه</span> في حسابك</div>
-                        <div><strong>طريقة الدفع:</strong> ${transaction.paymentMethod}</div>
-                        <hr>
-                        <div><strong>من قبل:</strong> ${transaction.createdBy}</div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>شكراً لزيارتكم Joyec Clinic</p>
-                        <p>نتمنى لكم دوام الصحة والعافية</p>
-                    </div>
-                </body>
-                </html>
-            `;
-        }
-        // إيصال سحب (دفع مقابل خدمات - عميل قديم)
-        else if (transaction.type === 'withdrawal') {
-            const services = transaction.services || [];
-            const servicesText = services.length > 0 ? services.map(s => s.name).join(' - ') : (transaction.notes || 'خدمات');
-            
-            receiptHTML = `
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>إيصال دفع - Joyec Clinic</title>
-                    <style>
-                        body {
-                            font-family: 'Arial', sans-serif;
-                            max-width: 400px;
-                            margin: 20px auto;
-                            padding: 20px;
-                            border: 2px solid #333;
-                        }
-                        .header {
-                            text-align: center;
-                            border-bottom: 2px solid #333;
-                            padding-bottom: 15px;
-                            margin-bottom: 20px;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .header p {
-                            margin: 5px 0;
-                            font-size: 12px;
-                        }
-                        .content {
-                            line-height: 2;
-                            font-size: 14px;
-                        }
-                        .content div {
-                            margin-bottom: 10px;
-                        }
-                        .amount {
-                            font-size: 18px;
-                            font-weight: bold;
-                            color: #dc3545;
-                        }
-                        .footer {
-                            margin-top: 30px;
-                            text-align: center;
-                            border-top: 2px solid #333;
-                            padding-top: 15px;
-                            font-size: 12px;
-                        }
-                        @media print {
-                            body {
-                                border: none;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Joyec Clinic</h1>
-                        <p>مركز التجميل والعناية</p>
-                        <p>📞 01028725687 - 01099776794 - 01028992800  | 📍 شارع المستشفي امام الاسعاف</p>
-                    </div>
-                    
-                    <div class="content">
-                        <div><strong>الاسم:</strong> ${transaction.customerName}</div>
-                        <div><strong>الرقم:</strong> ${currentCustomerData.id || currentCustomerId}</div>
-                        <div><strong>التاريخ:</strong> ${formattedDate}</div>
-                        <hr>
-                        <div>تم دفع مبلغ قدره <span class="amount">${transaction.amount.toFixed(2)} جنيه</span></div>
-                        <div><strong>طريقة الدفع:</strong> ${transaction.paymentMethod || 'رصيد داخلي'}</div>
-                        <hr>
-                        <div><strong>مقابل خدمة:</strong> ${servicesText}</div>
-                        <div>وتم تسجيلها في حساب العميل في مركز Joyec Clinic</div>
-                        <hr>
-                        <div><strong>من قبل:</strong> ${transaction.createdBy}</div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>شكراً لزيارتكم Joyec Clinic</p>
-                        <p>نتمنى لكم دوام الصحة والعافية</p>
-                    </div>
-                </body>
-                </html>
-            `;
-        }
-        // إيصال إرجاع
-        else if (transaction.type === 'refund') {
-            receiptHTML = `
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>إيصال إرجاع - Joyec Clinic</title>
-                    <style>
-                        body {
-                            font-family: 'Arial', sans-serif;
-                            max-width: 400px;
-                            margin: 20px auto;
-                            padding: 20px;
-                            border: 2px solid #333;
-                        }
-                        .header {
-                            text-align: center;
-                            border-bottom: 2px solid #333;
-                            padding-bottom: 15px;
-                            margin-bottom: 20px;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .header p {
-                            margin: 5px 0;
-                            font-size: 12px;
-                        }
-                        .content {
-                            line-height: 2;
-                            font-size: 14px;
-                        }
-                        .content div {
-                            margin-bottom: 10px;
-                        }
-                        .amount {
-                            font-size: 18px;
-                            font-weight: bold;
-                            color: #28a745;
-                        }
-                        .footer {
-                            margin-top: 30px;
-                            text-align: center;
-                            border-top: 2px solid #333;
-                            padding-top: 15px;
-                            font-size: 12px;
-                        }
-                        @media print {
-                            body {
-                                border: none;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Joyec Clinic</h1>
-                        <p>مركز التجميل والعناية</p>
-                        <p>📞 01028725687 - 01099776794 - 01028992800 | 📍 شارع المستشفي امام الاسعاف</p>
-                    </div>
-                    
-                    <div class="content">
-                        <div><strong>الاسم:</strong> ${transaction.customerName}</div>
-                        <div><strong>الرقم:</strong> ${currentCustomerData.id || currentCustomerId}</div>
-                        <div><strong>التاريخ:</strong> ${formattedDate}</div>
-                        <hr>
-                        <div>تم إرجاع مبلغ <span class="amount">${transaction.amount.toFixed(2)} جنيه</span> إلى حسابك</div>
-                        <div><strong>السبب:</strong> ${transaction.notes || 'إلغاء حجز'}</div>
-                        <hr>
-                        <div><strong>من قبل:</strong> ${transaction.createdBy}</div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>شكراً لزيارتكم Joyec Clinic</p>
-                        <p>نتمنى لكم دوام الصحة والعافية</p>
-                    </div>
-                </body>
-                </html>
-            `;
+        // تجهيز نص الخدمات إذا وُجدت (للحالات التي فيها services)
+        let servicesText = '';
+        if (transaction.services && Array.isArray(transaction.services) && transaction.services.length > 0) {
+            servicesText = transaction.services.map(s => {
+                if (typeof s === 'string') return s;
+                const name = s.name || s.serviceName || 'خدمة';
+                const qty = s.quantity ? ` x${s.quantity}` : '';
+                return `${name}${qty}`;
+            }).join(' — ');
         }
 
-        // فتح نافذة طباعة
-        const printWindow = window.open('', '_blank', 'width=600,height=800');
-        printWindow.document.write(receiptHTML);
-        printWindow.document.close();
-        
-        // انتظار تحميل المحتوى ثم الطباعة
-        printWindow.onload = function() {
-            printWindow.print();
-        };
+        const amountText = (transaction.amount || 0).toFixed(2) + ' جنيه';
+        let typeText = 'إجراء';
+        if (transaction.type === 'deposit') typeText = 'إيداع';
+        else if (transaction.type === 'withdrawal') typeText = 'سحب';
+        else if (transaction.type === 'payment') typeText = 'دفع';
+        else if (transaction.type === 'refund') typeText = 'إرجاع';
+
+        const notesText = transaction.notes ? transaction.notes : '-';
+        const createdBy = transaction.createdBy || 'نظام';
+        const paymentMethod = transaction.paymentMethod || '-';
+        const customerName = transaction.customerName || '-';
+
+        const receiptHTML = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>إيصال - Joyec Clinic</title>
+<style>
+  body { font-family: Arial, "Noto Naskh Arabic", sans-serif; direction: rtl; max-width:420px; margin:20px auto; color:#111; }
+  .wrap { border:1px solid #333; padding:16px; }
+  .header { text-align:center; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:12px; }
+  .header h1 { margin:0; font-size:20px; }
+  .meta { font-size:13px; line-height:1.6; }
+  .amount { font-weight:700; font-size:18px; color:#28a745; margin-top:10px; }
+  .section { margin-top:12px; }
+  .small { font-size:12px; color:#555; }
+  .footer { margin-top:18px; text-align:center; border-top:1px solid #ddd; padding-top:10px; font-size:12px; color:#444; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Joyec Clinic</h1>
+      <div class="small">إيصال دفع</div>
+    </div>
+
+    <div class="meta">
+      <div><strong>التاريخ:</strong> ${formattedDate}</div>
+      <div><strong>العميل:</strong> ${customerName}</div>
+      <div><strong>بواسطة:</strong> ${createdBy}</div>
+      <div><strong>طريقة الدفع:</strong> ${paymentMethod}</div>
+      <div><strong>نوع المعاملة:</strong> ${typeText}</div>
+    </div>
+
+    <div class="section amount">
+      <div>المبلغ: ${amountText}</div>
+    </div>
+
+    ${servicesText ? `<div class="section"><strong>الخدمات:</strong><div class="small">${servicesText}</div></div>` : ''}
+
+    <div class="section">
+      <strong>ملاحظات:</strong>
+      <div class="small">${notesText}</div>
+    </div>
+
+    <div class="footer">
+      شكرًا لاستخدامك Joyec Clinic — تواصل معنا لأي استفسار.
+    </div>
+  </div>
+
+  <script>
+    // ننتظر قليلًا ليُحمّل المحتوى ثم نطبع ونغلق نافذة الطباعة تلقائيًا
+    setTimeout(() => {
+      window.print();
+      // لا تُغلق النافذة تلقائيًا إن رغبت بالاحتفاظ بالإيصال في بعض المتصفحات
+      try { window.close(); } catch (e) { /* ignore */ }
+    }, 300);
+  </script>
+</body>
+</html>`;
+
+        // فتح نافذة جديدة وكتابة الإيصال
+        const w = window.open('', '_blank', 'width=450,height=700');
+        if (!w) {
+            // قد يمنع popup blocker — أرشد المستخدم
+            alert('تعذر فتح نافذة الطباعة. يرجى السماح للنوافذ المنبثقة أو طباعة من الصفحة الحالية.');
+            return;
+        }
+        w.document.open();
+        w.document.write(receiptHTML);
+        w.document.close();
 
     } catch (error) {
         console.error("خطأ في طباعة الإيصال:", error);
-        alert('❌ حدث خطأ في طباعة الإيصال');
+        alert('❌ حدث خطأ أثناء طباعة الإيصال: ' + (error.message || error));
     }
 };
-
-const style = document.createElement('style');
-style.textContent = `
-    .transaction-type-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-    .positive { color: #28a745; }
-    .negative { color: #dc3545; }
-    .visit-item, .transaction-item { background: white; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-right: 4px solid #007bff; }
-    .visit-header, .transaction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .visit-details, .transaction-details { color: #666; font-size: 14px; }
-    .visit-details div, .transaction-details div { margin-bottom: 5px; }
-    .visit-notes, .transaction-notes { background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 10px; border-right: 2px solid #007bff; }
-    .transaction-actions { margin-top: 15px; display: flex; gap: 10px; }
-    .print-receipt-btn { 
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-    .print-receipt-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-`;
-document.head.appendChild(style);

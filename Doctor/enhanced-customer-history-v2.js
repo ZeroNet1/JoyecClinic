@@ -1,4 +1,4 @@
-// enhanced-customer-history-v2.js - سجل الزيارات الكامل مع نظام التقارير
+// enhanced-customer-history-v2.js - سجل الزيارات المحدث
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getFirestore, 
@@ -6,12 +6,9 @@ import {
     getDocs,
     doc,
     getDoc,
-    addDoc,
-    updateDoc,
     query,
     where,
-    orderBy,
-    Timestamp
+    orderBy
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { checkUserRole } from "../shared/auth.js";
 
@@ -29,7 +26,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let customerId = null;
-let currentReportData = null;
 let currentUser = null;
 
 checkUserRole().then(async (userData) => {
@@ -145,6 +141,8 @@ async function createVisitCard(booking, bookingId) {
         
         const hasReport = !reportSnapshot.empty;
         const reportId = hasReport ? reportSnapshot.docs[0].id : null;
+        const buttonClass = hasReport ? 'view-report-btn has-report' : 'view-report-btn';
+        const buttonText = hasReport ? '📋 عرض التقرير' : 'لا يوجد تقرير';
         
         servicesHTML += `
             <div class="service-item">
@@ -153,9 +151,13 @@ async function createVisitCard(booking, bookingId) {
                     <span class="service-name">${service.name}</span>
                     <span class="service-details">(${service.duration || 0} دقيقة - ${(service.price || 0).toFixed(2)} جنيه)</span>
                 </div>
-                <button class="view-report-btn" onclick="handleServiceReport('${bookingId}', '${service.name}', '${reportId}', ${hasReport})">
-                    ${hasReport ? '📋 عرض التقرير' : '➕ إضافة تقرير'}
-                </button>
+                ${hasReport ? `
+                    <button class="${buttonClass}" onclick="viewReport('${reportId}')">
+                        ${buttonText}
+                    </button>
+                ` : `
+                    <span style="color: #999; font-size: 13px;">${buttonText}</span>
+                `}
             </div>
         `;
     }
@@ -181,17 +183,8 @@ async function createVisitCard(booking, bookingId) {
     return card;
 }
 
-// التعامل مع تقرير الخدمة
-window.handleServiceReport = async function(bookingId, serviceName, reportId, hasReport) {
-    if (hasReport && reportId && reportId !== 'null') {
-        await viewReport(reportId);
-    } else {
-        await addReport(bookingId, serviceName);
-    }
-};
-
-// عرض التقرير الموجود
-async function viewReport(reportId) {
+// عرض التقرير
+window.viewReport = async function(reportId) {
     try {
         const reportDoc = await getDoc(doc(db, "serviceReports", reportId));
         
@@ -230,6 +223,10 @@ async function viewReport(reportId) {
                     <div class="report-item">
                         <div class="report-label">نوع الجلسة</div>
                         <div class="report-value">${report.sessionType || '-'}</div>
+                    </div>
+                    <div class="report-item">
+                        <div class="report-label">الدكتور</div>
+                        <div class="report-value">${report.doctorName || '-'}</div>
                     </div>
                 </div>
             </div>
@@ -276,118 +273,11 @@ async function viewReport(reportId) {
         console.error("خطأ في تحميل التقرير:", error);
         alert('❌ حدث خطأ في تحميل التقرير');
     }
-}
-
-// إضافة تقرير جديد
-async function addReport(bookingId, serviceName) {
-    try {
-        // جلب بيانات الحجز
-        const bookingDoc = await getDoc(doc(db, "bookings", bookingId));
-        if (!bookingDoc.exists()) {
-            alert('❌ الحجز غير موجود!');
-            return;
-        }
-        
-        const booking = bookingDoc.data();
-        
-        // ملء البيانات الأساسية
-        document.getElementById('reportPatientName').value = booking.customerName;
-        document.getElementById('reportPatientPhone').value = booking.customerPhone || '';
-        
-        // تعيين التاريخ والوقت من الحجز
-        const completedDate = booking.completedAt?.toDate() || new Date();
-        document.getElementById('reportDate').value = completedDate.toISOString().split('T')[0];
-        document.getElementById('reportTime').value = completedDate.toTimeString().slice(0, 5);
-        
-        // رقم الجلسة (تلقائي)
-        document.getElementById('reportSessionNumber').value = `SESS-${Date.now()}`;
-        
-        // نوع الجلسة (الخدمة)
-        document.getElementById('reportSessionType').value = serviceName;
-        
-        // حفظ البيانات في المتغير العام
-        currentReportData = {
-            bookingId,
-            customerId: booking.customerId,
-            customerName: booking.customerName,
-            customerPhone: booking.customerPhone,
-            doctorId: booking.doctorId,
-            doctorName: booking.doctorName,
-            serviceName
-        };
-        
-        // إظهار المودال
-        document.getElementById('editReportModal').classList.remove('hidden');
-        
-    } catch (error) {
-        console.error("خطأ في إعداد التقرير:", error);
-        alert('❌ حدث خطأ في تحميل البيانات');
-    }
-}
-
-// حفظ التقرير
-window.saveReport = async function() {
-    if (!currentReportData) return;
-    
-    // جمع البيانات من النموذج
-    const reportData = {
-        bookingId: currentReportData.bookingId,
-        customerId: currentReportData.customerId,
-        customerName: currentReportData.customerName,
-        customerPhone: document.getElementById('reportPatientPhone').value,
-        doctorId: currentReportData.doctorId,
-        doctorName: currentReportData.doctorName,
-        serviceName: currentReportData.serviceName,
-        sessionDate: document.getElementById('reportDate').value,
-        sessionTime: document.getElementById('reportTime').value,
-        sessionNumber: document.getElementById('reportSessionNumber').value,
-        sessionType: document.getElementById('reportSessionType').value,
-        pulseCount: parseInt(document.getElementById('reportPulseCount').value) || 0,
-        power: document.getElementById('reportPower').value,
-        pulseDuration: document.getElementById('reportPulseDuration').value,
-        spotSize: document.getElementById('reportSpotSize').value,
-        skinType: document.getElementById('reportSkinType').value,
-        notes: document.getElementById('reportNotes').value,
-        createdAt: Timestamp.now(),
-        createdBy: currentUser.name
-    };
-    
-    // التحقق من البيانات المطلوبة
-    if (!reportData.sessionDate || !reportData.sessionTime || !reportData.sessionNumber) {
-        alert('⚠️ يرجى ملء جميع الحقول المطلوبة!');
-        return;
-    }
-    
-    try {
-        // حفظ التقرير في Firestore
-        await addDoc(collection(db, "serviceReports"), reportData);
-        
-        alert('✅ تم حفظ التقرير بنجاح!');
-        
-        // إغلاق المودال
-        closeEditReportModal();
-        
-        // إعادة تحميل الزيارات لعرض الزر الجديد
-        await loadCustomerBookings();
-        
-    } catch (error) {
-        console.error("خطأ في حفظ التقرير:", error);
-        alert('❌ حدث خطأ أثناء حفظ التقرير: ' + error.message);
-    }
 };
 
 // إغلاق مودال عرض التقرير
 window.closeViewReportModal = function() {
     document.getElementById('viewReportModal').classList.add('hidden');
-};
-
-// إغلاق مودال تحرير التقرير
-window.closeEditReportModal = function() {
-    document.getElementById('editReportModal').classList.add('hidden');
-    currentReportData = null;
-    
-    // إعادة تعيين النموذج
-    document.getElementById('reportForm').reset();
 };
 
 // طباعة التقرير

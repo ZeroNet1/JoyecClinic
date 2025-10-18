@@ -72,6 +72,24 @@ body {
     color: var(--text-dark);
     font-weight: 500;
 }
+/* تنسيق خاص لبطاقة العروض */
+.offers-card {
+    background: linear-gradient(135deg, #fff5f8 0%, #ffe0eb 100%);
+    border: 2px solid var(--primary-color);
+}
+
+.offers-card .card-icon {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
 
 .input-group input {
     width: 100%;

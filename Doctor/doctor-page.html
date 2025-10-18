@@ -201,6 +201,33 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
+        }
+
+        .service-item-content {
+            flex: 1;
+        }
+
+        .add-details-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .add-details-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .add-details-btn.has-report {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
         /* خدمات إضافية غير مدفوعة */
@@ -609,6 +636,45 @@
             transform: none;
         }
 
+        /* نموذج التقرير */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         /* حالات التحميل */
         .loading, .empty-state, .waiting-message {
             text-align: center;
@@ -657,7 +723,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .customer-info-grid {
+            .customer-info-grid, .form-row {
                 grid-template-columns: 1fr;
             }
 
@@ -732,6 +798,105 @@
                     تأكيد الإضافة
                 </button>
                 <button class="modal-btn secondary" onclick="closeAddServiceModal()">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة تفاصيل الجلسة -->
+    <div id="serviceReportModal" class="professional-modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span>📝</span>
+                    تفاصيل الجلسة
+                </h2>
+                <button class="close-btn" onclick="closeServiceReportModal()">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="serviceReportForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>الاسم:</label>
+                            <input type="text" id="reportPatientName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>رقم التليفون:</label>
+                            <input type="text" id="reportPatientPhone" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>التاريخ:</label>
+                            <input type="date" id="reportDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الوقت:</label>
+                            <input type="time" id="reportTime" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>رقم الجلسة:</label>
+                            <input type="text" id="reportSessionNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label>نوع الجلسة:</label>
+                            <input type="text" id="reportSessionType" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>عدد النبضات:</label>
+                            <input type="number" id="reportPulseCount" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Power:</label>
+                            <input type="text" id="reportPower" placeholder="مثال: 2.5 J/cm²">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Pulse Duration:</label>
+                            <input type="text" id="reportPulseDuration" placeholder="مثال: 3 ms">
+                        </div>
+                        <div class="form-group">
+                            <label>Spot Size:</label>
+                            <input type="text" id="reportSpotSize" placeholder="مثال: 8mm">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Skin Type:</label>
+                        <select id="reportSkinType">
+                            <option value="">اختر نوع البشرة</option>
+                            <option value="I">Type I - Very fair</option>
+                            <option value="II">Type II - Fair</option>
+                            <option value="III">Type III - Medium</option>
+                            <option value="IV">Type IV - Olive</option>
+                            <option value="V">Type V - Brown</option>
+                            <option value="VI">Type VI - Black</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ملاحظات إضافية:</label>
+                        <textarea id="reportNotes" rows="4" placeholder="أي ملاحظات عن الجلسة..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="saveServiceReport()">
+                    💾 حفظ التقرير
+                </button>
+                <button class="modal-btn secondary" onclick="closeServiceReportModal()">
                     إلغاء
                 </button>
             </div>

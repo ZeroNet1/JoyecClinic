@@ -145,6 +145,7 @@
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+            flex: 1;
         }
 
         .service-number {
@@ -174,11 +175,16 @@
             font-size: 13px;
             font-weight: 600;
             transition: all 0.3s;
+            white-space: nowrap;
         }
 
         .view-report-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .view-report-btn.has-report {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
         .visit-meta {
@@ -319,44 +325,6 @@
             color: white;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -371,9 +339,42 @@
             opacity: 0.5;
         }
 
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
         @media (max-width: 768px) {
-            .report-grid, .form-row {
+            .report-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .service-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media print {
+            .header, .back-btn, .report-footer {
+                display: none !important;
+            }
+            
+            .report-modal {
+                position: static;
+                background: white;
+            }
+            
+            .report-content {
+                box-shadow: none;
+                max-height: none;
             }
         }
     </style>
@@ -411,8 +412,8 @@
         </div>
 
         <div class="visits-list" id="visitsList">
-            <div class="empty-state">
-                <div class="empty-icon">⏳</div>
+            <div class="loading">
+                <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
                 <h3>جاري تحميل الزيارات...</h3>
             </div>
         </div>
@@ -429,90 +430,6 @@
             <div class="report-footer">
                 <button class="print-btn" onclick="printReport()">🖨️ طباعة</button>
                 <button class="close-report-btn" onclick="closeViewReportModal()">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal إضافة/تحرير تقرير -->
-    <div id="editReportModal" class="report-modal hidden">
-        <div class="report-content">
-            <div class="report-header">
-                <h3>📝 تفاصيل الجلسة</h3>
-                <button class="close-btn" onclick="closeEditReportModal()">✕</button>
-            </div>
-            <div class="report-body">
-                <form id="reportForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>الاسم:</label>
-                            <input type="text" id="reportPatientName" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>رقم التليفون:</label>
-                            <input type="text" id="reportPatientPhone" readonly>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>التاريخ:</label>
-                            <input type="date" id="reportDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>الوقت:</label>
-                            <input type="time" id="reportTime" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>رقم الجلسة:</label>
-                            <input type="text" id="reportSessionNumber" required>
-                        </div>
-                        <div class="form-group">
-                            <label>نوع الجلسة:</label>
-                            <input type="text" id="reportSessionType" readonly>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>عدد النبضات:</label>
-                            <input type="number" id="reportPulseCount" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Power:</label>
-                            <input type="text" id="reportPower" placeholder="مثال: 2.5 J/cm²">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Pulse Duration:</label>
-                            <input type="text" id="reportPulseDuration" placeholder="مثال: 3 ms">
-                        </div>
-                        <div class="form-group">
-                            <label>Spot Size:</label>
-                            <input type="text" id="reportSpotSize" placeholder="مثال: 8mm">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Skin Type:</label>
-                        <select id="reportSkinType">
-                            <option value="">اختر نوع البشرة</option>
-                            <option value="I">Type I - Very fair</option>
-                            <option value="II">Type II - Fair</option>
-                            <option value="III">Type III - Medium</option>
-                            <option value="IV">Type IV - Olive</option>
-                            <option value="V">Type V - Brown</option>
-                            <option value="VI">Type VI - Black</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>ملاحظات إضافية:</label>
-                        <textarea id="reportNotes" rows="4" placeholder="أي ملاحظات عن الجلسة..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="report-footer">
-                <button class="print-btn" onclick="saveReport()">💾 حفظ التقرير</button>
-                <button class="close-report-btn" onclick="closeEditReportModal()">إلغاء</button>
             </div>
         </div>
     </div>

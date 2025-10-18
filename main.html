@@ -122,6 +122,12 @@
             margin-bottom: 20px;
             color: var(--primary-color);
         }
+
+        /* specific styling for the new active-offers card to make it stand out */
+        .active-offers-card {
+            background: linear-gradient(135deg,#fff7fb 0%, #ffeaf4 100%);
+            border: 2px dashed rgba(214,51,132,0.12);
+        }
         
         .card h3 {
             margin-bottom: 15px;
@@ -212,6 +218,20 @@
             <div class="card-icon">👑</div>
             <h3>لوحة الإدمن</h3>
             <p>إدارة الموظفين والأرباح والصلاحيات</p>
+        </div>
+
+        <!-- existing offers card -->
+        <div class="card offers-card" id="offersCard" onclick="navigateTo('offers/offers.html')">
+            <div class="card-icon">🎁</div>
+            <h3>إدارة العروض</h3>
+            <p>إضافة وإدارة العروض الترويجية والباكدجات</p>
+        </div>
+
+        <!-- NEW: Active offers quick card -->
+        <div class="card active-offers-card" id="activeOffersCard" onclick="navigateTo('offers/offers.html')">
+            <div class="card-icon">🔥</div>
+            <h3>العروض النشطة</h3>
+            <p id="activeOffersText">جارٍ التحميل...</p>
         </div>
         
         <div class="card" id="inventoryCard" onclick="navigateTo('inventory/inventory.html')">
@@ -376,6 +396,25 @@
 
         let globalShiftListener = null;
 
+        // دالة لجلب عدد العروض النشطة وعرضه في الكرت
+        async function fetchActiveOffersCount() {
+            try {
+                const offersRef = collection(db, 'offers');
+                // بسيط: نعتبر العرض نشط إذا الحقل active === true
+                const q = query(offersRef, where('active', '==', true));
+                const snap = await getDocs(q);
+                const count = snap.size;
+                const el = document.getElementById('activeOffersText');
+                if (el) {
+                    el.textContent = count > 0 ? `يوجد ${count} عرض نشط` : 'لا توجد عروض نشطة';
+                }
+            } catch (err) {
+                console.error('خطأ في جلب عدد العروض النشطة:', err);
+                const el = document.getElementById('activeOffersText');
+                if (el) el.textContent = 'خطأ في جلب العروض';
+            }
+        }
+
         // التحقق من المصادقة وعرض معلومات المستخدم
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -399,6 +438,10 @@
 
                     // بدء الاستماع للتغيرات في الشيفتات
                     startGlobalShiftMonitoring();
+
+                    // جلب عدد العروض النشطة وعرضها في الكرت
+                    // استدعاء أولي، ويمكنك استدعاؤها لاحقًا لتحديث
+                    fetchActiveOffersCount();
                 } else {
                     window.location.href = "index.html";
                 }

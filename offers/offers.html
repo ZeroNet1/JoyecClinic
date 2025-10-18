@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة العروض - مركز التجميل</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="offers.css">
+</head>
+<body>
+    <!-- الهيدر -->
+    <div class="header sticky-header">
+        <h1>🎁 إدارة العروض 🎁</h1>
+        <div class="user-info">
+            <div class="user-details">
+                <div id="userName" class="user-name"></div>
+                <div id="userRole" class="user-role"></div>
+            </div>
+            <button onclick="window.location.href='../main.html'" class="back-btn">العودة للرئيسية</button>
+        </div>
+    </div>
+
+    <!-- رسالة النظام -->
+    <div id="message" class="message-container" style="display: none;"></div>
+
+    <div class="container">
+        <!-- قسم الفلترة -->
+        <div class="filter-section sticky-filter">
+            <div class="filter-controls">
+                <select id="categoryFilter" aria-label="فلتر الأقسام">
+                    <option value="all">جميع الأقسام</option>
+                </select>
+
+                <select id="offerTypeFilter" aria-label="نوع العرض">
+                    <option value="all">جميع الأنواع</option>
+                    <option value="package">باكدج جلسات</option>
+                    <option value="discount">تخفيض سعر</option>
+                </select>
+
+                <select id="statusFilter" aria-label="حالة العرض">
+                    <option value="active">العروض النشطة</option>
+                    <option value="expired">العروض المنتهية</option>
+                    <option value="all">جميع العروض</option>
+                </select>
+
+                <div class="offers-count" id="offersCount" aria-live="polite">0 عرض</div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- الشريط الجانبي -->
+            <aside class="sidebar" aria-label="شريط جانبي">
+                <!-- إحصائيات العروض -->
+                <div class="form-section stats-section">
+                    <h3>📊 إحصائيات العروض</h3>
+                    <div class="stat-row">
+                        <div>العروض النشطة</div>
+                        <div id="activeOffersCount">0</div>
+                    </div>
+                    <div class="stat-row">
+                        <div>العروض المنتهية</div>
+                        <div id="expiredOffersCount">0</div>
+                    </div>
+                    <div class="stat-row">
+                        <div>إجمالي العروض</div>
+                        <div id="totalOffersCount">0</div>
+                    </div>
+                </div>
+
+                <!-- نموذج إضافة عرض جديد -->
+                <div class="form-section">
+                    <h3>➕ إضافة عرض جديد</h3>
+                    <form id="addOfferForm">
+                        <!-- اختيار القسم -->
+                        <div class="input-group">
+                            <label>القسم: <span class="required">*</span></label>
+                            <select id="offerCategory" required>
+                                <option value="">اختر القسم</option>
+                            </select>
+                        </div>
+
+                        <!-- اختيار الخدمة -->
+                        <div class="input-group">
+                            <label>الخدمة: <span class="required">*</span></label>
+                            <select id="offerService" required disabled>
+                                <option value="">اختر الخدمة أولاً</option>
+                            </select>
+                        </div>
+
+                        <!-- نوع العرض -->
+                        <div class="input-group">
+                            <label>نوع العرض: <span class="required">*</span></label>
+                            <select id="offerType" required>
+                                <option value="">اختر نوع العرض</option>
+                                <option value="package">باكدج جلسات محددة</option>
+                                <option value="discount">تخفيض على سعر الخدمة</option>
+                            </select>
+                        </div>
+
+                        <!-- عدد الجلسات (للباكدج فقط) -->
+                        <div class="input-group hidden" id="sessionsGroup">
+                            <label>عدد الجلسات: <span class="required">*</span></label>
+                            <input type="number" id="sessionsCount" min="2" placeholder="مثال: 10">
+                            <small class="helper-text">عدد الجلسات في الباكدج</small>
+                        </div>
+
+                        <!-- السعر الأصلي (يظهر تلقائياً) -->
+                        <div class="input-group">
+                            <label>السعر الأصلي:</label>
+                            <div class="price-display" id="originalPriceDisplay">
+                                <span class="price-value">0.00</span>
+                                <span class="price-currency">جنيه</span>
+                            </div>
+                        </div>
+
+                        <!-- سعر العرض -->
+                        <div class="input-group">
+                            <label>سعر العرض: <span class="required">*</span></label>
+                            <input type="number" id="offerPrice" step="0.01" min="0" placeholder="أدخل سعر العرض" required>
+                            <small class="helper-text">السعر الذي سيدفعه العميل</small>
+                        </div>
+
+                        <!-- نسبة التخفيض (تحسب تلقائياً) -->
+                        <div class="discount-percentage" id="discountPercentage" style="display: none;">
+                            <span class="discount-label">نسبة التخفيض:</span>
+                            <span class="discount-value">0%</span>
+                        </div>
+
+                        <!-- تاريخ البداية -->
+                        <div class="input-group">
+                            <label>تاريخ بداية العرض: <span class="required">*</span></label>
+                            <input type="date" id="startDate" required>
+                        </div>
+
+                        <!-- تاريخ النهاية -->
+                        <div class="input-group">
+                            <label>تاريخ نهاية العرض: <span class="required">*</span></label>
+                            <input type="date" id="endDate" required>
+                        </div>
+
+                        <!-- ملاحظات اختيارية -->
+                        <div class="input-group">
+                            <label>ملاحظات (اختياري):</label>
+                            <textarea id="offerNotes" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">إضافة العرض</button>
+                    </form>
+                </div>
+            </aside>
+
+            <!-- المنطقة الرئيسية للعروض -->
+            <main class="offers-main" role="main">
+                <!-- مؤشر التحميل -->
+                <div id="loadingOffers" class="loading" style="display: none;">جاري التحميل...</div>
+
+                <!-- شبكة العروض -->
+                <div id="offersGrid" class="offers-grid">
+                    <!-- سيتم ملؤها بالبيانات -->
+                </div>
+
+                <!-- حالة الفراغ -->
+                <div id="emptyOffersState" class="empty-state" style="display: none;">
+                    <div class="icon">🎁</div>
+                    <h3>لا توجد عروض</h3>
+                    <p>ابدأ بإضافة عرض جديد من الشريط الجانبي</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- مودال تعديل العرض -->
+    <div id="editOfferModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ تعديل العرض</h3>
+                <button class="close-btn" onclick="closeEditModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="editOfferForm">
+                    <input type="hidden" id="editOfferId">
+                    
+                    <!-- سعر العرض الجديد -->
+                    <div class="input-group">
+                        <label>سعر العرض الجديد: <span class="required">*</span></label>
+                        <input type="number" id="editOfferPrice" step="0.01" min="0" required>
+                    </div>
+
+                    <!-- تاريخ النهاية الجديد -->
+                    <div class="input-group">
+                        <label>تاريخ نهاية العرض: <span class="required">*</span></label>
+                        <input type="date" id="editEndDate" required>
+                    </div>
+
+                    <!-- ملاحظات -->
+                    <div class="input-group">
+                        <label>ملاحظات:</label>
+                        <textarea id="editOfferNotes" rows="3"></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="save-btn">حفظ التعديلات</button>
+                        <button type="button" class="cancel-btn" onclick="closeEditModal()">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال عرض العملاء المستفيدين -->
+    <div id="customersModal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>👥 العملاء المستفيدين من العرض</h3>
+                <button class="close-btn" onclick="closeCustomersModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="customersList" class="customers-list">
+                    <!-- سيتم ملؤها بالبيانات -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="offers.js"></script>
+</body>
+</html>
