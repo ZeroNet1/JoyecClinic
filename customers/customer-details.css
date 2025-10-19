@@ -1,4 +1,4 @@
-/* customer-details.css - محدث مع العروض */
+/* customer-details.css - مع أرصدة متعددة */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -88,10 +88,12 @@ body {
     display: flex;
     background: #f8f9fa;
     border-bottom: 2px solid #e9ecef;
+    overflow-x: auto;
 }
 
 .tab-btn {
     flex: 1;
+    min-width: 120px;
     padding: 14px 18px;
     background: none;
     border: none;
@@ -101,6 +103,7 @@ body {
     color: #555;
     transition: all 0.3s;
     border-bottom: 3px solid transparent;
+    white-space: nowrap;
 }
 
 .tab-btn:hover {
@@ -249,7 +252,7 @@ body {
     gap: 12px;
 }
 
-.recharge-btn, .edit-btn {
+.recharge-btn, .edit-btn, .transfer-btn {
     padding: 11px 22px;
     border: none;
     border-radius: 10px;
@@ -279,8 +282,91 @@ body {
     transform: translateY(-2px);
 }
 
+.transfer-btn {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.transfer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+}
+
+/* أقسام أنواع الأرصدة */
+.balance-type-section {
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    color: white;
+}
+
+.offers-bg {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.laser-bg {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.derma-bg {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.balance-type-section .balance-info h3 {
+    color: white;
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+.balance-type-section .balance-amount {
+    font-size: 32px;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.balance-description {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 5px;
+}
+
+.balance-actions-group {
+    display: flex;
+    gap: 12px;
+}
+
+.balance-type-section .recharge-btn,
+.balance-type-section .transfer-btn {
+    background: white;
+    color: #333;
+    font-weight: 700;
+    padding: 12px 24px;
+}
+
+.offers-bg .recharge-btn:hover,
+.offers-bg .transfer-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #f5576c;
+}
+
+.laser-bg .recharge-btn:hover,
+.laser-bg .transfer-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #00f2fe;
+}
+
+.derma-bg .recharge-btn:hover,
+.derma-bg .transfer-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #38f9d7;
+}
+
 /* نموذج شحن الرصيد */
-.recharge-form {
+.recharge-form, .transfer-form {
     background: white;
     border: 2px solid #e9ecef;
     border-radius: 12px;
@@ -288,7 +374,7 @@ body {
     margin-top: 20px;
 }
 
-.recharge-form h4 {
+.recharge-form h4, .transfer-form h4 {
     margin: 0 0 18px 0;
     color: #1a1a1a;
     border-bottom: 2px solid #e9ecef;
@@ -382,6 +468,8 @@ body {
     align-items: center;
     padding: 26px 26px 18px;
     border-bottom: 2px solid #f0f0f0;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .visits-header h3, .transactions-header h3 {
@@ -406,6 +494,84 @@ body {
 .add-visit-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* فلتر الحركات المالية */
+.transactions-filter {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    padding: 20px 26px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-weight: 700;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+.filter-group select,
+.filter-group input[type="date"] {
+    padding: 11px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    color: #2c3e50;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.filter-group select:focus,
+.filter-group input[type="date"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.clear-filter-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+    white-space: nowrap;
+    height: fit-content;
+}
+
+.clear-filter-btn:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.custom-date-group {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* قوائم */
@@ -548,320 +714,6 @@ body {
     font-size: 16px;
 }
 
-/* ====================
-   قسم العروض - جديد
-==================== */
-
-.offers-container {
-    padding: 26px;
-}
-
-/* قسم رصيد العروض */
-.offers-balance-section {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-    padding: 25px;
-    border-radius: 15px;
-    margin-bottom: 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 5px 20px rgba(245, 87, 108, 0.3);
-}
-
-.offers-balance-section .balance-info h3 {
-    color: white;
-    font-size: 20px;
-    margin-bottom: 8px;
-}
-
-.offers-balance-section .balance-amount {
-    font-size: 32px;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.balance-description {
-    font-size: 13px;
-    opacity: 0.9;
-    margin-top: 5px;
-}
-
-.offers-balance-section .recharge-btn {
-    background: white;
-    color: #f5576c;
-    font-weight: 700;
-    padding: 12px 24px;
-}
-
-.offers-balance-section .recharge-btn:hover {
-    background: rgba(255, 255, 255, 0.9);
-    transform: translateY(-2px);
-}
-
-/* فلتر الأقسام */
-.offers-filter {
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.offers-filter label {
-    font-weight: 700;
-    color: #1a1a1a;
-    font-size: 15px;
-}
-
-.offers-filter select {
-    flex: 1;
-    max-width: 300px;
-    padding: 11px 14px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 14px;
-    background: white;
-    color: #2c3e50;
-    font-weight: 600;
-    transition: all 0.3s;
-}
-
-.offers-filter select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* قوائم العروض */
-.offers-section, .customer-offers-section {
-    margin-bottom: 30px;
-}
-
-.offers-section h3, .customer-offers-section h3 {
-    font-size: 20px;
-    color: #1a1a1a;
-    margin-bottom: 18px;
-    padding-bottom: 12px;
-    border-bottom: 3px solid #f0f0f0;
-}
-
-.offers-list, .customer-offers-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-/* بطاقة العرض */
-.offer-card {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s;
-    border: 2px solid transparent;
-    position: relative;
-}
-
-.offer-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-    border-color: #667eea;
-}
-
-.offer-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    color: white;
-    z-index: 10;
-}
-
-.offer-badge.package {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-}
-
-.offer-badge.discount {
-    background: linear-gradient(135deg, #f093fb, #f5576c);
-}
-
-.offer-content {
-    padding: 20px;
-}
-
-.offer-service-name {
-    font-size: 19px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 8px 0;
-}
-
-.offer-category-name {
-    font-size: 13px;
-    color: #666;
-    margin: 0 0 15px 0;
-}
-
-.offer-pricing {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-
-.price-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-.price-row.highlight {
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.original-price {
-    text-decoration: line-through;
-    color: #999;
-}
-
-.offer-price {
-    color: #dc3545;
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.discount-badge {
-    display: inline-block;
-    background: #28a745;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 15px;
-    font-size: 11px;
-    font-weight: 700;
-    margin-top: 5px;
-}
-
-.offer-sessions, .offer-validity {
-    padding: 10px;
-    background: #f0f0f0;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: #555;
-    font-weight: 600;
-}
-
-.offer-notes-text {
-    background: #fff3cd;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    font-size: 13px;
-    color: #856404;
-    border-right: 3px solid #ffc107;
-}
-
-.buy-offer-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.buy-offer-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-}
-
-/* بطاقة عرض العميل المشترى */
-.customer-offer-item {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border-right: 4px solid #667eea;
-}
-
-.customer-offer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f0f0f0;
-}
-
-.customer-offer-header h4 {
-    font-size: 18px;
-    color: #1a1a1a;
-    margin: 0 0 5px 0;
-}
-
-.customer-offer-header p {
-    font-size: 13px;
-    color: #666;
-    margin: 0;
-}
-
-.offer-status {
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.offer-status.active {
-    background: #d4edda;
-    color: #155724;
-}
-
-.offer-status.completed {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.customer-offer-details {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-}
-
-.detail-row span:first-child {
-    color: #666;
-}
-
-.detail-row span:last-child {
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-.price-highlight {
-    color: #28a745 !important;
-    font-size: 16px !important;
-}
-
-.sessions-count {
-    color: #667eea !important;
-    font-size: 15px !important;
-}
-
 /* المودال */
 .modal {
     position: fixed;
@@ -955,9 +807,13 @@ body {
     color: #dc3545;
 }
 
-/* الخفاء */
+/* الإخفاء */
 .hidden {
     display: none !important;
+}
+
+.offers-container {
+    padding: 26px;
 }
 
 /* ========== Responsive Design ========== */
@@ -970,10 +826,6 @@ body {
     .customer-stats {
         width: 100%;
         justify-content: center;
-    }
-
-    .offers-list, .customer-offers-list {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     }
 }
 
@@ -1024,27 +876,30 @@ body {
         gap: 20px;
     }
 
-    .balance-section, .offers-balance-section {
+    .balance-section, .balance-type-section {
         flex-direction: column;
         gap: 18px;
         text-align: center;
     }
 
-    .balance-actions {
+    .balance-actions, .balance-actions-group {
         width: 100%;
         flex-direction: column;
     }
 
-    .recharge-btn, .edit-btn {
+    .recharge-btn, .edit-btn, .transfer-btn {
         width: 100%;
     }
 
     .tabs-header {
-        flex-direction: column;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .tab-btn {
         padding: 12px 15px;
+        min-width: 100px;
+        font-size: 13px;
     }
 
     .visits-header, .transactions-header {
@@ -1064,6 +919,7 @@ body {
 
     .transactions-summary {
         flex-direction: column;
+        width: 100%;
     }
 
     .visit-details, .transaction-details {
@@ -1074,17 +930,18 @@ body {
         flex-direction: column;
     }
 
-    .offers-filter {
+    .transactions-filter {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .offers-filter select {
-        max-width: 100%;
+    .filter-group {
+        min-width: auto;
+        width: 100%;
     }
 
-    .offers-list, .customer-offers-list {
-        grid-template-columns: 1fr;
+    .clear-filter-btn {
+        width: 100%;
     }
 }
 
@@ -1133,11 +990,157 @@ body {
         font-size: 24px;
     }
 
-    .offers-balance-section .balance-amount {
+    .balance-type-section .balance-amount {
         font-size: 28px;
     }
 
-    .visit-item, .transaction-item, .customer-offer-item {
+    .visit-item, .transaction-item {
         padding: 14px;
     }
+
+    .tab-btn {
+        font-size: 12px;
+        padding: 10px 12px;
+    }
+    /* تقارير الجلسات */
+.session-report-item {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border-right: 4px solid #667eea;
+    transition: all 0.3s;
+}
+
+.session-report-item:hover {
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.report-date {
+    font-weight: 700;
+    color: #1a1a1a;
+    font-size: 16px;
+}
+
+.report-services-list {
+    margin-bottom: 15px;
+}
+
+.report-services-list h4 {
+    margin-bottom: 12px;
+    color: #333;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.report-service-item {
+    background: white;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-right: 3px solid #28a745;
+}
+
+.report-service-item.no-report {
+    border-right-color: #6c757d;
+    opacity: 0.7;
+}
+
+.service-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.view-report-details-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.view-report-details-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.view-report-details-btn.no-report {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.view-report-details-btn.no-report:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.report-modal-body {
+    padding: 25px;
+}
+
+.report-section {
+    margin-bottom: 25px;
+}
+
+.report-section h4 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 17px;
+    font-weight: 700;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.report-field {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border-right: 3px solid #667eea;
+}
+
+.report-label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.report-value {
+    display: block;
+    font-size: 15px;
+    color: #333;
+    font-weight: 700;
+}
+
+.report-notes {
+    grid-column: 1 / -1;
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    padding: 15px;
+}
 }

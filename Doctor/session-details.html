@@ -1,240 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تفاصيل الجلسة - مركز التجميل</title>
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="session-details.css">
-</head>
-<body>
-    <div class="header">
-        <h1 id="pageTitle">تفاصيل الجلسة</h1>
-        <div class="user-info">
-            <span id="userName"></span>
-            <div class="header-actions">
-                <button onclick="window.location.href='doctor-page.html'" class="back-btn">رجوع</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- معلومات الجلسة -->
-        <div class="session-info-section">
-            <h2>معلومات الجلسة</h2>
-            <div id="sessionInfo">
-                <!-- سيتم ملؤها بالبيانات -->
-            </div>
-        </div>
-
-        <!-- إجراءات الجلسة -->
-        <div class="session-actions-section">
-            <h2>إجراءات الجلسة</h2>
-            <div class="action-buttons">
-                <button class="action-btn primary" onclick="showAddServiceModal()">
-                    <span class="action-icon">➕</span>
-                    <span>إضافة خدمة</span>
-                </button>
-                
-                <button class="action-btn secondary" onclick="showInventoryModal()">
-                    <span class="action-icon">📦</span>
-                    <span>المخزون</span>
-                </button>
-                
-                <button class="action-btn success" onclick="showSessionReportModal()">
-                    <span class="action-icon">📋</span>
-                    <span>تفاصيل العملية</span>
-                </button>
-                
-                <button class="action-btn danger" onclick="endSession()">
-                    <span class="action-icon">⏹️</span>
-                    <span>إنهاء الجلسة</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- الخدمات الإضافية -->
-        <div class="additional-services-section">
-            <h2>الخدمات الإضافية</h2>
-            <div id="additionalServicesList">
-                <!-- سيتم ملؤها بالخدمات -->
-            </div>
-        </div>
-
-        <!-- المنتجات المستخدمة -->
-        <div class="used-products-section">
-            <h2>المنتجات المستخدمة</h2>
-            <div id="usedProductsList">
-                <!-- سيتم ملؤها بالمنتجات -->
-            </div>
-        </div>
-    </div>
-
-    <!-- مودال إضافة خدمة -->
-    <div id="addServiceModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>➕ إضافة خدمة إضافية</h3>
-                <button class="close-btn" onclick="hideAddServiceModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <form id="addServiceForm">
-                    <div class="form-group">
-                        <label for="additionalService">الخدمة الإضافية:</label>
-                        <select id="additionalService" required>
-                            <option value="">اختر الخدمة</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="additionalPrice">السعر الإضافي (جنيه):</label>
-                        <input type="number" id="additionalPrice" step="0.01" min="0" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="additionalNotes">ملاحظات:</label>
-                        <textarea id="additionalNotes" rows="3" placeholder="أي ملاحظات إضافية عن الخدمة..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="save-btn" onclick="addAdditionalService()">إضافة الخدمة</button>
-                <button type="button" class="cancel-btn" onclick="hideAddServiceModal()">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- مودال المخزون -->
-    <div id="inventoryModal" class="modal hidden">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h3>📦 استخدام منتج من المخزون</h3>
-                <button class="close-btn" onclick="hideInventoryModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="inventory-filters">
-                    <input type="text" id="inventorySearch" placeholder="🔍 ابحث عن منتج..." class="search-input">
-                </div>
-                
-                <div class="inventory-list" id="inventoryList">
-                    <!-- سيتم ملؤها بالمنتجات -->
-                </div>
-                
-                <div class="selected-product hidden" id="selectedProductSection">
-                    <h4>المنتج المختار</h4>
-                    <div class="product-info" id="selectedProductInfo"></div>
-                    
-                    <div class="quantity-controls">
-                        <label for="useQuantity">الكمية المستخدمة:</label>
-                        <input type="number" id="useQuantity" min="1" value="1">
-                        <span id="currentStockInfo"></span>
-                    </div>
-                    
-                    <div class="product-actions">
-                        <button class="save-btn" onclick="useProductFromInventory()">استخدام المنتج</button>
-                        <button class="cancel-btn" onclick="clearSelectedProduct()">إلغاء</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- مودال تفاصيل العملية -->
-    <div id="sessionReportModal" class="modal hidden">
-        <div class="modal-content x-large">
-            <div class="modal-header">
-                <h3>📋 تفاصيل العملية</h3>
-                <button class="close-btn" onclick="hideSessionReportModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <form id="sessionReportForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="patientName">اسم العميلة:</label>
-                            <input type="text" id="patientName" readonly>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="patientPhone">رقم التليفون:</label>
-                            <input type="text" id="patientPhone" readonly>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="sessionDate">التاريخ:</label>
-                            <input type="date" id="sessionDate" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="sessionTime">الوقت:</label>
-                            <input type="time" id="sessionTime" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="sessionNumber">رقم الجلسة:</label>
-                            <input type="text" id="sessionNumber" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="sessionType">نوع الجلسة:</label>
-                            <input type="text" id="sessionType" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="pulseCount">عدد النبضات:</label>
-                            <input type="number" id="pulseCount" min="0">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="power">Power:</label>
-                            <input type="text" id="power" placeholder="مثال: 2.5 J/cm²">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="pulseDuration">Puls Duration:</label>
-                            <input type="text" id="pulseDuration" placeholder="مثال: 3 ms">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="spotSize">Spot Size:</label>
-                            <input type="text" id="spotSize" placeholder="مثال: 8mm">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="skinType">Skin Type:</label>
-                        <select id="skinType">
-                            <option value="">اختر نوع البشرة</option>
-                            <option value="I">Type I - Very fair</option>
-                            <option value="II">Type II - Fair</option>
-                            <option value="III">Type III - Medium</option>
-                            <option value="IV">Type IV - Olive</option>
-                            <option value="V">Type V - Brown</option>
-                            <option value="VI">Type VI - Black</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="sessionNotes">ملاحظات إضافية:</label>
-                        <textarea id="sessionNotes" rows="4" placeholder="أي ملاحظات إضافية عن الجلسة..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="print-btn" onclick="printSessionReport()">🖨️ طباعة التقرير</button>
-                <button type="button" class="save-btn" onclick="saveSessionReport()">💾 حفظ التقرير</button>
-                <button type="button" class="cancel-btn" onclick="hideSessionReportModal()">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module" src="session-details.js"></script>
-</body>
-</html>

@@ -1,4 +1,4 @@
-// customers.js - إصدار معرف رقمي متسلسل (1,2,3,...) مع قفل هاتف customers_by_phone
+// customers.js - إصلاح تسجيل بيانات العملاء في الشيفت
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import {
   getFirestore,
@@ -8,11 +8,11 @@ import {
   where,
   doc,
   runTransaction,
-  Timestamp
+  Timestamp,
+  addDoc
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { checkUserRoleWithShift } from "../shared/auth-check.js";
 
-// --- تكوين Firebase (نفس بياناتك) ---
 const firebaseConfig = {
   apiKey: "AIzaSyAZSMTIQ9o2Aqool263jkvVq-qzhEHEFfM",
   authDomain: "beautycenter-6e1cf.firebaseapp.com",
@@ -25,38 +25,41 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+let currentUserName = "نظام";
 
-// التحقق من صلاحية المستخدم مع الشيفت (كما عندك)
 checkUserRoleWithShift().then(userData => {
   if (userData) {
     const userNameEl = document.getElementById('userName');
     if (userNameEl) userNameEl.textContent = userData.name || '';
+    currentUserName = userData.name || "نظام";
     loadStats();
     setupCustomerForm();
-  } else {
-    console.warn('لم يتم جلب بيانات المستخدم من checkUserRoleWithShift.');
   }
 }).catch(err => {
   console.error('خطأ في التحقق من صلاحية المستخدم:', err);
 });
 
-// ---------- إعداد نموذج إضافة العميل (رقمي) ----------
 async function setupCustomerForm() {
   const form = document.getElementById('addCustomerForm');
-  if (!form) {
-    console.warn('#addCustomerForm غير موجود.');
-    return;
-  }
+  if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name = (document.getElementById('customerName')?.value || '').trim();
     let phone = (document.getElementById('customerPhone')?.value || '').trim();
-    const balance = parseFloat(document.getElementById('customerBalance')?.value) || 0;
     const paymentMethod = (document.getElementById('customerPaymentMethod')?.value || 'نقدي');
 
-    // مفتاح الهاتف نبقيه بدون فراغات
+    const normalBalanceEnabled = document.getElementById('enableNormalBalance')?.checked;
+    const offersBalanceEnabled = document.getElementById('enableOffersBalance')?.checked;
+    const laserBalanceEnabled = document.getElementById('enableLaserBalance')?.checked;
+    const dermaBalanceEnabled = document.getElementById('enableDermaBalance')?.checked;
+
+    const normalBalance = normalBalanceEnabled ? (parseFloat(document.getElementById('customerBalance')?.value) || 0) : 0;
+    const offersBalance = offersBalanceEnabled ? (parseFloat(document.getElementById('offersBalance')?.value) || 0) : 0;
+    const laserBalance = laserBalanceEnabled ? (parseFloat(document.getElementById('laserBalance')?.value) || 0) : 0;
+    const dermaBalance = dermaBalanceEnabled ? (parseFloat(document.getElementById('dermaBalance')?.value) || 0) : 0;
+
     const phoneKey = phone.replace(/\s+/g, '');
 
     if (!name || !phone) {
@@ -68,19 +71,26 @@ async function setupCustomerForm() {
       return;
     }
 
+    if (normalBalance < 0 || offersBalance < 0 || laserBalance < 0 || dermaBalance < 0) {
+      showMessage('⚠️ لا يمكن أن تكون قيم الأرصدة سالبة!', 'error');
+      return;
+    }
+
+    if (normalBalance > 100000 || offersBalance > 100000 || laserBalance > 100000 || dermaBalance > 100000) {
+      showMessage('⚠️ قيمة الرصيد كبيرة جداً! يرجى إدخال مبلغ أقل من 100,000 جنيه', 'error');
+      return;
+    }
+
     try {
-      // تنفيذ المعاملة: 1) تأكد أن الهاتف غير موجود 2) اقرأ/حدّث العداد 3) أنشئ مستند العميل باستخدام doc id = رقم السِلسلة
       const generatedNumericId = await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, "counters", "customersCounter");
         const phoneRef = doc(db, "customers_by_phone", phoneKey);
 
-        // 1) تحقق من وجود رقم الهاتف كقفل
         const phoneSnap = await transaction.get(phoneRef);
         if (phoneSnap.exists()) {
           throw new Error('PHONE_EXISTS');
         }
 
-        // 2) اقرأ أو أنشئ العداد
         const counterSnap = await transaction.get(counterRef);
         let nextSeq = 1;
         if (!counterSnap.exists()) {
@@ -92,17 +102,18 @@ async function setupCustomerForm() {
           transaction.update(counterRef, { seq: nextSeq });
         }
 
-        // 3) استخدم الرقم كنص لمعرف الوثيقة (Firestore doc id يجب أن يكون string)
-        const docIdString = String(nextSeq); // e.g. "1", "2"
+        const docIdString = String(nextSeq);
 
-        // 4) أنشئ مستند العميل داخل المعاملة
         const customerRef = doc(db, "customers", docIdString);
         transaction.set(customerRef, {
-          id: nextSeq,                    // الحقل الرقمي (Number)
-          docId: docIdString,             // نسخة نصية من الـ doc id (مفيدة إن احتجت)
+          id: nextSeq,
+          docId: docIdString,
           name,
           phone: phoneKey,
-          balance,
+          balance: normalBalance,
+          offersBalance: offersBalance,
+          laserBalance: laserBalance,
+          dermaBalance: dermaBalance,
           totalSpent: 0,
           visitCount: 0,
           defaultPaymentMethod: paymentMethod,
@@ -110,30 +121,138 @@ async function setupCustomerForm() {
           updatedAt: Timestamp.now()
         });
 
-        // 5) أنشئ مستند قفل الهاتف
         transaction.set(phoneRef, {
           customerDocId: docIdString,
           createdAt: Timestamp.now()
         });
 
-        return nextSeq; // نُعيد الرقم الحقيقي (Number)
+        return nextSeq;
       });
 
-      // سجل الشيفت (إن وجد)
+      // ✅ حساب إجمالي المبلغ المدفوع
+      const totalPaidAmount = normalBalance + offersBalance + laserBalance + dermaBalance;
+
+      // ✅ تسجيل المعاملات المالية مع التفاصيل
+      const transactionsToCreate = [];
+
+      if (normalBalance > 0) {
+        transactionsToCreate.push({
+          customerId: String(generatedNumericId),
+          customerName: name,
+          type: 'deposit',
+          balanceType: 'normal',
+          amount: normalBalance,
+          previousBalance: 0,
+          newBalance: normalBalance,
+          paymentMethod: paymentMethod,
+          notes: `شحن رصيد عادي عند تسجيل الحساب - ${paymentMethod}`,
+          createdAt: Timestamp.now(),
+          createdBy: currentUserName
+        });
+      }
+
+      if (offersBalance > 0) {
+        transactionsToCreate.push({
+          customerId: String(generatedNumericId),
+          customerName: name,
+          type: 'deposit',
+          balanceType: 'offers',
+          amount: offersBalance,
+          previousBalance: 0,
+          newBalance: offersBalance,
+          paymentMethod: paymentMethod,
+          notes: `شحن رصيد عروض عند تسجيل الحساب - ${paymentMethod}`,
+          createdAt: Timestamp.now(),
+          createdBy: currentUserName
+        });
+      }
+
+      if (laserBalance > 0) {
+        transactionsToCreate.push({
+          customerId: String(generatedNumericId),
+          customerName: name,
+          type: 'deposit',
+          balanceType: 'laser',
+          amount: laserBalance,
+          previousBalance: 0,
+          newBalance: laserBalance,
+          paymentMethod: paymentMethod,
+          notes: `شحن رصيد ليزر عند تسجيل الحساب - ${paymentMethod}`,
+          createdAt: Timestamp.now(),
+          createdBy: currentUserName
+        });
+      }
+
+      if (dermaBalance > 0) {
+        transactionsToCreate.push({
+          customerId: String(generatedNumericId),
+          customerName: name,
+          type: 'deposit',
+          balanceType: 'derma',
+          amount: dermaBalance,
+          previousBalance: 0,
+          newBalance: dermaBalance,
+          paymentMethod: paymentMethod,
+          notes: `شحن رصيد جلدية عند تسجيل الحساب - ${paymentMethod}`,
+          createdAt: Timestamp.now(),
+          createdBy: currentUserName
+        });
+      }
+
+      for (const transactionData of transactionsToCreate) {
+        await addDoc(collection(db, "transactions"), transactionData);
+      }
+
+      // ✅ تسجيل في الشيفت مع المبالغ بشكل صحيح
       try {
         const shiftModule = await import('../shift-management/shift-management.js');
         if (shiftModule && shiftModule.addShiftAction) {
+          // بناء نص وصفي للأرصدة
+          const balancesText = [];
+          if (normalBalance > 0) balancesText.push(`عادي: ${normalBalance.toFixed(2)}`);
+          if (offersBalance > 0) balancesText.push(`عروض: ${offersBalance.toFixed(2)}`);
+          if (laserBalance > 0) balancesText.push(`ليزر: ${laserBalance.toFixed(2)}`);
+          if (dermaBalance > 0) balancesText.push(`جلدية: ${dermaBalance.toFixed(2)}`);
+          
+          const balancesSummary = balancesText.length > 0 ? ` - الأرصدة: ${balancesText.join(', ')} جنيه` : '';
+          
+          // ✅ تمرير المبلغ الإجمالي وطريقة الدفع كمعاملات منفصلة
           await shiftModule.addShiftAction(
             'إضافة عميل',
-            `تم إضافة عميل جديد: ${name} - هاتف: ${phoneKey} - رصيد: ${balance.toFixed(2)} - طريقة دفع: ${paymentMethod} - ID: ${generatedNumericId}`
+            `تم تسجيل عميل جديد: ${name} - هاتف: ${phoneKey}${balancesSummary} - ${paymentMethod} - ID: ${generatedNumericId}`,
+            name,
+            totalPaidAmount, // ✅ المبلغ الإجمالي
+            paymentMethod,   // ✅ طريقة الدفع
+            {
+              actionCategory: 'customer',
+              customerId: String(generatedNumericId),
+              normalBalance: normalBalance,
+              offersBalance: offersBalance,
+              laserBalance: laserBalance,
+              dermaBalance: dermaBalance
+            }
           );
+          
+          console.log('✅ تم تسجيل العميل في الشيفت:', name, totalPaidAmount, paymentMethod);
         }
       } catch (shiftError) {
-        console.log('لا يمكن تسجيل إجراء الشيفت:', shiftError);
+        console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError);
       }
 
-      showMessage(`✅ تم تسجيل العميل بنجاح! رقم العميل: ${generatedNumericId}`, 'success');
+      showMessage(
+        `✅ تم تسجيل العميل بنجاح!\n\n` +
+        `📋 رقم العميل: ${generatedNumericId}\n` +
+        `👤 الاسم: ${name}\n` +
+        `📱 الهاتف: ${phoneKey}\n` +
+        `💰 إجمالي الرصيد: ${totalPaidAmount.toFixed(2)} جنيه`,
+        'success'
+      );
+      
       form.reset();
+      
+      document.querySelectorAll('.balance-input-group').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.balance-checkbox').forEach(el => el.checked = false);
+      
       loadStats();
 
     } catch (error) {
@@ -141,35 +260,21 @@ async function setupCustomerForm() {
         showMessage('⚠️ رقم الهاتف مسجل مسبقاً!', 'error');
       } else {
         console.error("خطأ في إضافة العميل:", error);
-        showMessage('❌ حدث خطأ أثناء حفظ العميل!', 'error');
+        showMessage('❌ حدث خطأ أثناء حفظ العميل: ' + (error.message || error), 'error');
       }
     }
   });
 }
 
-// ---------- دوال مساعدة ----------
 function isValidPhone(phone) {
   const phoneRegex = /^01[0125][0-9]{8}$/;
   return phoneRegex.test(phone);
 }
 
-async function isPhoneExists(phone) {
-  try {
-    const q = query(collection(db, "customers"), where("phone", "==", phone));
-    const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
-  } catch (error) {
-    console.error("خطأ في التحقق من رقم الهاتف:", error);
-    return false;
-  }
-}
-
-// تحميل الإحصائيات كما عندك
 async function loadStats() {
   try {
     const querySnapshot = await getDocs(collection(db, "customers"));
     let totalCustomers = 0;
-    let totalBalance = 0;
     let newCustomers = 0;
 
     const today = new Date();
@@ -178,7 +283,6 @@ async function loadStats() {
     querySnapshot.forEach((doc) => {
       const customer = doc.data() || {};
       totalCustomers++;
-      totalBalance += Number(customer.balance || 0);
 
       if (customer.createdAt && typeof customer.createdAt.toDate === 'function') {
         const customerDate = customer.createdAt.toDate();
@@ -189,16 +293,17 @@ async function loadStats() {
       }
     });
 
-    const totalCustomersEl = document.getElementById('totalCustomers');
-    const totalBalanceEl = document.getElementById('totalBalance');
-    const newCustomersEl = document.getElementById('newCustomers');
+    updateElement('totalCustomers', totalCustomers);
+    updateElement('newCustomers', newCustomers);
 
-    if (totalCustomersEl) totalCustomersEl.textContent = totalCustomers;
-    if (totalBalanceEl) totalBalanceEl.textContent = totalBalance.toFixed(2);
-    if (newCustomersEl) newCustomersEl.textContent = newCustomers;
   } catch (error) {
     console.error("خطأ في تحميل الإحصائيات:", error);
   }
+}
+
+function updateElement(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
 }
 
 function showMessage(text, type = 'info') {
@@ -208,11 +313,12 @@ function showMessage(text, type = 'info') {
     else console.log(text);
     return;
   }
+  
   messageDiv.textContent = text;
   messageDiv.className = `message ${type}`;
   messageDiv.style.display = 'block';
 
   setTimeout(() => {
     messageDiv.style.display = 'none';
-  }, 5000);
+  }, 8000);
 }

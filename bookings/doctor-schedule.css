@@ -1,4 +1,4 @@
-/* doctor-schedule.css - التصميم مع الحالات الجديدة */
+/* doctor-schedule.css - التصميم الكامل مع التحسينات */
 
 * {
     margin: 0;
@@ -148,26 +148,26 @@ body {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
 }
 
-/* ✅ ألوان الحالات الجديدة */
+/* ألوان الحالات الجديدة */
 .booking-card.status-pending {
-    border-right-color: #ffc107; /* أصفر */
+    border-right-color: #ffc107;
 }
 
 .booking-card.status-confirmed {
-    border-right-color: #28a745; /* أخضر */
+    border-right-color: #28a745;
 }
 
 .booking-card.status-started {
-    border-right-color: #17a2b8; /* أزرق */
+    border-right-color: #17a2b8;
 }
 
 .booking-card.status-completed {
-    border-right-color: #6c757d; /* رمادي */
+    border-right-color: #6c757d;
     opacity: 0.85;
 }
 
 .booking-card.status-cancelled {
-    border-right-color: #dc3545; /* أحمر */
+    border-right-color: #dc3545;
     opacity: 0.7;
 }
 
@@ -199,7 +199,7 @@ body {
     font-weight: 700;
 }
 
-/* ✅ ألوان حالات الحجز */
+/* ألوان حالات الحجز */
 .booking-status.status-yellow {
     background: #fff3cd;
     color: #856404;
@@ -223,6 +223,11 @@ body {
 .booking-status.status-red {
     background: #f8d7da;
     color: #721c24;
+}
+
+.booking-status.status-orange {
+    background: #fff3cd;
+    color: #856404;
 }
 
 /* محتوى البطاقة */
@@ -398,6 +403,30 @@ body {
     color: #666;
 }
 
+.empty-state {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #7f8c8d;
+    font-size: 16px;
+    margin: 20px 0;
+}
+
+.loading {
+    color: #3498db;
+    font-weight: 500;
+}
+
+.loading::after {
+    content: '...';
+    display: inline-block;
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
 /* المودال */
 .modal {
     position: fixed;
@@ -410,6 +439,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    backdrop-filter: blur(5px);
 }
 
 .modal.hidden {
@@ -425,6 +455,18 @@ body {
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-header {
@@ -432,31 +474,36 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f0f0f0;
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px 20px 0 0;
+    margin: -30px -30px 25px -30px;
 }
 
 .modal-header h3 {
     margin: 0;
     font-size: 24px;
-    color: #333;
+    color: white;
 }
 
 .close-btn {
-    background: #f0f0f0;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     width: 36px;
     height: 36px;
     border-radius: 50%;
     font-size: 20px;
     cursor: pointer;
-    color: #666;
+    color: white;
     transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .close-btn:hover {
-    background: #dc3545;
-    color: white;
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
 }
 
 /* حقول الإدخال */
@@ -511,8 +558,19 @@ body {
     transition: all 0.2s;
 }
 
+.customer-result-item:last-child {
+    border-bottom: none;
+}
+
 .customer-result-item:hover {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.customer-result-item strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 15px;
 }
 
 .customer-result-item .positive {
@@ -520,32 +578,45 @@ body {
     font-weight: 700;
 }
 
+.customer-result-item:hover .positive {
+    color: #a8e6cf;
+}
+
 .customer-result-item .zero {
     color: #dc3545;
     font-weight: 700;
 }
 
+.customer-result-item:hover .zero {
+    color: #ffcdd2;
+}
+
 /* معلومات العميل المختار */
 #selectedCustomerInfo {
-    background: #e8f5e9;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 2px solid #28a745;
     border-radius: 12px;
     padding: 15px;
     margin-top: 12px;
 }
 
+#selectedCustomerInfo p {
+    margin: 5px 0;
+    color: #2c3e50;
+}
+
 /* صندوق الرصيد */
 .balance-info-box {
-    background: #e3f2fd;
-    border: 2px solid #2196f3;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 15px;
     padding: 20px;
     margin-top: 20px;
+    color: white;
 }
 
 .balance-info-box h4 {
     margin: 0 0 15px 0;
-    color: #0d47a1;
+    color: white;
     font-size: 18px;
 }
 
@@ -553,7 +624,7 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 12px 0;
-    border-bottom: 1px solid rgba(33, 150, 243, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .balance-row:last-child {
@@ -561,19 +632,20 @@ body {
 }
 
 .balance-label {
-    color: #1565c0;
+    color: white;
     font-size: 14px;
+    opacity: 0.9;
 }
 
 .balance-value {
     font-weight: 700;
     font-size: 16px;
-    color: #0d47a1;
+    color: white;
 }
 
 .recharge-btn {
-    background: #ffc107;
-    color: #000;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
     border: none;
     padding: 12px 20px;
     border-radius: 10px;
@@ -585,8 +657,9 @@ body {
 }
 
 .recharge-btn:hover {
-    background: #ffb300;
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
 }
 
 /* صندوق الملخص */
@@ -639,6 +712,28 @@ body {
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 2px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-footer .save-btn {
+    width: auto;
+    margin: 0;
+}
+
+.modal-footer .cancel-btn {
+    background: #95a5a6;
+}
+
+.modal-footer .cancel-btn:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
 /* أسباب الإلغاء */
 .cancel-reasons {
     display: flex;
@@ -661,6 +756,161 @@ body {
 .cancel-reasons label:hover {
     border-color: #667eea;
     background: #f8f9fa;
+}
+
+/* قسم العروض */
+.offers-header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.offers-header h4 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.offers-note {
+    margin: 0;
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.available-offers {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+/* بطاقة العرض */
+.offer-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.offer-card:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+    transform: translateY(-2px);
+}
+
+.offer-card input[type="radio"]:checked ~ .offer-details {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.offer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.offer-header input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.offer-header label {
+    cursor: pointer;
+    flex: 1;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.offer-details {
+    padding-right: 30px;
+    transition: all 0.3s ease;
+}
+
+.offer-sessions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.sessions-count {
+    color: #27ae60;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.offer-progress {
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #ecf0f1;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.offer-meta {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+/* شارات نوع الحجز */
+.booking-type-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 8px 0;
+}
+
+.booking-type-badge.offer {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.booking-type-badge.laser {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.booking-type-badge.derma {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+/* معلومات النقص */
+.deficit-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.deficit-amount {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.balance-negative {
+    color: #e74c3c;
+}
+
+.balance-positive {
+    color: #27ae60;
 }
 
 /* الإخفاء */
@@ -699,11 +949,38 @@ body {
     .modal-content {
         width: 95%;
         padding: 20px;
+        max-height: 95vh;
+    }
+    
+    .offer-card {
+        padding: 12px;
+    }
+    
+    .balance-info-box {
+        padding: 15px;
+    }
+    
+    .modal-header h3 {
+        font-size: 18px;
     }
 }
 
 @media (max-width: 480px) {
     .booking-card {
         padding: 18px;
+    }
+    
+    .modal-header {
+        padding: 15px 20px;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .offer-sessions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
     }
 }

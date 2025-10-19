@@ -1,4 +1,4 @@
-// customer-details.js - مع نظام العروض
+// customer-details.js - مع نظام الأرصدة المتعددة والتحويلات
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getFirestore, 
@@ -11,7 +11,8 @@ import {
     query,
     where,
     orderBy,
-    Timestamp
+    Timestamp,
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { checkUserRole } from "../shared/auth.js";
@@ -33,8 +34,8 @@ const auth = getAuth(app);
 let currentCustomerId = null;
 let currentCustomerData = null;
 let currentUserName = "نظام";
-let allOffers = [];
-let customerOffers = [];
+let allTransactions = []; // لحفظ جميع الحركات للفلترة
+let currentTransactionFilter = 'all'; // الفلتر الحالي
 
 function el(id) {
     return document.getElementById(id) || null;
@@ -76,14 +77,67 @@ function setupEventListeners() {
         });
     }
 
+    // الرصيد العادي
     const rechargeBtn = el('rechargeBtn');
     const cancelRecharge = el('cancelRecharge');
     const rechargeForm = el('rechargeBalanceForm');
+    const transferNormalBtn = el('transferNormalBtn');
+    const cancelNormalTransfer = el('cancelNormalTransfer');
+    const transferNormalForm = el('transferNormalBalanceForm');
 
     if (rechargeBtn) rechargeBtn.addEventListener('click', showRechargeForm);
     if (cancelRecharge) cancelRecharge.addEventListener('click', hideRechargeForm);
     if (rechargeForm) rechargeForm.addEventListener('submit', rechargeBalance);
+    if (transferNormalBtn) transferNormalBtn.addEventListener('click', () => showBalanceForm('normal', 'transfer'));
+    if (cancelNormalTransfer) cancelNormalTransfer.addEventListener('click', () => hideBalanceForm('normal', 'transfer'));
+    if (transferNormalForm) transferNormalForm.addEventListener('submit', (e) => transferBalance(e, 'normal'));
 
+    // رصيد العروض
+    const rechargeOffersBtn = el('rechargeOffersBtn');
+    const cancelOffersRecharge = el('cancelOffersRecharge');
+    const rechargeOffersForm = el('rechargeOffersBalanceForm');
+    const transferOffersBtn = el('transferOffersBtn');
+    const cancelOffersTransfer = el('cancelOffersTransfer');
+    const transferOffersForm = el('transferOffersBalanceForm');
+
+    if (rechargeOffersBtn) rechargeOffersBtn.addEventListener('click', () => showBalanceForm('offers', 'recharge'));
+    if (cancelOffersRecharge) cancelOffersRecharge.addEventListener('click', () => hideBalanceForm('offers', 'recharge'));
+    if (rechargeOffersForm) rechargeOffersForm.addEventListener('submit', (e) => rechargeSpecialBalance(e, 'offers'));
+    if (transferOffersBtn) transferOffersBtn.addEventListener('click', () => showBalanceForm('offers', 'transfer'));
+    if (cancelOffersTransfer) cancelOffersTransfer.addEventListener('click', () => hideBalanceForm('offers', 'transfer'));
+    if (transferOffersForm) transferOffersForm.addEventListener('submit', (e) => transferBalance(e, 'offers'));
+
+    // رصيد الليزر
+    const rechargeLaserBtn = el('rechargeLaserBtn');
+    const cancelLaserRecharge = el('cancelLaserRecharge');
+    const rechargeLaserForm = el('rechargeLaserBalanceForm');
+    const transferLaserBtn = el('transferLaserBtn');
+    const cancelLaserTransfer = el('cancelLaserTransfer');
+    const transferLaserForm = el('transferLaserBalanceForm');
+
+    if (rechargeLaserBtn) rechargeLaserBtn.addEventListener('click', () => showBalanceForm('laser', 'recharge'));
+    if (cancelLaserRecharge) cancelLaserRecharge.addEventListener('click', () => hideBalanceForm('laser', 'recharge'));
+    if (rechargeLaserForm) rechargeLaserForm.addEventListener('submit', (e) => rechargeSpecialBalance(e, 'laser'));
+    if (transferLaserBtn) transferLaserBtn.addEventListener('click', () => showBalanceForm('laser', 'transfer'));
+    if (cancelLaserTransfer) cancelLaserTransfer.addEventListener('click', () => hideBalanceForm('laser', 'transfer'));
+    if (transferLaserForm) transferLaserForm.addEventListener('submit', (e) => transferBalance(e, 'laser'));
+
+    // رصيد الجلدية
+    const rechargeDermaBtn = el('rechargeDermaBtn');
+    const cancelDermaRecharge = el('cancelDermaRecharge');
+    const rechargeDermaForm = el('rechargeDermaBalanceForm');
+    const transferDermaBtn = el('transferDermaBtn');
+    const cancelDermaTransfer = el('cancelDermaTransfer');
+    const transferDermaForm = el('transferDermaBalanceForm');
+
+    if (rechargeDermaBtn) rechargeDermaBtn.addEventListener('click', () => showBalanceForm('derma', 'recharge'));
+    if (cancelDermaRecharge) cancelDermaRecharge.addEventListener('click', () => hideBalanceForm('derma', 'recharge'));
+    if (rechargeDermaForm) rechargeDermaForm.addEventListener('submit', (e) => rechargeSpecialBalance(e, 'derma'));
+    if (transferDermaBtn) transferDermaBtn.addEventListener('click', () => showBalanceForm('derma', 'transfer'));
+    if (cancelDermaTransfer) cancelDermaTransfer.addEventListener('click', () => hideBalanceForm('derma', 'transfer'));
+    if (transferDermaForm) transferDermaForm.addEventListener('submit', (e) => transferBalance(e, 'derma'));
+
+    // الزيارات
     const addVisitBtn = el('addVisitBtn');
     const closeVisitModal = el('closeVisitModal');
     const cancelVisit = el('cancelVisit');
@@ -94,17 +148,6 @@ function setupEventListeners() {
     if (cancelVisit) cancelVisit.addEventListener('click', hideAddVisitModal);
     if (addVisitForm) addVisitForm.addEventListener('submit', addVisit);
 
-    // أحداث العروض
-    const rechargeOffersBtn = el('rechargeOffersBtn');
-    const cancelOffersRecharge = el('cancelOffersRecharge');
-    const rechargeOffersForm = el('rechargeOffersBalanceForm');
-    const offerCategoryFilter = el('offerCategoryFilter');
-
-    if (rechargeOffersBtn) rechargeOffersBtn.addEventListener('click', showOffersRechargeForm);
-    if (cancelOffersRecharge) cancelOffersRecharge.addEventListener('click', hideOffersRechargeForm);
-    if (rechargeOffersForm) rechargeOffersForm.addEventListener('submit', rechargeOffersBalance);
-    if (offerCategoryFilter) offerCategoryFilter.addEventListener('change', filterOffersByCategory);
-
     const addVisitModal = el('addVisitModal');
     if (addVisitModal) {
         addVisitModal.addEventListener('click', (e) => {
@@ -112,10 +155,39 @@ function setupEventListeners() {
         });
     }
 
-    const rechargeOverlay = el('rechargeForm');
-    if (rechargeOverlay) {
-        rechargeOverlay.addEventListener('click', (e) => {
-            if (e.target.id === 'rechargeForm') hideRechargeForm();
+    // فلتر الحركات المالية
+    const transactionDateFilter = el('transactionDateFilter');
+    const customTransactionDate = el('customTransactionDate');
+    const clearTransactionFilter = el('clearTransactionFilter');
+    const customDateGroup = el('customDateGroup');
+
+    if (transactionDateFilter) {
+        transactionDateFilter.addEventListener('change', function() {
+            currentTransactionFilter = this.value;
+            if (this.value === 'custom') {
+                if (customDateGroup) customDateGroup.classList.remove('hidden');
+            } else {
+                if (customDateGroup) customDateGroup.classList.add('hidden');
+                filterTransactions();
+            }
+        });
+    }
+
+    if (customTransactionDate) {
+        customTransactionDate.addEventListener('change', function() {
+            if (this.value) {
+                filterTransactions();
+            }
+        });
+    }
+
+    if (clearTransactionFilter) {
+        clearTransactionFilter.addEventListener('click', function() {
+            currentTransactionFilter = 'all';
+            if (transactionDateFilter) transactionDateFilter.value = 'all';
+            if (customTransactionDate) customTransactionDate.value = '';
+            if (customDateGroup) customDateGroup.classList.add('hidden');
+            filterTransactions();
         });
     }
 }
@@ -134,8 +206,6 @@ async function loadCustomerData() {
         displayCustomerInfo();
         await loadVisits();
         await loadTransactions();
-        await loadOffers();
-        await loadCustomerOffers();
     } catch (error) {
         console.error("خطأ في تحميل بيانات العميل:", error);
         alert('❌ حدث خطأ في تحميل بيانات العميل');
@@ -153,6 +223,7 @@ function displayCustomerInfo() {
     if (el('visitCount')) el('visitCount').textContent = currentCustomerData.visitCount || 0;
     if (el('totalSpent')) el('totalSpent').textContent = (currentCustomerData.totalSpent || 0).toFixed(2);
 
+    // الرصيد العادي
     if (el('currentBalance')) {
         el('currentBalance').textContent = `${(currentCustomerData.balance || 0).toFixed(2)} جنيه`;
         const balanceElement = el('currentBalance');
@@ -165,10 +236,22 @@ function displayCustomerInfo() {
         }
     }
 
-    // عرض رصيد العروض
+    // رصيد العروض
     if (el('offersBalance')) {
         const offersBalance = currentCustomerData.offersBalance || 0;
         el('offersBalance').textContent = `${offersBalance.toFixed(2)} جنيه`;
+    }
+
+    // رصيد الليزر
+    if (el('laserBalance')) {
+        const laserBalance = currentCustomerData.laserBalance || 0;
+        el('laserBalance').textContent = `${laserBalance.toFixed(2)} جنيه`;
+    }
+
+    // رصيد الجلدية
+    if (el('dermaBalance')) {
+        const dermaBalance = currentCustomerData.dermaBalance || 0;
+        el('dermaBalance').textContent = `${dermaBalance.toFixed(2)} جنيه`;
     }
 }
 
@@ -183,10 +266,6 @@ function switchTab(tabName) {
 
     if (tabName === 'visits') loadVisits();
     else if (tabName === 'transactions') loadTransactions();
-    else if (tabName === 'offers') {
-        loadOffers();
-        loadCustomerOffers();
-    }
 }
 
 // ========== دوال الرصيد العادي ==========
@@ -197,17 +276,6 @@ function showRechargeForm() {
 
     const amountInput = el('rechargeAmount');
     if (amountInput) amountInput.focus();
-
-    const paymentMethodSelect = el('paymentMethod');
-    if (paymentMethodSelect) {
-        paymentMethodSelect.innerHTML = `
-            <option value="نقدي">نقدي</option>
-            <option value="كاش">كاش</option>
-            <option value="فيزا">فيزا</option>
-            <option value="تحويل بنكي">تحويل بنكي</option>
-            <option value="محفظة إلكترونية">محفظة إلكترونية</option>
-        `;
-    }
 }
 
 function hideRechargeForm() {
@@ -250,21 +318,33 @@ async function rechargeBalance(e) {
             customerId: currentCustomerId,
             customerName: currentCustomerData.name,
             type: 'deposit',
+            balanceType: 'normal',
             amount: amount,
             previousBalance: currentBalance,
             newBalance: newBalance,
             paymentMethod: paymentMethod,
-            notes: notes || `شحن رصيد - ${paymentMethod}`,
+            notes: notes || `شحن رصيد عادي - ${paymentMethod}`,
             createdAt: Timestamp.now(),
             createdBy: currentUserName
         });
 
+        // 🔥 تسجيل في الشيفت
         try {
             const shiftModule = await import('../shift-management/shift-management.js');
             if (shiftModule && shiftModule.addShiftAction) {
                 await shiftModule.addShiftAction(
                     'شحن رصيد',
-                    `تم شحن رصيد لـ ${currentCustomerData.name} - المبلغ: ${amount.toFixed(2)} جنيه - طريقة الدفع: ${paymentMethod}`
+                    `شحن رصيد ${currentCustomerData.name} - ${amount.toFixed(2)} جنيه`,
+                    currentCustomerData.name,
+                    amount,
+                    paymentMethod,
+                    {
+                        actionCategory: 'deposit',
+                        customerId: currentCustomerId,
+                        balanceType: 'normal',
+                        previousBalance: currentBalance,
+                        newBalance: newBalance
+                    }
                 );
             }
         } catch (shiftError) {
@@ -283,283 +363,52 @@ async function rechargeBalance(e) {
     }
 }
 
-// ========== دوال العروض ==========
-async function loadOffers() {
-    const offersList = el('offersList');
-    if (!offersList) return;
+// ========== دوال الأرصدة الخاصة (عروض، ليزر، جلدية) ==========
+function showBalanceForm(type, action) {
+    const formId = `${type}${action === 'recharge' ? 'Recharge' : 'Transfer'}Form`;
+    const formEl = el(formId);
+    if (!formEl) return;
     
-    offersList.innerHTML = '<div class="loading">جاري تحميل العروض...</div>';
-
-    try {
-        const now = new Date();
-        const q = query(
-            collection(db, "offers"),
-            where("endDate", ">=", Timestamp.fromDate(now)),
-            orderBy("endDate", "asc")
-        );
-
-        const querySnapshot = await getDocs(q);
-        allOffers = [];
-
-        querySnapshot.forEach(docSnap => {
-            const offer = { id: docSnap.id, ...docSnap.data() };
-            
-            // التحقق من أن العرض نشط ولم ينته
-            const startDate = offer.startDate.toDate();
-            const endDate = offer.endDate.toDate();
-            
-            if (now >= startDate && now <= endDate) {
-                allOffers.push(offer);
-            }
-        });
-
-        displayOffers();
-    } catch (error) {
-        console.error("خطأ في تحميل العروض:", error);
-        offersList.innerHTML = '<div class="error">حدث خطأ في تحميل العروض</div>';
-    }
-}
-
-function displayOffers() {
-    const offersList = el('offersList');
-    const offerCategoryFilter = el('offerCategoryFilter');
+    // إخفاء النماذج الأخرى
+    hideBalanceForm(type, action === 'recharge' ? 'transfer' : 'recharge');
     
-    if (!offersList) return;
-
-    // استخراج الأقسام الفريدة
-    const categories = {};
-    allOffers.forEach(offer => {
-        if (!categories[offer.categoryId]) {
-            categories[offer.categoryId] = offer.categoryName;
-        }
-    });
-
-    // تحديث قائمة الأقسام
-    if (offerCategoryFilter) {
-        offerCategoryFilter.innerHTML = '<option value="all">جميع الأقسام</option>';
-        Object.entries(categories).forEach(([id, name]) => {
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = name;
-            offerCategoryFilter.appendChild(option);
-        });
-    }
-
-    filterOffersByCategory();
-}
-
-function filterOffersByCategory() {
-    const offersList = el('offersList');
-    const offerCategoryFilter = el('offerCategoryFilter');
+    formEl.classList.remove('hidden');
     
-    if (!offersList) return;
-
-    const selectedCategory = offerCategoryFilter ? offerCategoryFilter.value : 'all';
-    
-    const filteredOffers = selectedCategory === 'all' 
-        ? allOffers 
-        : allOffers.filter(o => o.categoryId === selectedCategory);
-
-    if (filteredOffers.length === 0) {
-        offersList.innerHTML = '<div class="empty-state"><p>لا توجد عروض نشطة حالياً</p></div>';
-        return;
-    }
-
-    offersList.innerHTML = '';
-
-    filteredOffers.forEach(offer => {
-        const offerCard = createOfferCard(offer);
-        offersList.appendChild(offerCard);
-    });
-}
-
-function createOfferCard(offer) {
-    const card = document.createElement('div');
-    card.className = 'offer-card';
-
-    const discount = ((offer.originalPrice - offer.offerPrice) / offer.originalPrice) * 100;
-    const endDate = offer.endDate.toDate();
-    const formattedEndDate = endDate.toLocaleDateString('ar-EG', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-
-    card.innerHTML = `
-        <div class="offer-badge ${offer.offerType}">
-            ${offer.offerType === 'package' ? '📦 باكدج' : '🏷️ تخفيض'}
-        </div>
-        
-        <div class="offer-content">
-            <h4 class="offer-service-name">${offer.serviceName}</h4>
-            <p class="offer-category-name">${offer.categoryName}</p>
-            
-            <div class="offer-pricing">
-                <div class="price-row">
-                    <span>السعر الأصلي:</span>
-                    <span class="original-price">${offer.originalPrice.toFixed(2)} جنيه</span>
-                </div>
-                <div class="price-row highlight">
-                    <span>سعر العرض:</span>
-                    <span class="offer-price">${offer.offerPrice.toFixed(2)} جنيه</span>
-                </div>
-                <div class="discount-badge">خصم ${discount.toFixed(0)}%</div>
-            </div>
-            
-            ${offer.offerType === 'package' ? `
-                <div class="offer-sessions">
-                    🎫 عدد الجلسات: ${offer.sessionsCount}
-                </div>
-            ` : ''}
-            
-            <div class="offer-validity">
-                🕐 ينتهي في: ${formattedEndDate}
-            </div>
-            
-            ${offer.notes ? `
-                <div class="offer-notes-text">
-                    ℹ️ ${offer.notes}
-                </div>
-            ` : ''}
-            
-            <button class="buy-offer-btn" onclick="buyOffer('${offer.id}')">
-                شراء العرض
-            </button>
-        </div>
-    `;
-
-    return card;
-}
-
-window.buyOffer = async function(offerId) {
-    const offer = allOffers.find(o => o.id === offerId);
-    if (!offer) {
-        alert('❌ العرض غير موجود!');
-        return;
-    }
-
-    const offersBalance = currentCustomerData.offersBalance || 0;
-
-    if (offersBalance < offer.offerPrice) {
-        const shortage = offer.offerPrice - offersBalance;
-        alert(`⚠️ رصيد العروض غير كافٍ!\n\nالرصيد الحالي: ${offersBalance.toFixed(2)} جنيه\nالمبلغ المطلوب: ${offer.offerPrice.toFixed(2)} جنيه\nالنقص: ${shortage.toFixed(2)} جنيه\n\nيرجى شحن رصيد العروض أولاً.`);
-        return;
-    }
-
-    if (!confirm(`هل تريد شراء هذا العرض؟\n\n${offer.serviceName}\n${offer.offerType === 'package' ? `عدد الجلسات: ${offer.sessionsCount}\n` : ''}السعر: ${offer.offerPrice.toFixed(2)} جنيه`)) {
-        return;
-    }
-
-    try {
-        const newOffersBalance = offersBalance - offer.offerPrice;
-
-        // تحديث رصيد العروض
-        await updateDoc(doc(db, "customers", currentCustomerId), {
-            offersBalance: newOffersBalance,
-            updatedAt: Timestamp.now()
-        });
-
-        // إضافة العرض للعميل
-        await addDoc(collection(db, "customerOffers"), {
-            customerId: currentCustomerId,
-            customerName: currentCustomerData.name,
-            offerId: offer.id,
-            offerName: offer.serviceName,
-            categoryName: offer.categoryName,
-            offerType: offer.offerType,
-            totalSessions: offer.offerType === 'package' ? offer.sessionsCount : 1,
-            remainingSessions: offer.offerType === 'package' ? offer.sessionsCount : 1,
-            purchasePrice: offer.offerPrice,
-            purchaseDate: Timestamp.now(),
-            status: 'active',
-            createdBy: currentUserName
-        });
-
-        // تسجيل في الحركات المالية
-        await addDoc(collection(db, "transactions"), {
-            customerId: currentCustomerId,
-            customerName: currentCustomerData.name,
-            type: 'withdrawal',
-            amount: offer.offerPrice,
-            previousBalance: offersBalance,
-            newBalance: newOffersBalance,
-            paymentMethod: 'رصيد العروض',
-            notes: `شراء عرض: ${offer.serviceName} - ${offer.categoryName}`,
-            createdAt: Timestamp.now(),
-            createdBy: currentUserName
-        });
-
-        // تحديث عدد المستفيدين من العرض
-        const offerRef = doc(db, "offers", offer.id);
-        const offerDoc = await getDoc(offerRef);
-        if (offerDoc.exists()) {
-            const currentCount = offerDoc.data().customersCount || 0;
-            await updateDoc(offerRef, {
-                customersCount: currentCount + 1
-            });
-        }
-
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction(
-                    'شراء عرض',
-                    `قام ${currentCustomerData.name} بشراء عرض: ${offer.serviceName} - المبلغ: ${offer.offerPrice.toFixed(2)} جنيه`
-                );
-            }
-        } catch (shiftError) {
-            console.log('لا يمكن تسجيل إجراء الشيفت:', shiftError);
-        }
-
-        currentCustomerData.offersBalance = newOffersBalance;
-        displayCustomerInfo();
-
-        alert(`✅ تم شراء العرض بنجاح!\n\nتم خصم ${offer.offerPrice.toFixed(2)} جنيه من رصيد العروض\nالرصيد الجديد: ${newOffersBalance.toFixed(2)} جنيه`);
-
-        await loadCustomerOffers();
-        await loadTransactions();
-
-    } catch (error) {
-        console.error("خطأ في شراء العرض:", error);
-        alert('❌ حدث خطأ أثناء شراء العرض: ' + (error.message || error));
-    }
-};
-
-// شحن رصيد العروض
-function showOffersRechargeForm() {
-    const form = el('offersRechargeForm');
-    if (!form) return;
-    form.classList.remove('hidden');
-
-    const amountInput = el('offersRechargeAmount');
+    const amountInputId = `${type}${action === 'recharge' ? 'Recharge' : 'Transfer'}Amount`;
+    const amountInput = el(amountInputId);
     if (amountInput) amountInput.focus();
-
-    const paymentMethodSelect = el('offersPaymentMethod');
-    if (paymentMethodSelect) {
-        paymentMethodSelect.innerHTML = `
-            <option value="نقدي">نقدي</option>
-            <option value="كاش">كاش</option>
-            <option value="فيزا">فيزا</option>
-            <option value="تحويل بنكي">تحويل بنكي</option>
-            <option value="محفظة إلكترونية">محفظة إلكترونية</option>
-        `;
-    }
 }
 
-function hideOffersRechargeForm() {
-    const form = el('offersRechargeForm');
-    if (form) form.classList.add('hidden');
+function hideBalanceForm(type, action) {
+    const formId = `${type}${action === 'recharge' ? 'Recharge' : 'Transfer'}Form`;
+    const formEl = el(formId);
+    if (formEl) formEl.classList.add('hidden');
 
-    const rechargeForm = el('rechargeOffersBalanceForm');
-    if (rechargeForm) rechargeForm.reset();
+    const formElementId = action === 'recharge' 
+        ? `recharge${type.charAt(0).toUpperCase() + type.slice(1)}BalanceForm`
+        : `transfer${type.charAt(0).toUpperCase() + type.slice(1)}BalanceForm`;
+    const formElement = el(formElementId);
+    if (formElement) formElement.reset();
 }
 
-async function rechargeOffersBalance(e) {
+async function rechargeSpecialBalance(e, type) {
     e.preventDefault();
+    
+    const typeNames = {
+        offers: 'العروض',
+        laser: 'الليزر',
+        derma: 'الجلدية'
+    };
 
-    const amountInput = el('offersRechargeAmount');
-    const notesInput = el('offersRechargeNotes');
-    const paymentMethodSelect = el('offersPaymentMethod');
+    const balanceFields = {
+        offers: 'offersBalance',
+        laser: 'laserBalance',
+        derma: 'dermaBalance'
+    };
+
+    const amountInput = el(`${type}RechargeAmount`);
+    const notesInput = el(`${type}RechargeNotes`);
+    const paymentMethodSelect = el(`${type}PaymentMethod`);
 
     const amount = amountInput ? parseFloat(amountInput.value) : NaN;
     const notes = notesInput ? notesInput.value.trim() : '';
@@ -575,11 +424,12 @@ async function rechargeOffersBalance(e) {
     }
 
     try {
-        const currentOffersBalance = currentCustomerData.offersBalance || 0;
-        const newOffersBalance = currentOffersBalance + amount;
+        const balanceField = balanceFields[type];
+        const currentBalance = currentCustomerData[balanceField] || 0;
+        const newBalance = currentBalance + amount;
 
         await updateDoc(doc(db, "customers", currentCustomerId), {
-            offersBalance: newOffersBalance,
+            [balanceField]: newBalance,
             updatedAt: Timestamp.now()
         });
 
@@ -587,123 +437,227 @@ async function rechargeOffersBalance(e) {
             customerId: currentCustomerId,
             customerName: currentCustomerData.name,
             type: 'deposit',
+            balanceType: type,
             amount: amount,
-            previousBalance: currentOffersBalance,
-            newBalance: newOffersBalance,
+            previousBalance: currentBalance,
+            newBalance: newBalance,
             paymentMethod: paymentMethod,
-            notes: notes || `شحن رصيد عروض - ${paymentMethod}`,
+            notes: notes || `شحن رصيد ${typeNames[type]} - ${paymentMethod}`,
             createdAt: Timestamp.now(),
             createdBy: currentUserName
         });
 
+        // 🔥 تسجيل في الشيفت
         try {
             const shiftModule = await import('../shift-management/shift-management.js');
             if (shiftModule && shiftModule.addShiftAction) {
                 await shiftModule.addShiftAction(
-                    'شحن رصيد عروض',
-                    `تم شحن رصيد عروض لـ ${currentCustomerData.name} - المبلغ: ${amount.toFixed(2)} جنيه - طريقة الدفع: ${paymentMethod}`
+                    `شحن رصيد ${typeNames[type]}`,
+                    `شحن رصيد ${typeNames[type]} لـ ${currentCustomerData.name} - ${amount.toFixed(2)} جنيه`,
+                    currentCustomerData.name,
+                    amount,
+                    paymentMethod,
+                    {
+                        actionCategory: 'deposit',
+                        customerId: currentCustomerId,
+                        balanceType: type,
+                        previousBalance: currentBalance,
+                        newBalance: newBalance
+                    }
                 );
             }
         } catch (shiftError) {
             console.log('لا يمكن تسجيل إجراء الشيفت:', shiftError);
         }
 
-        currentCustomerData.offersBalance = newOffersBalance;
+        currentCustomerData[balanceField] = newBalance;
         displayCustomerInfo();
 
-        alert(`✅ تم شحن ${amount.toFixed(2)} جنيه لرصيد العروض بنجاح!\nالرصيد الجديد: ${newOffersBalance.toFixed(2)} جنيه`);
-        hideOffersRechargeForm();
+        alert(`✅ تم شحن ${amount.toFixed(2)} جنيه لرصيد ${typeNames[type]} بنجاح!\nالرصيد الجديد: ${newBalance.toFixed(2)} جنيه`);
+        hideBalanceForm(type, 'recharge');
         await loadTransactions();
 
     } catch (error) {
-        console.error("خطأ في شحن رصيد العروض:", error);
-        alert('❌ حدث خطأ أثناء شحن رصيد العروض: ' + (error.message || error));
+        console.error(`خطأ في شحن رصيد ${typeNames[type]}:`, error);
+        alert(`❌ حدث خطأ أثناء شحن رصيد ${typeNames[type]}: ` + (error.message || error));
     }
 }
 
-// تحميل عروض العميل المشتراة
-async function loadCustomerOffers() {
-    const customerOffersList = el('customerOffersList');
-    if (!customerOffersList) return;
+// تحديث دالة التحويل
+async function transferBalance(e, type) {
+    e.preventDefault();
+    
+    const typeNames = {
+        normal: 'العادي',
+        offers: 'العروض',
+        laser: 'الليزر',
+        derma: 'الجلدية'
+    };
 
-    customerOffersList.innerHTML = '<div class="loading">جاري تحميل عروضك...</div>';
+    const balanceFields = {
+        normal: 'balance',
+        offers: 'offersBalance',
+        laser: 'laserBalance',
+        derma: 'dermaBalance'
+    };
+
+    const amountInput = el(`${type}TransferAmount`);
+    const phoneInput = el(`${type}TransferTo`);
+    const notesInput = el(`${type}TransferNotes`);
+
+    const amount = amountInput ? parseFloat(amountInput.value) : NaN;
+    let targetPhone = phoneInput ? phoneInput.value.trim().replace(/\s+/g, '') : '';
+    const notes = notesInput ? notesInput.value.trim() : '';
+
+    if (!amount || amount <= 0) {
+        alert('⚠️ يرجى إدخال مبلغ صحيح!');
+        return;
+    }
+
+    if (!targetPhone) {
+        alert('⚠️ يرجى إدخال رقم هاتف العميل المستقبل!');
+        return;
+    }
+
+    const balanceField = balanceFields[type];
+    const currentBalance = currentCustomerData[balanceField] || 0;
+
+    if (amount > currentBalance) {
+        alert(`⚠️ رصيد ${typeNames[type]} غير كافٍ!\n\nالرصيد الحالي: ${currentBalance.toFixed(2)} جنيه\nالمبلغ المطلوب: ${amount.toFixed(2)} جنيه\nالنقص: ${(amount - currentBalance).toFixed(2)} جنيه`);
+        return;
+    }
 
     try {
-        const q = query(
-            collection(db, "customerOffers"),
-            where("customerId", "==", currentCustomerId),
-            orderBy("purchaseDate", "desc")
-        );
-
+        // البحث عن العميل المستقبل بالهاتف
+        const q = query(collection(db, "customers"), where("phone", "==", targetPhone));
         const querySnapshot = await getDocs(q);
-        customerOffers = [];
 
-        querySnapshot.forEach(docSnap => {
-            customerOffers.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        if (customerOffers.length === 0) {
-            customerOffersList.innerHTML = '<div class="empty-state"><p>لم تشتري أي عروض بعد</p></div>';
+        if (querySnapshot.empty) {
+            alert('❌ لم يتم العثور على عميل بهذا الرقم!');
             return;
         }
 
-        customerOffersList.innerHTML = '';
+        const targetCustomerDoc = querySnapshot.docs[0];
+        const targetCustomerId = targetCustomerDoc.id;
+        const targetCustomerData = targetCustomerDoc.data();
 
-        customerOffers.forEach(offer => {
-            const offerItem = createCustomerOfferItem(offer);
-            customerOffersList.appendChild(offerItem);
+        if (targetCustomerId === currentCustomerId) {
+            alert('⚠️ لا يمكن التحويل لنفس العميل!');
+            return;
+        }
+
+        if (!confirm(`هل تريد تحويل ${amount.toFixed(2)} جنيه من رصيد ${typeNames[type]}\n\nمن: ${currentCustomerData.name}\nإلى: ${targetCustomerData.name}\n\nالرصيد بعد التحويل: ${(currentBalance - amount).toFixed(2)} جنيه`)) {
+            return;
+        }
+
+        // تنفيذ التحويل بـ transaction لضمان التزامن
+        await runTransaction(db, async (transaction) => {
+            const senderRef = doc(db, "customers", currentCustomerId);
+            const receiverRef = doc(db, "customers", targetCustomerId);
+
+            const senderDoc = await transaction.get(senderRef);
+            const receiverDoc = await transaction.get(receiverRef);
+
+            if (!senderDoc.exists() || !receiverDoc.exists()) {
+                throw new Error("أحد العملاء غير موجود!");
+            }
+
+            const senderBalance = senderDoc.data()[balanceField] || 0;
+            const receiverBalance = receiverDoc.data()[balanceField] || 0;
+
+            if (senderBalance < amount) {
+                throw new Error("الرصيد غير كافٍ!");
+            }
+
+            const newSenderBalance = senderBalance - amount;
+            const newReceiverBalance = receiverBalance + amount;
+
+            // تحديث رصيد المرسل
+            transaction.update(senderRef, {
+                [balanceField]: newSenderBalance,
+                updatedAt: Timestamp.now()
+            });
+
+            // تحديث رصيد المستقبل
+            transaction.update(receiverRef, {
+                [balanceField]: newReceiverBalance,
+                updatedAt: Timestamp.now()
+            });
+
+            // تسجيل معاملة السحب للمرسل
+            const senderTransactionRef = doc(collection(db, "transactions"));
+            transaction.set(senderTransactionRef, {
+                customerId: currentCustomerId,
+                customerName: currentCustomerData.name,
+                type: 'withdrawal',
+                balanceType: type,
+                amount: amount,
+                previousBalance: senderBalance,
+                newBalance: newSenderBalance,
+                paymentMethod: 'تحويل',
+                notes: notes || `تحويل رصيد ${typeNames[type]} إلى ${targetCustomerData.name}`,
+                transferTo: targetCustomerId,
+                transferToName: targetCustomerData.name,
+                createdAt: Timestamp.now(),
+                createdBy: currentUserName
+            });
+
+            // تسجيل معاملة الإيداع للمستقبل
+            const receiverTransactionRef = doc(collection(db, "transactions"));
+            transaction.set(receiverTransactionRef, {
+                customerId: targetCustomerId,
+                customerName: targetCustomerData.name,
+                type: 'deposit',
+                balanceType: type,
+                amount: amount,
+                previousBalance: receiverBalance,
+                newBalance: newReceiverBalance,
+                paymentMethod: 'تحويل',
+                notes: notes || `تحويل رصيد ${typeNames[type]} من ${currentCustomerData.name}`,
+                transferFrom: currentCustomerId,
+                transferFromName: currentCustomerData.name,
+                createdAt: Timestamp.now(),
+                createdBy: currentUserName
+            });
         });
 
+        // 🔥 تسجيل في الشيفت
+        try {
+            const shiftModule = await import('../shift-management/shift-management.js');
+            if (shiftModule && shiftModule.addShiftAction) {
+                await shiftModule.addShiftAction(
+                    `تحويل رصيد ${typeNames[type]}`,
+                    `تحويل ${amount.toFixed(2)} جنيه من رصيد ${typeNames[type]} من ${currentCustomerData.name} إلى ${targetCustomerData.name}`,
+                    currentCustomerData.name,
+                    amount,
+                    'تحويل',
+                    {
+                        actionCategory: 'transfer',
+                        customerId: currentCustomerId,
+                        balanceType: type,
+                        transferTo: targetCustomerId,
+                        transferToName: targetCustomerData.name
+                    }
+                );
+            }
+        } catch (shiftError) {
+            console.log('لا يمكن تسجيل إجراء الشيفت:', shiftError);
+        }
+
+        currentCustomerData[balanceField] = (currentCustomerData[balanceField] || 0) - amount;
+        displayCustomerInfo();
+
+        alert(`✅ تم تحويل ${amount.toFixed(2)} جنيه من رصيد ${typeNames[type]} بنجاح!\n\nمن: ${currentCustomerData.name}\nإلى: ${targetCustomerData.name}\n\nرصيدك الجديد: ${currentCustomerData[balanceField].toFixed(2)} جنيه`);
+        hideBalanceForm(type, 'transfer');
+        await loadTransactions();
+
     } catch (error) {
-        console.error("خطأ في تحميل عروض العميل:", error);
-        customerOffersList.innerHTML = '<div class="error">حدث خطأ في تحميل عروضك</div>';
+        console.error(`خطأ في تحويل رصيد ${typeNames[type]}:`, error);
+        alert(`❌ حدث خطأ أثناء تحويل رصيد ${typeNames[type]}: ` + (error.message || error));
     }
 }
 
-function createCustomerOfferItem(offer) {
-    const item = document.createElement('div');
-    item.className = 'customer-offer-item';
-
-    const purchaseDate = offer.purchaseDate.toDate().toLocaleDateString('ar-EG', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-
-    const statusClass = offer.status === 'active' ? 'active' : 'completed';
-    const statusText = offer.status === 'active' ? '🟢 نشط' : '✅ مكتمل';
-
-    item.innerHTML = `
-        <div class="customer-offer-header">
-            <div>
-                <h4>${offer.offerName}</h4>
-                <p>${offer.categoryName}</p>
-            </div>
-            <span class="offer-status ${statusClass}">${statusText}</span>
-        </div>
-        
-        <div class="customer-offer-details">
-            <div class="detail-row">
-                <span>تاريخ الشراء:</span>
-                <span>${purchaseDate}</span>
-            </div>
-            <div class="detail-row">
-                <span>المبلغ المدفوع:</span>
-                <span class="price-highlight">${offer.purchasePrice.toFixed(2)} جنيه</span>
-            </div>
-            ${offer.offerType === 'package' ? `
-                <div class="detail-row">
-                    <span>الجلسات المتبقية:</span>
-                    <span class="sessions-count">${offer.remainingSessions} من ${offer.totalSessions}</span>
-                </div>
-            ` : ''}
-        </div>
-    `;
-
-    return item;
-}
-
-// ========== باقي الدوال الأصلية ==========
+// ========== دوال الزيارات ==========
 function showAddVisitModal() {
     const modal = el('addVisitModal');
     if (!modal) return;
@@ -824,6 +778,7 @@ async function addVisit(e) {
             customerId: currentCustomerId,
             customerName: currentCustomerData.name,
             type: 'withdrawal',
+            balanceType: 'normal',
             amount,
             previousBalance: currentBalance,
             newBalance,
@@ -868,13 +823,8 @@ async function loadVisits() {
 
         if (querySnapshot.empty) {
             visitsList.innerHTML = '<div class="empty-state">لا توجد زيارات مسجلة</div>';
-            if (el('totalVisitsCount')) el('totalVisitsCount').textContent = '0';
-            if (el('totalVisitAmount')) el('totalVisitAmount').textContent = '0.00 جنيه';
             return;
         }
-
-        let totalVisits = 0;
-        let totalVisitAmount = 0;
 
         querySnapshot.forEach(docSnap => {
             const visit = docSnap.data();
@@ -883,9 +833,6 @@ async function loadVisits() {
 
             const visitDate = visit.visitDate ? visit.visitDate.toDate() : new Date();
             const formattedDate = visitDate.toLocaleString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-            totalVisits++;
-            totalVisitAmount += visit.amount || 0;
 
             visitItem.innerHTML = `
                 <div class="visit-header">
@@ -902,9 +849,6 @@ async function loadVisits() {
             visitsList.appendChild(visitItem);
         });
 
-        if (el('totalVisitsCount')) el('totalVisitsCount').textContent = totalVisits;
-        if (el('totalVisitAmount')) el('totalVisitAmount').textContent = totalVisitAmount.toFixed(2) + ' جنيه';
-
     } catch (error) {
         console.error("خطأ في تحميل الزيارات:", error);
         visitsList.innerHTML = '<div class="error">حدث خطأ في تحميل الزيارات</div>';
@@ -919,72 +863,150 @@ async function loadTransactions() {
     try {
         const q = query(collection(db, "transactions"), where("customerId", "==", currentCustomerId), orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
-        transactionsList.innerHTML = '';
 
-        let totalDeposits = 0;
-        let totalWithdrawals = 0;
-        let transactionCount = 0;
-
-        if (querySnapshot.empty) {
-            transactionsList.innerHTML = '<div class="empty-state">لا توجد حركات مالية</div>';
-            if (el('totalDeposits')) el('totalDeposits').textContent = '0.00 جنيه';
-            if (el('totalWithdrawals')) el('totalWithdrawals').textContent = '0.00 جنيه';
-            if (el('transactionCount')) el('transactionCount').textContent = '0';
-            return;
-        }
-
+        allTransactions = [];
         querySnapshot.forEach(docSnap => {
-            const transaction = docSnap.data();
-            const transactionItem = document.createElement('div');
-            transactionItem.className = 'transaction-item';
-
-            const transactionDate = transaction.createdAt ? transaction.createdAt.toDate() : new Date();
-            const formattedDate = transactionDate.toLocaleString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-            const amountClass = transaction.type === 'deposit' ? 'positive' : 'negative';
-            const amountSign = transaction.type === 'deposit' ? '+' : '-';
-            let typeText = transaction.type === 'deposit' ? 'إيداع' : 'سحب';
-            if (transaction.type === 'payment') typeText = 'دفع مقابل خدمات';
-            if (transaction.type === 'refund') typeText = 'إرجاع';
-
-            if (transaction.type === 'deposit') totalDeposits += transaction.amount || 0;
-            else if (transaction.type === 'withdrawal') totalWithdrawals += transaction.amount || 0;
-            transactionCount++;
-
-            transactionItem.innerHTML = `
-                <div class="transaction-header">
-                    <div class="transaction-type-badge ${amountClass}">${typeText}</div>
-                    <div class="transaction-date">${formattedDate}</div>
-                    <div class="transaction-amount ${amountClass}">${amountSign} ${((transaction.amount || 0)).toFixed(2)} جنيه</div>
-                </div>
-                <div class="transaction-details">
-                    <div><strong>بواسطة:</strong> ${transaction.createdBy || 'نظام'}</div>
-                    <div><strong>طريقة الدفع:</strong> ${transaction.paymentMethod || 'غير محدد'}</div>
-                    <div><strong>الرصيد السابق:</strong> ${(transaction.previousBalance || 0).toFixed(2)} جنيه</div>
-                    <div><strong>الرصيد الجديد:</strong> ${(transaction.newBalance || 0).toFixed(2)} جنيه</div>
-                </div>
-                ${transaction.notes ? `<div class="transaction-notes"><strong>ملاحظات:</strong> ${transaction.notes}</div>` : ''}
-                <div class="transaction-actions">
-                    <button class="print-receipt-btn" onclick="printReceipt('${docSnap.id}')">🖨️ طباعة الإيصال</button>
-                </div>
-            `;
-
-            transactionsList.appendChild(transactionItem);
+            allTransactions.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        if (el('totalDeposits')) {
-            el('totalDeposits').textContent = totalDeposits.toFixed(2) + ' جنيه';
-            el('totalDeposits').style.color = '#28a745';
-        }
-        if (el('totalWithdrawals')) {
-            el('totalWithdrawals').textContent = totalWithdrawals.toFixed(2) + ' جنيه';
-            el('totalWithdrawals').style.color = '#dc3545';
-        }
-        if (el('transactionCount')) el('transactionCount').textContent = transactionCount;
+        filterTransactions();
 
     } catch (error) {
         console.error("خطأ في تحميل الحركات:", error);
         transactionsList.innerHTML = '<div class="error">حدث خطأ في تحميل الحركات المالية</div>';
+    }
+}
+
+function filterTransactions() {
+    const transactionsList = el('transactionsList');
+    if (!transactionsList) return;
+
+    let filteredTransactions = [...allTransactions];
+
+    // تطبيق الفلتر حسب التاريخ
+    if (currentTransactionFilter !== 'all') {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        filteredTransactions = filteredTransactions.filter(transaction => {
+            if (!transaction.createdAt) return false;
+            const transactionDate = transaction.createdAt.toDate();
+            const transactionDay = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), transactionDate.getDate());
+
+            switch (currentTransactionFilter) {
+                case 'today':
+                    return transactionDay.getTime() === today.getTime();
+
+                case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return transactionDay.getTime() === yesterday.getTime();
+
+                case 'this_week':
+                    const weekStart = new Date(today);
+                    weekStart.setDate(today.getDate() - today.getDay());
+                    return transactionDay >= weekStart;
+
+                case 'this_month':
+                    return transactionDate.getMonth() === now.getMonth() && 
+                           transactionDate.getFullYear() === now.getFullYear();
+
+                case 'last_month':
+                    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    return transactionDate.getMonth() === lastMonth.getMonth() && 
+                           transactionDate.getFullYear() === lastMonth.getFullYear();
+
+                case 'custom':
+                    const customDateInput = el('customTransactionDate');
+                    if (!customDateInput || !customDateInput.value) return true;
+                    const selectedDate = new Date(customDateInput.value);
+                    const selectedDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+                    return transactionDay.getTime() === selectedDay.getTime();
+
+                default:
+                    return true;
+            }
+        });
+    }
+
+    displayTransactions(filteredTransactions);
+}
+
+function displayTransactions(transactions) {
+    const transactionsList = el('transactionsList');
+    if (!transactionsList) return;
+
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+
+    if (transactions.length === 0) {
+        transactionsList.innerHTML = '<div class="empty-state">لا توجد حركات مالية في الفترة المحددة</div>';
+        if (el('totalDeposits')) el('totalDeposits').textContent = '0.00 جنيه';
+        if (el('totalWithdrawals')) el('totalWithdrawals').textContent = '0.00 جنيه';
+        return;
+    }
+
+    transactionsList.innerHTML = '';
+
+    transactions.forEach(transaction => {
+        const transactionItem = document.createElement('div');
+        transactionItem.className = 'transaction-item';
+
+        const transactionDate = transaction.createdAt ? transaction.createdAt.toDate() : new Date();
+        const formattedDate = transactionDate.toLocaleString('ar-EG', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+
+        const amountClass = transaction.type === 'deposit' ? 'positive' : 'negative';
+        const amountSign = transaction.type === 'deposit' ? '+' : '-';
+        let typeText = transaction.type === 'deposit' ? 'إيداع' : 'سحب';
+        
+        // إضافة نوع الرصيد
+        const balanceTypeNames = {
+            normal: 'عادي',
+            offers: 'عروض',
+            laser: 'ليزر',
+            derma: 'جلدية'
+        };
+        const balanceType = transaction.balanceType ? ` - ${balanceTypeNames[transaction.balanceType] || ''}` : '';
+
+        if (transaction.type === 'deposit') totalDeposits += transaction.amount || 0;
+        else if (transaction.type === 'withdrawal') totalWithdrawals += transaction.amount || 0;
+
+        transactionItem.innerHTML = `
+            <div class="transaction-header">
+                <div class="transaction-type-badge ${amountClass}">${typeText}${balanceType}</div>
+                <div class="transaction-date">${formattedDate}</div>
+                <div class="transaction-amount ${amountClass}">${amountSign} ${((transaction.amount || 0)).toFixed(2)} جنيه</div>
+            </div>
+            <div class="transaction-details">
+                <div><strong>بواسطة:</strong> ${transaction.createdBy || 'نظام'}</div>
+                <div><strong>طريقة الدفع:</strong> ${transaction.paymentMethod || 'غير محدد'}</div>
+                <div><strong>الرصيد السابق:</strong> ${(transaction.previousBalance || 0).toFixed(2)} جنيه</div>
+                <div><strong>الرصيد الجديد:</strong> ${(transaction.newBalance || 0).toFixed(2)} جنيه</div>
+                ${transaction.transferTo ? `<div><strong>محول إلى:</strong> ${transaction.transferToName || '-'}</div>` : ''}
+                ${transaction.transferFrom ? `<div><strong>محول من:</strong> ${transaction.transferFromName || '-'}</div>` : ''}
+            </div>
+            ${transaction.notes ? `<div class="transaction-notes"><strong>ملاحظات:</strong> ${transaction.notes}</div>` : ''}
+            <div class="transaction-actions">
+                <button class="print-receipt-btn" onclick="printReceipt('${transaction.id}')">🖨️ طباعة الإيصال</button>
+            </div>
+        `;
+
+        transactionsList.appendChild(transactionItem);
+    });
+
+    if (el('totalDeposits')) {
+        el('totalDeposits').textContent = totalDeposits.toFixed(2) + ' جنيه';
+        el('totalDeposits').style.color = '#28a745';
+    }
+    if (el('totalWithdrawals')) {
+        el('totalWithdrawals').textContent = totalWithdrawals.toFixed(2) + ' جنيه';
+        el('totalWithdrawals').style.color = '#dc3545';
     }
 }
 
@@ -1006,23 +1028,18 @@ window.printReceipt = async function(transactionId) {
             minute: '2-digit' 
         });
 
-        // تجهيز نص الخدمات إذا وُجدت (للحالات التي فيها services)
-        let servicesText = '';
-        if (transaction.services && Array.isArray(transaction.services) && transaction.services.length > 0) {
-            servicesText = transaction.services.map(s => {
-                if (typeof s === 'string') return s;
-                const name = s.name || s.serviceName || 'خدمة';
-                const qty = s.quantity ? ` x${s.quantity}` : '';
-                return `${name}${qty}`;
-            }).join(' — ');
-        }
-
         const amountText = (transaction.amount || 0).toFixed(2) + ' جنيه';
         let typeText = 'إجراء';
         if (transaction.type === 'deposit') typeText = 'إيداع';
         else if (transaction.type === 'withdrawal') typeText = 'سحب';
-        else if (transaction.type === 'payment') typeText = 'دفع';
-        else if (transaction.type === 'refund') typeText = 'إرجاع';
+
+        const balanceTypeNames = {
+            normal: 'عادي',
+            offers: 'عروض',
+            laser: 'ليزر',
+            derma: 'جلدية'
+        };
+        const balanceType = transaction.balanceType ? ` (${balanceTypeNames[transaction.balanceType] || ''})` : '';
 
         const notesText = transaction.notes ? transaction.notes : '-';
         const createdBy = transaction.createdBy || 'نظام';
@@ -1058,14 +1075,12 @@ window.printReceipt = async function(transactionId) {
       <div><strong>العميل:</strong> ${customerName}</div>
       <div><strong>بواسطة:</strong> ${createdBy}</div>
       <div><strong>طريقة الدفع:</strong> ${paymentMethod}</div>
-      <div><strong>نوع المعاملة:</strong> ${typeText}</div>
+      <div><strong>نوع المعاملة:</strong> ${typeText}${balanceType}</div>
     </div>
 
     <div class="section amount">
       <div>المبلغ: ${amountText}</div>
     </div>
-
-    ${servicesText ? `<div class="section"><strong>الخدمات:</strong><div class="small">${servicesText}</div></div>` : ''}
 
     <div class="section">
       <strong>ملاحظات:</strong>
@@ -1073,25 +1088,21 @@ window.printReceipt = async function(transactionId) {
     </div>
 
     <div class="footer">
-      شكرًا لاستخدامك Joyec Clinic — تواصل معنا لأي استفسار.
+      شكراً لاستخدامك Joyec Clinic – تواصل معنا لأي استفسار.
     </div>
   </div>
 
   <script>
-    // ننتظر قليلًا ليُحمّل المحتوى ثم نطبع ونغلق نافذة الطباعة تلقائيًا
     setTimeout(() => {
       window.print();
-      // لا تُغلق النافذة تلقائيًا إن رغبت بالاحتفاظ بالإيصال في بعض المتصفحات
       try { window.close(); } catch (e) { /* ignore */ }
     }, 300);
   </script>
 </body>
 </html>`;
 
-        // فتح نافذة جديدة وكتابة الإيصال
         const w = window.open('', '_blank', 'width=450,height=700');
         if (!w) {
-            // قد يمنع popup blocker — أرشد المستخدم
             alert('تعذر فتح نافذة الطباعة. يرجى السماح للنوافذ المنبثقة أو طباعة من الصفحة الحالية.');
             return;
         }
@@ -1103,4 +1114,5 @@ window.printReceipt = async function(transactionId) {
         console.error("خطأ في طباعة الإيصال:", error);
         alert('❌ حدث خطأ أثناء طباعة الإيصال: ' + (error.message || error));
     }
+    
 };

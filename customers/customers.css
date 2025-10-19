@@ -1,27 +1,58 @@
-/* customers.css */
-.container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+/* customers.css - نسخة محسّنة ومتجاوبة */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    direction: rtl;
+    line-height: 1.6;
+    color: #2c3e50;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 25px;
+    align-items: start;
+}
+
+/* الأقسام الرئيسية */
 .form-section, .stats-section {
     background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 28px;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .form-section h2, .stats-section h2 {
-    margin-bottom: 20px;
-    color: #333;
-    border-bottom: 2px solid #d63384;
-    padding-bottom: 10px;
+    margin-bottom: 25px;
+    color: #1a1a1a;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 12px;
+    font-weight: 700;
+    font-size: 20px;
 }
 
+/* حقول الإدخال */
 .input-group {
     margin-bottom: 20px;
 }
@@ -29,124 +60,575 @@
 .input-group label {
     display: block;
     margin-bottom: 8px;
-    color: #555;
+    color: #1a1a1a;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s;
+    background: #f8f9fa;
+    color: #2c3e50;
     font-weight: 500;
 }
 
-.input-group input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+/* خيارات الرصيد */
+.balance-options {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 2px solid #e9ecef;
+}
+
+.balance-options h3 {
+    margin-bottom: 18px;
+    color: #1a1a1a;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.balance-type-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    border: 2px solid #e0e0e0;
     transition: all 0.3s;
 }
 
-.input-group input:focus {
-    outline: none;
-    border-color: #d63384;
-    box-shadow: 0 0 0 3px rgba(214, 51, 132, 0.1);
+.balance-type-card:hover {
+    border-color: #667eea;
+    transform: translateX(-3px);
 }
 
+.balance-type-card.offers-card:hover {
+    border-color: #f5576c;
+}
+
+.balance-type-card.laser-card:hover {
+    border-color: #00f2fe;
+}
+
+.balance-type-card.derma-card:hover {
+    border-color: #38f9d7;
+}
+
+.balance-type-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.balance-checkbox {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.balance-type-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    flex: 1;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.balance-icon {
+    font-size: 24px;
+}
+
+.balance-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-right: 34px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        max-height: 100px;
+        transform: translateY(0);
+    }
+}
+
+.balance-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #28a745;
+    background: #f8f9fa;
+    transition: all 0.3s;
+}
+
+.balance-input:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    background: white;
+}
+
+.currency {
+    font-weight: 600;
+    color: #555;
+    font-size: 14px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* أزرار النموذج */
 .form-actions {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     margin-top: 25px;
 }
 
 .save-btn {
-    background: linear-gradient(135deg, #d63384, #ff8fab);
+    background: linear-gradient(135deg, #28a745, #20c997);
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
+    padding: 14px 25px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 16px;
+    font-weight: 700;
     flex: 1;
     transition: all 0.3s;
 }
 
 .save-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(214, 51, 132, 0.3);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
 }
 
 .view-customers-btn {
-    background: #607d8b;
+    background: #6c757d;
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
+    padding: 14px 25px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 16px;
+    font-weight: 700;
     flex: 1;
     transition: all 0.3s;
 }
 
 .view-customers-btn:hover {
-    background: #546e7a;
+    background: #5a6268;
     transform: translateY(-2px);
 }
 
-/* إحصائيات */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-}
-
-.stat-card {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    padding: 20px;
+/* الرسائل */
+.message {
+    margin-top: 20px;
+    padding: 14px 18px;
     border-radius: 10px;
     text-align: center;
-    border-left: 4px solid #d63384;
-}
-
-.stat-number {
-    font-size: 24px;
-    font-weight: bold;
-    color: #d63384;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 14px;
-    color: #666;
-}
-
-.message {
-    margin-top: 15px;
-    padding: 12px;
-    border-radius: 8px;
-    text-align: center;
     display: none;
+    font-weight: 600;
+    animation: fadeIn 0.3s ease-in;
 }
 
 .message.success {
     background: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
+    border: 2px solid #c3e6cb;
     display: block;
 }
 
 .message.error {
     background: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
+    border: 2px solid #f5c6cb;
     display: block;
 }
 
-@media (max-width: 768px) {
+/* بطاقات الإحصائيات */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 25px 20px;
+    border-radius: 12px;
+    text-align: center;
+    border-right: 4px solid #667eea;
+    transition: all 0.3s;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+}
+
+.stat-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #555;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+/* ملخص الأرصدة */
+.balance-summary {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.balance-summary h3 {
+    margin-bottom: 15px;
+    color: #1a1a1a;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.balance-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.summary-item {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    border-right: 4px solid #667eea;
+    transition: all 0.3s;
+}
+
+.summary-item:hover {
+    transform: translateX(-3px);
+}
+
+.summary-item.offers-summary {
+    border-right-color: #f5576c;
+}
+
+.summary-item.laser-summary {
+    border-right-color: #00f2fe;
+}
+
+.summary-item.derma-summary {
+    border-right-color: #38f9d7;
+}
+
+.summary-label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.summary-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* الإجراءات السريعة */
+.quick-actions {
+    margin-top: 0;
+}
+.quick-actions {
+    margin-top: 20px;
+}
+
+.action-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 700;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* ========== Responsive Design ========== */
+
+/* شاشات متوسطة */
+@media (max-width: 1200px) {
+    .container {
+        gap: 20px;
+        padding: 15px;
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .form-section, .stats-section {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 991px) {
     .container {
         grid-template-columns: 1fr;
+        padding: 15px;
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* شاشات صغيرة */
+@media (max-width: 768px) {
+    .container {
+        padding: 12px;
+        gap: 15px;
+    }
+    
+    .form-section, .stats-section {
+        padding: 20px;
+    }
+    
+    .form-section h2, .stats-section h2 {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+    
+    .balance-options {
+        padding: 15px;
+    }
+    
+    .balance-options h3 {
+        font-size: 16px;
+    }
+    
+    .balance-type-card {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .balance-type-label {
+        font-size: 14px;
     }
     
     .form-actions {
         flex-direction: column;
+        gap: 10px;
+    }
+    
+    .save-btn, .view-customers-btn {
+        width: 100%;
+        padding: 12px 20px;
     }
     
     .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 20px 18px;
+        min-height: 100px;
+    }
+    
+    .stat-icon {
+        font-size: 36px;
+    }
+    
+    .stat-number {
+        font-size: 28px;
+    }
+    
+    .stat-label {
+        font-size: 13px;
+    }
+    
+    .action-btn {
+        padding: 12px 18px;
+        font-size: 15px;
+    }
+}
+
+/* شاشات صغيرة جداً */
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+        gap: 12px;
+    }
+    
+    .form-section, .stats-section {
+        padding: 16px;
+    }
+    
+    .form-section h2, .stats-section h2 {
+        font-size: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .input-group {
+        margin-bottom: 16px;
+    }
+    
+    .input-group label {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+    
+    .input-group input,
+    .input-group select {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    .balance-options {
+        padding: 12px;
+    }
+    
+    .balance-options h3 {
+        font-size: 15px;
+        margin-bottom: 14px;
+    }
+    
+    .balance-type-card {
+        padding: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .balance-type-label {
+        font-size: 13px;
+        gap: 8px;
+    }
+    
+    .balance-icon {
+        font-size: 20px;
+    }
+    
+    .balance-checkbox {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .balance-input {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+    
+    .currency {
+        font-size: 13px;
+    }
+    
+    .form-actions {
+        gap: 8px;
+    }
+    
+    .save-btn, .view-customers-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .stat-card {
+        padding: 16px 15px;
+        min-height: 90px;
+    }
+    
+    .stat-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-number {
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+    }
+    
+    .action-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .message {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+}
+
+/* طباعة */
+@media print {
+    .header-actions,
+    .form-actions,
+    .quick-actions,
+    .message {
+        display: none;
+    }
+    
+    .container {
+        display: block;
+    }
+    
+    .form-section, .stats-section {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
     }
 }

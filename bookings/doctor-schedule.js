@@ -1,4 +1,4 @@
-// doctor-schedule.js - النسخة المحسّنة مع نظام التنبيهات
+// doctor-schedule.js - محسّن مع نظام الحجز بالعروض والأرصدة المتعددة
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getFirestore, 
@@ -41,6 +41,7 @@ let allServices = [];
 let currentUser = null;
 let selectedCustomer = null;
 let selectedServices = [];
+let customerOffers = []; // عروض العميل المتاحة
 let unsubscribeBookings = null;
 let unsubscribeAlerts = null;
 let pendingAlerts = [];
@@ -59,11 +60,6 @@ function initializePage() {
     currentDoctorName = decodeURIComponent(urlParams.get('doctorName') || '');
     const dateParam = urlParams.get('date');
     if (dateParam) currentDate = dateParam;
-    
-    console.log('🔧 تهيئة الصفحة:');
-    console.log('   - doctorId:', currentDoctorId);
-    console.log('   - doctorName:', currentDoctorName);
-    console.log('   - currentDate:', currentDate);
     
     if (!currentDoctorId) {
         alert('❌ لم يتم تحديد دكتور!');
@@ -87,7 +83,6 @@ function initializePage() {
 function setupEventListeners() {
     document.getElementById('scheduleDate').addEventListener('change', function(e) {
         currentDate = e.target.value;
-        console.log('📅 تم تغيير التاريخ إلى:', currentDate);
         loadScheduleRealtime();
     });
     
@@ -100,15 +95,19 @@ function setupEventListeners() {
     document.getElementById('servicesCount').addEventListener('change', updateServicesInputs);
     document.getElementById('bookingTime').addEventListener('change', calculateEndTime);
     
+    // استماع لتغيير نوع الحجز
+    const bookingTypeSelect = document.getElementById('bookingType');
+    if (bookingTypeSelect) {
+        bookingTypeSelect.addEventListener('change', handleBookingTypeChange);
+    }
+    
     const rechargeBtn = document.getElementById('rechargeBalanceBtn');
     if (rechargeBtn) rechargeBtn.addEventListener('click', showRechargeModal);
 }
 
 async function loadInitialData() {
-    console.log('📦 تحميل البيانات الأولية...');
     await loadCustomers();
     await loadServices();
-    console.log('✅ تم تحميل البيانات الأولية');
 }
 
 async function loadCustomers() {
@@ -123,7 +122,10 @@ async function loadCustomers() {
                 displayId: String(data.id || docSnap.id),
                 name: data.name || '',
                 phone: data.phone || '',
-                balance: Number(data.balance || 0)
+                balance: Number(data.balance || 0),
+                offersBalance: Number(data.offersBalance || 0),
+                laserBalance: Number(data.laserBalance || 0),
+                dermaBalance: Number(data.dermaBalance || 0)
             });
         });
         console.log('✅ تم تحميل', allCustomers.length, 'عميل');
@@ -151,10 +153,165 @@ async function loadServices() {
     }
 }
 
-// إعداد الاستماع للتنبيهات في الوقت الحقيقي
-function setupRealtimeAlerts() {
-    console.log('🔔 بدء الاستماع للتنبيهات...');
+// تحميل عروض العميل المتاحة
+async function loadCustomerOffers(customerId) {
+    try {
+        const q = query(
+            collection(db, "customerOffers"),
+            where("customerId", "==", customerId),
+            where("remainingSessions", ">", 0),
+            orderBy("purchaseDate", "desc")
+        );
+        
+        const snapshot = await getDocs(q);
+        customerOffers = [];
+        
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            customerOffers.push({
+                id: docSnap.id,
+                ...data
+            });
+        });
+        
+        console.log('✅ تم تحميل', customerOffers.length, 'عرض متاح');
+        return customerOffers;
+    } catch (error) {
+        console.error("خطأ في تحميل عروض العميل:", error);
+        return [];
+    }
+}
+
+// معالجة تغيير نوع الحجز
+async function handleBookingTypeChange() {
+    const bookingType = document.getElementById('bookingType').value;
+    const offersSection = document.getElementById('offersSection');
+    const balanceInfo = document.getElementById('customerBalanceInfo');
     
+    // إخفاء جميع الأقسام أولاً
+    if (offersSection) offersSection.classList.add('hidden');
+    
+    if (!selectedCustomer) {
+        alert('⚠️ يرجى اختيار عميل أولاً!');
+        document.getElementById('bookingType').value = 'normal';
+        return;
+    }
+    
+    if (bookingType === 'offer') {
+        // عرض قسم العروض
+        await displayCustomerOffers();
+        if (offersSection) offersSection.classList.remove('hidden');
+    } else if (bookingType === 'laser') {
+        // استخدام رصيد الليزر
+        updateBalanceDisplay('laser');
+    } else if (bookingType === 'derma') {
+        // استخدام رصيد الجلدية
+        updateBalanceDisplay('derma');
+    } else {
+        // رصيد عادي
+        updateBalanceDisplay('normal');
+    }
+}
+
+// عرض عروض العميل
+async function displayCustomerOffers() {
+    const offersContainer = document.getElementById('availableOffers');
+    if (!offersContainer) return;
+    
+    offersContainer.innerHTML = '<div class="loading">جاري تحميل العروض...</div>';
+    
+    await loadCustomerOffers(selectedCustomer.id);
+    
+    if (customerOffers.length === 0) {
+        offersContainer.innerHTML = '<div class="empty-state">⚠️ لا توجد عروض متاحة لهذا العميل</div>';
+        return;
+    }
+    
+    offersContainer.innerHTML = '';
+    
+    customerOffers.forEach(offer => {
+        const offerCard = document.createElement('div');
+        offerCard.className = 'offer-card';
+        
+        const purchaseDate = offer.purchaseDate ? offer.purchaseDate.toDate().toLocaleDateString('ar-EG') : '-';
+        const progress = (offer.remainingSessions / offer.totalSessions) * 100;
+        
+        offerCard.innerHTML = `
+            <div class="offer-header">
+                <input type="radio" name="selectedOffer" value="${offer.id}" id="offer-${offer.id}">
+                <label for="offer-${offer.id}">
+                    <strong>${offer.offerName}</strong>
+                </label>
+            </div>
+            <div class="offer-details">
+                <div class="offer-sessions">
+                    <span>الجلسات المتبقية:</span>
+                    <strong class="sessions-count">${offer.remainingSessions} من ${offer.totalSessions}</strong>
+                </div>
+                <div class="offer-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+                <div class="offer-meta">
+                    <span>تاريخ الشراء: ${purchaseDate}</span>
+                </div>
+            </div>
+        `;
+        
+        offersContainer.appendChild(offerCard);
+        
+        // استماع لاختيار العرض
+        const radio = offerCard.querySelector('input[type="radio"]');
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                // تحديث التكلفة إلى صفر عند استخدام العرض
+                document.getElementById('totalCost').textContent = '0.00';
+                document.getElementById('bookingCostDisplay').textContent = '0.00';
+                updateBalanceStatus(selectedCustomer.balance, 0);
+            }
+        });
+    });
+}
+
+// تحديث عرض الرصيد حسب النوع
+function updateBalanceDisplay(type) {
+    const balanceInfo = document.getElementById('customerBalanceInfo');
+    const currentBalanceEl = document.getElementById('currentCustomerBalance');
+    const rechargeBtn = document.getElementById('rechargeBalanceBtn');
+    
+    if (!selectedCustomer || !balanceInfo || !currentBalanceEl) return;
+    
+    let balance = 0;
+    let balanceTypeName = '';
+    
+    switch(type) {
+        case 'laser':
+            balance = selectedCustomer.laserBalance || 0;
+            balanceTypeName = 'رصيد الليزر';
+            break;
+        case 'derma':
+            balance = selectedCustomer.dermaBalance || 0;
+            balanceTypeName = 'رصيد الجلدية';
+            break;
+        default:
+            balance = selectedCustomer.balance || 0;
+            balanceTypeName = 'الرصيد العادي';
+    }
+    
+    currentBalanceEl.textContent = balance.toFixed(2);
+    
+    // تحديث عنوان القسم
+    const balanceTitle = balanceInfo.querySelector('h4');
+    if (balanceTitle) {
+        balanceTitle.textContent = `💰 ${balanceTypeName}`;
+    }
+    
+    const totalCost = parseFloat(document.getElementById('totalCost').textContent) || 0;
+    updateBalanceStatus(balance, totalCost);
+}
+
+function setupRealtimeAlerts() {
     const q = query(
         collection(db, "receptionAlerts"),
         where("doctorId", "==", currentDoctorId),
@@ -172,10 +329,8 @@ function setupRealtimeAlerts() {
             pendingAlerts.push({ id: doc.id, ...doc.data() });
         });
         
-        console.log('🔔 تم جلب', pendingAlerts.length, 'تنبيه');
         displayAlerts(pendingAlerts);
         
-        // تشغيل صوت إذا كان هناك تنبيهات
         if (pendingAlerts.length > 0) {
             playAlertSound();
         }
@@ -184,7 +339,6 @@ function setupRealtimeAlerts() {
     });
 }
 
-// عرض التنبيهات
 function displayAlerts(alerts) {
     const alertsBox = document.getElementById('alertsBox');
     const alertsBadge = document.getElementById('alertsBadge');
@@ -724,7 +878,6 @@ window.dismissAlert = async function(alertId) {
     }
 };
 
-// تشغيل صوت التنبيه
 function playAlertSound() {
     try {
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHGS57OihUBELTKXh8bllHgU2jdXzxnkpBSh+zPLaizsIGGS56+mjUxEJS6Hd8bpmHwU0iM/zy3UsBS1+zPDaizsIGGO46+qiUhEJSp/c8bplHwU0h87zynUsBS1+y+/biz0IFWO36OiiURAJSZ7b8bhkHgQzhs3zyHQrBSt8ye7Zij4IF2K15+ihTxAJR5zZ77hjHQQyhczyw3MrBCp6x+zYiT4IF2G05+efTQ8JRprX7rZiHAQxg8ryvXIqBCl4xurWiD0HFl+y5eadTAkIP5jV7LVhGwMwgcjxu3AoBCh1xerUhzwHFVyv4uSbSggHPZbT6rNfGgIvf8bwuG4nAydyweHP');
@@ -735,9 +888,6 @@ function playAlertSound() {
 }
 
 function loadScheduleRealtime() {
-    console.log('📅 تحميل جدول الحجوزات للتاريخ:', currentDate);
-    console.log('👨‍⚕️ الدكتور:', currentDoctorId, currentDoctorName);
-    
     const bookingsCards = document.getElementById('bookingsCards');
     bookingsCards.innerHTML = '<div class="loading">جاري تحميل الحجوزات...</div>';
     
@@ -750,10 +900,6 @@ function loadScheduleRealtime() {
         const nextDate = new Date(selectedDate);
         nextDate.setDate(nextDate.getDate() + 1);
         
-        console.log('📊 نطاق البحث:');
-        console.log('   من:', selectedDate);
-        console.log('   إلى:', nextDate);
-        
         const q = query(
             collection(db, "bookings"),
             where("doctorId", "==", currentDoctorId),
@@ -764,8 +910,6 @@ function loadScheduleRealtime() {
         );
         
         unsubscribeBookings = onSnapshot(q, (querySnapshot) => {
-            console.log('✅ تم جلب', querySnapshot.size, 'حجز');
-            
             if (querySnapshot.empty) {
                 bookingsCards.innerHTML = '<div class="empty-state">لا توجد حجوزات لهذا اليوم</div>';
                 return;
@@ -774,7 +918,6 @@ function loadScheduleRealtime() {
             const bookings = [];
             querySnapshot.forEach(docSnap => {
                 const data = docSnap.data();
-                console.log('📋 حجز:', docSnap.id, data);
                 bookings.push({ id: docSnap.id, ...data });
             });
             
@@ -794,8 +937,6 @@ function displayBookings(bookings) {
     const bookingsCards = document.getElementById('bookingsCards');
     bookingsCards.innerHTML = '';
     
-    console.log('🎨 عرض', bookings.length, 'حجز');
-    
     bookings.forEach(booking => {
         try {
             const card = createBookingCard(booking);
@@ -814,6 +955,20 @@ function createBookingCard(booking) {
     const servicesHTML = services.map(s => `
         <div class="service-item">📌 ${s.name || 'غير محدد'} (${s.duration || 0} دقيقة - ${(s.price || 0).toFixed(2)} جنيه)</div>
     `).join('');
+    
+    // إضافة معلومات نوع الحجز
+    let bookingTypeInfo = '';
+    if (booking.bookingType === 'offer' && booking.offerName) {
+        bookingTypeInfo = `
+            <div class="booking-type-badge offer">
+                🎁 حجز بعرض: ${booking.offerName}
+            </div>
+        `;
+    } else if (booking.bookingType === 'laser') {
+        bookingTypeInfo = '<div class="booking-type-badge laser">✨ حجز برصيد الليزر</div>';
+    } else if (booking.bookingType === 'derma') {
+        bookingTypeInfo = '<div class="booking-type-badge derma">🧴 حجز برصيد الجلدية</div>';
+    }
     
     const statusConfig = {
         'pending': { text: 'جاري', class: 'status-yellow' },
@@ -851,12 +1006,6 @@ function createBookingCard(booking) {
             <button class="complete-btn" data-booking-id="${booking.id}" data-action="complete">✔️ إنهاء الجلسة</button>
             <div class="started-badge">⏱️ الجلسة نشطة</div>
         `;
-    } else if (booking.status === 'pending_payment') {
-        actionButtons = `
-            <div class="pending-payment-badge">⚠️ يوجد خدمات إضافية غير مدفوعة</div>
-            <button class="complete-btn" data-booking-id="${booking.id}" data-action="complete">✔️ إنهاء الجلسة</button>
-            <div class="started-badge">⏱️ الجلسة نشطة</div>
-        `;
     } else if (booking.status === 'completed') {
         actionButtons = `<div class="completed-badge">✅ تم الانتهاء بنجاح</div>`;
     } else if (booking.status === 'cancelled') {
@@ -871,6 +1020,8 @@ function createBookingCard(booking) {
             </div>
             <div class="booking-status ${statusInfo.class}">${statusInfo.text}</div>
         </div>
+        
+        ${bookingTypeInfo}
         
         <div class="booking-body">
             <div class="customer-info">
@@ -897,6 +1048,7 @@ function createBookingCard(booking) {
         </div>
     `;
     
+    // إضافة معالجات الأحداث
     const confirmBtn = card.querySelector('[data-action="confirm"]');
     const cancelBtn = card.querySelector('[data-action="cancel"]');
     const startBtn = card.querySelector('[data-action="start"]');
@@ -956,9 +1108,6 @@ function createBookingCard(booking) {
     return card;
 }
 
-// باقي الدوال (showAddBookingModal, addNewBooking, confirmBooking, etc.) تبقى كما هي...
-// [يمكنني إضافتها إذا أردت، لكن لتوفير المساحة سأكتفي بالجزء الجديد]
-
 function showAddBookingModal() {
     const modal = document.getElementById('addBookingModal');
     if (modal) {
@@ -966,7 +1115,12 @@ function showAddBookingModal() {
     }
     document.getElementById('bookingTime').value = '';
     document.getElementById('servicesCount').value = '1';
+    document.getElementById('bookingType').value = 'normal';
     updateServicesInputs();
+    
+    // إخفاء قسم العروض عند فتح المودال
+    const offersSection = document.getElementById('offersSection');
+    if (offersSection) offersSection.classList.add('hidden');
 }
 
 function hideAddBookingModal() {
@@ -977,11 +1131,15 @@ function hideAddBookingModal() {
     document.getElementById('addBookingForm').reset();
     selectedServices = [];
     selectedCustomer = null;
+    customerOffers = [];
     
     const balanceInfo = document.getElementById('customerBalanceInfo');
     if (balanceInfo) {
         balanceInfo.classList.add('hidden');
     }
+    
+    const offersSection = document.getElementById('offersSection');
+    if (offersSection) offersSection.classList.add('hidden');
 }
 
 function handleCustomerTypeChange() {
@@ -990,6 +1148,8 @@ function handleCustomerTypeChange() {
     const newSection = document.getElementById('newCustomerSection');
     const existingSection = document.getElementById('existingCustomerSection');
     const balanceInfo = document.getElementById('customerBalanceInfo');
+    const bookingTypeSection = document.getElementById('bookingTypeSection');
+    const offersSection = document.getElementById('offersSection');
     
     if (newSection) {
         newSection.classList.toggle('hidden', type !== 'new');
@@ -999,6 +1159,17 @@ function handleCustomerTypeChange() {
     }
     if (balanceInfo) {
         balanceInfo.classList.add('hidden');
+    }
+    if (bookingTypeSection) {
+        bookingTypeSection.classList.toggle('hidden', type !== 'existing');
+    }
+    if (offersSection) {
+        offersSection.classList.add('hidden');
+    }
+    
+    // إعادة تعيين نوع الحجز
+    if (document.getElementById('bookingType')) {
+        document.getElementById('bookingType').value = 'normal';
     }
 }
 
@@ -1039,7 +1210,7 @@ function searchCustomers() {
     resultsContainer.classList.remove('hidden');
 }
 
-function selectCustomer(customer) {
+async function selectCustomer(customer) {
     selectedCustomer = customer;
     
     const selectedInfo = document.getElementById('selectedCustomerInfo');
@@ -1049,6 +1220,7 @@ function selectCustomer(customer) {
     const customerSearch = document.getElementById('customerSearch');
     const balanceInfo = document.getElementById('customerBalanceInfo');
     const currentBalance = document.getElementById('currentCustomerBalance');
+    const bookingTypeSection = document.getElementById('bookingTypeSection');
     
     if (selectedInfo) selectedInfo.classList.remove('hidden');
     if (selectedName) selectedName.textContent = customer.name;
@@ -1058,6 +1230,10 @@ function selectCustomer(customer) {
     
     if (balanceInfo) balanceInfo.classList.remove('hidden');
     if (currentBalance) currentBalance.textContent = customer.balance.toFixed(2);
+    if (bookingTypeSection) bookingTypeSection.classList.remove('hidden');
+    
+    // تحميل عروض العميل
+    await loadCustomerOffers(customer.id);
     
     const totalCost = parseFloat(document.getElementById('totalCost').textContent) || 0;
     const bookingCostDisplay = document.getElementById('bookingCostDisplay');
@@ -1139,6 +1315,12 @@ function calculateTotalCostAndDuration() {
         }
     });
     
+    // إذا كان نوع الحجز بالعرض، التكلفة تكون صفر
+    const bookingType = document.getElementById('bookingType')?.value;
+    if (bookingType === 'offer') {
+        totalCost = 0;
+    }
+    
     document.getElementById('totalCost').textContent = totalCost.toFixed(2);
     document.getElementById('totalDuration').textContent = totalDuration;
     
@@ -1148,7 +1330,16 @@ function calculateTotalCostAndDuration() {
     }
     
     if (selectedCustomer) {
-        updateBalanceStatus(selectedCustomer.balance, totalCost);
+        const currentBookingType = document.getElementById('bookingType')?.value || 'normal';
+        let balance = selectedCustomer.balance;
+        
+        if (currentBookingType === 'laser') {
+            balance = selectedCustomer.laserBalance || 0;
+        } else if (currentBookingType === 'derma') {
+            balance = selectedCustomer.dermaBalance || 0;
+        }
+        
+        updateBalanceStatus(balance, totalCost);
     }
     
     calculateEndTime();
@@ -1169,110 +1360,6 @@ function calculateEndTime() {
     const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
     document.getElementById('endTime').textContent = endTime;
 }
-
-function showRechargeModal() {
-    if (!selectedCustomer) return;
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.id = 'rechargeModal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>💰 شحن رصيد ${selectedCustomer.name}</h3>
-                <button class="close-btn" onclick="closeRechargeModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="balance-info-box">
-                    <div>الرصيد الحالي: <strong>${selectedCustomer.balance.toFixed(2)} جنيه</strong></div>
-                    <div>التكلفة المطلوبة: <strong>${document.getElementById('totalCost').textContent} جنيه</strong></div>
-                    <div class="deficit">النقص: <strong>${Math.abs(selectedCustomer.balance - parseFloat(document.getElementById('totalCost').textContent)).toFixed(2)} جنيه</strong></div>
-                </div>
-                
-                <div class="input-group">
-                    <label>مبلغ الشحن:</label>
-                    <input type="number" id="rechargeAmount" step="0.01" min="0" value="${Math.abs(selectedCustomer.balance - parseFloat(document.getElementById('totalCost').textContent)).toFixed(2)}">
-                </div>
-                
-                <div class="input-group">
-                    <label>طريقة الدفع:</label>
-                    <select id="rechargePaymentMethod">
-                        <option value="نقدي">نقدي</option>
-                        <option value="كاش">كاش</option>
-                        <option value="فيزا">فيزا</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="save-btn" onclick="confirmRecharge()">تأكيد الشحن</button>
-                <button class="cancel-btn" onclick="closeRechargeModal()">إلغاء</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-window.closeRechargeModal = function() {
-    const modal = document.getElementById('rechargeModal');
-    if (modal) modal.remove();
-};
-
-window.confirmRecharge = async function() {
-    const amount = parseFloat(document.getElementById('rechargeAmount').value);
-    const paymentMethod = document.getElementById('rechargePaymentMethod').value;
-    
-    if (!amount || amount <= 0) {
-        alert('⚠️ أدخل مبلغ صحيح!');
-        return;
-    }
-    
-    try {
-        const customerRef = doc(db, "customers", selectedCustomer.id);
-        const customerSnap = await getDoc(customerRef);
-        const currentBalance = customerSnap.data().balance || 0;
-        const newBalance = currentBalance + amount;
-        
-        await updateDoc(customerRef, {
-            balance: newBalance,
-            updatedAt: Timestamp.now()
-        });
-        
-        await addDoc(collection(db, "transactions"), {
-            customerId: selectedCustomer.id,
-            customerName: selectedCustomer.name,
-            type: 'deposit',
-            amount,
-            previousBalance: currentBalance,
-            newBalance,
-            paymentMethod,
-            notes: `شحن رصيد - ${paymentMethod}`,
-            createdAt: Timestamp.now(),
-            createdBy: currentUser.name
-        });
-        
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('شحن رصيد', `شحن ${amount.toFixed(2)} جنيه لـ ${selectedCustomer.name} - ${paymentMethod}`);
-            }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
-        
-        selectedCustomer.balance = newBalance;
-        document.getElementById('selectedCustomerBalance').textContent = newBalance.toFixed(2);
-        document.getElementById('currentCustomerBalance').textContent = newBalance.toFixed(2);
-        
-        const totalCost = parseFloat(document.getElementById('totalCost').textContent) || 0;
-        updateBalanceStatus(newBalance, totalCost);
-        
-        alert('✅ تم شحن الرصيد بنجاح!');
-        closeRechargeModal();
-        
-    } catch (error) {
-        console.error("خطأ في شحن الرصيد:", error);
-        alert('❌ حدث خطأ في شحن الرصيد');
-    }
-};
 
 async function validateBookingTime(bookingDate, bookingTime, totalDuration) {
     const now = new Date();
@@ -1347,6 +1434,7 @@ async function addNewBooking(e) {
     const bookingTime = document.getElementById('bookingTime').value;
     const totalCost = parseFloat(document.getElementById('totalCost').textContent);
     const totalDuration = parseInt(document.getElementById('totalDuration').textContent);
+    const bookingType = document.getElementById('bookingType')?.value || 'normal';
     
     if (selectedServices.length === 0) {
         alert('⚠️ يرجى اختيار الخدمات!');
@@ -1365,6 +1453,29 @@ async function addNewBooking(e) {
     }
     
     const endTime = validation.endTime;
+    
+    // التحقق من العرض المختار إذا كان نوع الحجز بالعرض
+    let selectedOfferId = null;
+    let selectedOfferName = null;
+    
+    if (bookingType === 'offer') {
+        const selectedOfferRadio = document.querySelector('input[name="selectedOffer"]:checked');
+        if (!selectedOfferRadio) {
+            alert('⚠️ يرجى اختيار عرض من القائمة!');
+            return;
+        }
+        selectedOfferId = selectedOfferRadio.value;
+        const selectedOffer = customerOffers.find(o => o.id === selectedOfferId);
+        if (!selectedOffer) {
+            alert('❌ خطأ في اختيار العرض!');
+            return;
+        }
+        if (selectedOffer.remainingSessions <= 0) {
+            alert('⚠️ لا توجد جلسات متبقية في هذا العرض!');
+            return;
+        }
+        selectedOfferName = selectedOffer.offerName;
+    }
     
     try {
         let customerId, customerName, customerPhone, isNewCustomer = false;
@@ -1411,18 +1522,33 @@ async function addNewBooking(e) {
             totalDuration,
             status: 'pending',
             isNewCustomer,
+            bookingType: bookingType,
             createdAt: Timestamp.now(),
             createdBy: currentUser.name
         };
         
-        console.log('💾 حفظ حجز جديد:', bookingData);
+        // إضافة معلومات العرض إذا كان الحجز بالعرض
+        if (bookingType === 'offer' && selectedOfferId) {
+            bookingData.offerId = selectedOfferId;
+            bookingData.offerName = selectedOfferName;
+        }
         
         await addDoc(collection(db, "bookings"), bookingData);
         
         try {
             const shiftModule = await import('../shift-management/shift-management.js');
             if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('إضافة حجز', `تم إضافة حجز لـ ${customerName} - ${selectedServices.length} خدمة - ${totalCost.toFixed(2)} جنيه`);
+                let bookingNote = `تم إضافة حجز لـ ${customerName} - ${selectedServices.length} خدمة`;
+                if (bookingType === 'offer') {
+                    bookingNote += ` - حجز بعرض: ${selectedOfferName}`;
+                } else if (bookingType === 'laser') {
+                    bookingNote += ` - حجز برصيد الليزر`;
+                } else if (bookingType === 'derma') {
+                    bookingNote += ` - حجز برصيد الجلدية`;
+                } else {
+                    bookingNote += ` - ${totalCost.toFixed(2)} جنيه`;
+                }
+                await shiftModule.addShiftAction('إضافة حجز', bookingNote);
             }
         } catch (err) {
             console.log('لا يمكن تسجيل في الشيفت:', err);
@@ -1438,8 +1564,6 @@ async function addNewBooking(e) {
 }
 
 window.confirmBooking = async function(bookingId, isNewCustomer, bookingData) {
-    console.log('✅ تأكيد الحجز:', bookingId, 'عميل جديد:', isNewCustomer);
-    
     const bookingRef = doc(db, "bookings", bookingId);
     const bookingSnap = await getDoc(bookingRef);
     const booking = bookingSnap.data();
@@ -1450,59 +1574,350 @@ window.confirmBooking = async function(bookingId, isNewCustomer, bookingData) {
         if (!confirm('هل تريد تأكيد هذا الحجز والدفع؟')) return;
         
         try {
-            const customerRef = doc(db, "customers", booking.customerId);
-            const customerSnap = await getDoc(customerRef);
-            const currentBalance = customerSnap.data().balance || 0;
+            const bookingType = booking.bookingType || 'normal';
             
-            if (currentBalance < booking.totalCost) {
-                if (!confirm(`⚠️ الرصيد غير كافٍ!\nالرصيد: ${currentBalance.toFixed(2)} جنيه\nالمطلوب: ${booking.totalCost.toFixed(2)} جنيه\nهل تريد المتابعة؟`)) {
-                    return;
+            // إذا كان الحجز بعرض، نخصم جلسة من العرض
+            if (bookingType === 'offer' && booking.offerId) {
+                await runTransaction(db, async (transaction) => {
+                    const offerRef = doc(db, "customerOffers", booking.offerId);
+                    const offerSnap = await transaction.get(offerRef);
+                    
+                    if (!offerSnap.exists()) {
+                        throw new Error('العرض غير موجود!');
+                    }
+                    
+                    const offerData = offerSnap.data();
+                    if (offerData.remainingSessions <= 0) {
+                        throw new Error('لا توجد جلسات متبقية في هذا العرض!');
+                    }
+                    
+                    // خصم جلسة من العرض
+                    transaction.update(offerRef, {
+                        remainingSessions: offerData.remainingSessions - 1,
+                        usedSessions: (offerData.usedSessions || 0) + 1,
+                        updatedAt: Timestamp.now()
+                    });
+                    
+                    // إضافة سجل استخدام العرض
+                    const offerUsageRef = doc(collection(db, "offerUsage"));
+                    transaction.set(offerUsageRef, {
+                        offerId: booking.offerId,
+                        customerId: booking.customerId,
+                        customerName: booking.customerName,
+                        bookingId: bookingId,
+                        sessionUsed: 1,
+                        remainingAfter: offerData.remainingSessions - 1,
+                        services: booking.services,
+                        usedAt: Timestamp.now(),
+                        usedBy: currentUser.name
+                    });
+                    
+                    // تأكيد الحجز
+                    transaction.update(bookingRef, {
+                        status: 'confirmed',
+                        confirmedAt: Timestamp.now(),
+                        confirmedBy: currentUser.name
+                    });
+                });
+                
+                alert('✅ تم تأكيد الحجز وخصم جلسة من العرض بنجاح!');
+            } else {
+                // الحجز بالرصيد العادي أو الليزر أو الجلدية
+                const customerRef = doc(db, "customers", booking.customerId);
+                const customerSnap = await getDoc(customerRef);
+                const customerData = customerSnap.data();
+                
+                let currentBalance = 0;
+                let balanceField = 'balance';
+                let balanceTypeName = 'العادي';
+                
+                if (bookingType === 'laser') {
+                    currentBalance = customerData.laserBalance || 0;
+                    balanceField = 'laserBalance';
+                    balanceTypeName = 'الليزر';
+                } else if (bookingType === 'derma') {
+                    currentBalance = customerData.dermaBalance || 0;
+                    balanceField = 'dermaBalance';
+                    balanceTypeName = 'الجلدية';
+                } else {
+                    currentBalance = customerData.balance || 0;
                 }
+                
+                if (currentBalance < booking.totalCost) {
+                    if (!confirm(`⚠️ رصيد ${balanceTypeName} غير كافٍ!\nالرصيد: ${currentBalance.toFixed(2)} جنيه\nالمطلوب: ${booking.totalCost.toFixed(2)} جنيه\nهل تريد المتابعة؟`)) {
+                        return;
+                    }
+                }
+                
+                const newBalance = currentBalance - booking.totalCost;
+                await updateDoc(customerRef, {
+                    [balanceField]: newBalance,
+                    totalSpent: increment(booking.totalCost),
+                    updatedAt: Timestamp.now()
+                });
+                
+                await addDoc(collection(db, "transactions"), {
+                    customerId: booking.customerId,
+                    customerName: booking.customerName,
+                    type: 'withdrawal',
+                    balanceType: bookingType === 'normal' ? 'normal' : bookingType,
+                    amount: booking.totalCost,
+                    previousBalance: currentBalance,
+                    newBalance,
+                    paymentMethod: 'رصيد داخلي',
+                    services: booking.services,
+                    bookingDate: booking.bookingDate,
+                    notes: `حجز خدمات (رصيد ${balanceTypeName}) - ${booking.services.map(s => s.name).join(', ')} - يوم ${new Date(booking.bookingDate.toDate()).toLocaleDateString('ar-EG')}`,
+                    createdAt: Timestamp.now(),
+                    createdBy: currentUser.name
+                });
+                
+                await updateDoc(bookingRef, {
+                    status: 'confirmed',
+                    confirmedAt: Timestamp.now(),
+                    confirmedBy: currentUser.name
+                });
+                
+                alert(`✅ تم تأكيد الحجز وخصم المبلغ من رصيد ${balanceTypeName} بنجاح!`);
             }
             
-            const newBalance = currentBalance - booking.totalCost;
-            await updateDoc(customerRef, {
-                balance: newBalance,
-                totalSpent: (customerSnap.data().totalSpent || 0) + booking.totalCost,
-                updatedAt: Timestamp.now()
-            });
-            
-            await addDoc(collection(db, "transactions"), {
-                customerId: booking.customerId,
-                customerName: booking.customerName,
-                type: 'withdrawal',
-                amount: booking.totalCost,
-                previousBalance: currentBalance,
-                newBalance,
-                paymentMethod: 'رصيد داخلي',
-                services: booking.services,
-                bookingDate: booking.bookingDate,
-                notes: `حجز خدمات - ${booking.services.map(s => s.name).join(', ')} - يوم ${new Date(booking.bookingDate.toDate()).toLocaleDateString('ar-EG')}`,
-                createdAt: Timestamp.now(),
-                createdBy: currentUser.name
-            });
-            
-            await updateDoc(bookingRef, {
-                status: 'confirmed',
-                confirmedAt: Timestamp.now(),
-                confirmedBy: currentUser.name
-            });
-            
+            // تسجيل في الشيفت
             try {
                 const shiftModule = await import('../shift-management/shift-management.js');
                 if (shiftModule && shiftModule.addShiftAction) {
-                    await shiftModule.addShiftAction('تأكيد حجز', `تأكيد حجز ${booking.customerName} - ${booking.totalCost.toFixed(2)} جنيه`);
+                    let actionNote = `تأكيد حجز ${booking.customerName} - ${booking.services.map(s => s.name).join(', ')}`;
+                    if (bookingType === 'offer') {
+                        actionNote += ` - بعرض: ${booking.offerName}`;
+                    }
+                    await shiftModule.addShiftAction('تأكيد حجز', actionNote, booking.customerName, booking.totalCost, bookingType === 'normal' ? 'رصيد داخلي' : `رصيد ${bookingType}`);
                 }
             } catch (e) {
                 console.log('لا يمكن تسجيل في الشيفت:', e);
             }
             
-            alert('✅ تم تأكيد الحجز وخصم المبلغ بنجاح!');
-            
         } catch (error) {
             console.error("خطأ في تأكيد الحجز:", error);
             alert('❌ حدث خطأ: ' + (error.message || error));
         }
+    }
+};
+
+window.startSession = async function(bookingId) {
+    if (!confirm('هل تريد بدء الجلسة؟')) return;
+    
+    try {
+        const bookingRef = doc(db, "bookings", bookingId);
+        const bookingSnap = await getDoc(bookingRef);
+        const booking = bookingSnap.data();
+        
+        await updateDoc(bookingRef, {
+            status: 'started',
+            startedAt: Timestamp.now(),
+            startedBy: currentUser.name
+        });
+        
+        const customerRef = doc(db, "customers", booking.customerId);
+        const customerSnap = await getDoc(customerRef);
+        const currentVisits = customerSnap.data().visitCount || 0;
+        
+        await updateDoc(customerRef, {
+            visitCount: currentVisits + 1,
+            updatedAt: Timestamp.now()
+        });
+        
+        await addDoc(collection(db, "visits"), {
+            customerId: booking.customerId,
+            customerName: booking.customerName,
+            visitDate: Timestamp.now(),
+            doctorId: booking.doctorId,
+            doctorName: booking.doctorName,
+            services: booking.services,
+            amount: booking.totalCost,
+            bookingId,
+            bookingType: booking.bookingType || 'normal',
+            offerId: booking.offerId || null,
+            offerName: booking.offerName || null,
+            notes: booking.bookingType === 'offer' ? 
+                `زيارة من خلال حجز بعرض: ${booking.offerName}` : 
+                `زيارة من خلال حجز - ${booking.services.map(s => s.name).join(', ')}`,
+            createdAt: Timestamp.now(),
+            createdBy: currentUser.name
+        });
+        
+        try {
+            const shiftModule = await import('../shift-management/shift-management.js');
+            if (shiftModule && shiftModule.addShiftAction) {
+                await shiftModule.addShiftAction('بدء جلسة', `بدأت جلسة ${booking.customerName} - ${booking.doctorName}`);
+            }
+        } catch (e) {
+            console.log('لا يمكن تسجيل في الشيفت:', e);
+        }
+        
+        alert('✅ تم بدء الجلسة وتسجيل الزيارة!');
+    } catch (error) {
+        console.error("خطأ في بدء الجلسة:", error);
+        alert('❌ حدث خطأ في بدء الجلسة');
+    }
+};
+
+window.completeSession = async function(bookingId) {
+    if (!confirm('هل تريد إنهاء الجلسة؟')) return;
+    
+    try {
+        const bookingRef = doc(db, "bookings", bookingId);
+        const bookingSnap = await getDoc(bookingRef);
+        const booking = bookingSnap.data();
+        
+        await updateDoc(bookingRef, {
+            status: 'completed',
+            completedAt: Timestamp.now(),
+            completedBy: currentUser.name
+        });
+        
+        try {
+            const shiftModule = await import('../shift-management/shift-management.js');
+            if (shiftModule && shiftModule.addShiftAction) {
+                await shiftModule.addShiftAction('إكمال حجز', `أنهيت جلسة ${booking.customerName} - ${booking.services?.map(s => s.name).join(', ') || 'خدمات'}`);
+            }
+        } catch (e) {
+            console.log('لا يمكن تسجيل في الشيفت:', e);
+        }
+        
+        alert('✅ تم إنهاء الجلسة بنجاح!');
+    } catch (error) {
+        console.error("خطأ في إنهاء الجلسة:", error);
+        alert('❌ حدث خطأ في إنهاء الجلسة');
+    }
+};
+
+window.showCancelModal = function(bookingId, isNewCustomer) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إلغاء الحجز</h3>
+                <button class="close-btn" onclick="this.closest('.modal').remove()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>اختر سبب الإلغاء:</p>
+                <div class="cancel-reasons">
+                    <label><input type="radio" name="cancelReason" value="العميل مردش"> العميل مردش</label>
+                    <label><input type="radio" name="cancelReason" value="العميل مجاش"> العميل مجاش</label>
+                    <label><input type="radio" name="cancelReason" value="other"> سبب آخر</label>
+                </div>
+                <textarea id="otherReason" class="hidden" placeholder="اكتب السبب..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="executeCancelBooking('${bookingId}', ${isNewCustomer})">تأكيد الإلغاء</button>
+                <button class="cancel-btn" onclick="this.closest('.modal').remove()">إلغاء</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelectorAll('input[name="cancelReason"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.getElementById('otherReason').classList.toggle('hidden', this.value !== 'other');
+        });
+    });
+};
+
+window.executeCancelBooking = async function(bookingId, isNewCustomer) {
+    const selectedReason = document.querySelector('input[name="cancelReason"]:checked');
+    if (!selectedReason) {
+        alert('⚠️ يرجى اختيار سبب الإلغاء');
+        return;
+    }
+    
+    let reason = selectedReason.value;
+    if (reason === 'other') {
+        reason = document.getElementById('otherReason').value.trim();
+        if (!reason) {
+            alert('⚠️ يرجى كتابة السبب');
+            return;
+        }
+    }
+    
+    try {
+        const bookingRef = doc(db, "bookings", bookingId);
+        const bookingSnap = await getDoc(bookingRef);
+        const booking = bookingSnap.data();
+        
+        // إرجاع المبلغ أو الجلسة إذا كان الحجز مؤكداً
+        if (!isNewCustomer && booking.status === 'confirmed' && booking.customerId) {
+            const bookingType = booking.bookingType || 'normal';
+            
+            if (bookingType === 'offer' && booking.offerId) {
+                // إرجاع الجلسة للعرض
+                const offerRef = doc(db, "customerOffers", booking.offerId);
+                await updateDoc(offerRef, {
+                    remainingSessions: increment(1),
+                    usedSessions: increment(-1),
+                    updatedAt: Timestamp.now()
+                });
+            } else {
+                // إرجاع المبلغ للرصيد المناسب
+                const customerRef = doc(db, "customers", booking.customerId);
+                const customerSnap = await getDoc(customerRef);
+                
+                let balanceField = 'balance';
+                let currentBalance = customerSnap.data().balance || 0;
+                
+                if (bookingType === 'laser') {
+                    balanceField = 'laserBalance';
+                    currentBalance = customerSnap.data().laserBalance || 0;
+                } else if (bookingType === 'derma') {
+                    balanceField = 'dermaBalance';
+                    currentBalance = customerSnap.data().dermaBalance || 0;
+                }
+                
+                const newBalance = currentBalance + booking.totalCost;
+                
+                await updateDoc(customerRef, {
+                    [balanceField]: newBalance,
+                    updatedAt: Timestamp.now()
+                });
+                
+                await addDoc(collection(db, "transactions"), {
+                    customerId: booking.customerId,
+                    customerName: booking.customerName,
+                    type: 'refund',
+                    balanceType: bookingType === 'normal' ? 'normal' : bookingType,
+                    amount: booking.totalCost,
+                    previousBalance: currentBalance,
+                    newBalance,
+                    paymentMethod: 'إرجاع',
+                    notes: `إرجاع مبلغ حجز ملغي - السبب: ${reason}`,
+                    createdAt: Timestamp.now(),
+                    createdBy: currentUser.name
+                });
+            }
+        }
+        
+        await updateDoc(bookingRef, {
+            status: 'cancelled',
+            cancelReason: reason,
+            cancelledAt: Timestamp.now(),
+            cancelledBy: currentUser.name
+        });
+        
+        try {
+            const shiftModule = await import('../shift-management/shift-management.js');
+            if (shiftModule && shiftModule.addShiftAction) {
+                await shiftModule.addShiftAction('إلغاء حجز', `تم إلغاء حجز ${booking.customerName} - السبب: ${reason}`);
+            }
+        } catch (e) {
+            console.log('لا يمكن تسجيل في الشيفت:', e);
+        }
+        
+        alert('✅ تم إلغاء الحجز' + (!isNewCustomer && booking.status === 'confirmed' ? ' وإرجاع المبلغ!' : '!'));
+        document.querySelector('.modal').remove();
+        
+    } catch (error) {
+        console.error("خطأ في إلغاء الحجز:", error);
+        alert('❌ حدث خطأ في الإلغاء');
     }
 };
 
@@ -1591,6 +2006,9 @@ window.processNewCustomerPayment = async function(bookingId) {
                 name: booking.customerName,
                 phone: phoneKey,
                 balance: amount - booking.totalCost,
+                offersBalance: 0,
+                laserBalance: 0,
+                dermaBalance: 0,
                 totalSpent: booking.totalCost,
                 visitCount: 0,
                 createdAt: Timestamp.now(),
@@ -1609,6 +2027,7 @@ window.processNewCustomerPayment = async function(bookingId) {
             customerId,
             customerName: booking.customerName,
             type: 'payment',
+            balanceType: 'normal',
             amount: booking.totalCost,
             paidAmount: amount,
             previousBalance: 0,
@@ -1651,41 +2070,82 @@ window.processNewCustomerPayment = async function(bookingId) {
     }
 };
 
-window.startSession = async function(bookingId) {
-    console.log('▶️ بدء جلسة:', bookingId);
+function showRechargeModal() {
+    if (!selectedCustomer) return;
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'rechargeModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 شحن رصيد ${selectedCustomer.name}</h3>
+                <button class="close-btn" onclick="closeRechargeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="balance-info-box">
+                    <div>الرصيد الحالي: <strong>${selectedCustomer.balance.toFixed(2)} جنيه</strong></div>
+                    <div>التكلفة المطلوبة: <strong>${document.getElementById('totalCost').textContent} جنيه</strong></div>
+                    <div class="deficit">النقص: <strong>${Math.abs(selectedCustomer.balance - parseFloat(document.getElementById('totalCost').textContent)).toFixed(2)} جنيه</strong></div>
+                </div>
+                
+                <div class="input-group">
+                    <label>مبلغ الشحن:</label>
+                    <input type="number" id="rechargeAmount" step="0.01" min="0" value="${Math.abs(selectedCustomer.balance - parseFloat(document.getElementById('totalCost').textContent)).toFixed(2)}">
+                </div>
+                
+                <div class="input-group">
+                    <label>طريقة الدفع:</label>
+                    <select id="rechargePaymentMethod">
+                        <option value="نقدي">نقدي</option>
+                        <option value="كاش">كاش</option>
+                        <option value="فيزا">فيزا</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="confirmRecharge()">تأكيد الشحن</button>
+                <button class="cancel-btn" onclick="closeRechargeModal()">إلغاء</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+window.closeRechargeModal = function() {
+    const modal = document.getElementById('rechargeModal');
+    if (modal) modal.remove();
+};
+
+window.confirmRecharge = async function() {
+    const amount = parseFloat(document.getElementById('rechargeAmount').value);
+    const paymentMethod = document.getElementById('rechargePaymentMethod').value;
     
-    if (!confirm('هل تريد بدء الجلسة؟')) return;
+    if (!amount || amount <= 0) {
+        alert('⚠️ أدخل مبلغ صحيح!');
+        return;
+    }
     
     try {
-        const bookingRef = doc(db, "bookings", bookingId);
-        const bookingSnap = await getDoc(bookingRef);
-        const booking = bookingSnap.data();
-        
-        await updateDoc(bookingRef, {
-            status: 'started',
-            startedAt: Timestamp.now(),
-            startedBy: currentUser.name
-        });
-        
-        const customerRef = doc(db, "customers", booking.customerId);
+        const customerRef = doc(db, "customers", selectedCustomer.id);
         const customerSnap = await getDoc(customerRef);
-        const currentVisits = customerSnap.data().visitCount || 0;
+        const currentBalance = customerSnap.data().balance || 0;
+        const newBalance = currentBalance + amount;
         
         await updateDoc(customerRef, {
-            visitCount: currentVisits + 1,
+            balance: newBalance,
             updatedAt: Timestamp.now()
         });
         
-        await addDoc(collection(db, "visits"), {
-            customerId: booking.customerId,
-            customerName: booking.customerName,
-            visitDate: Timestamp.now(),
-            doctorId: booking.doctorId,
-            doctorName: booking.doctorName,
-            services: booking.services,
-            amount: booking.totalCost,
-            bookingId,
-            notes: `زيارة من خلال حجز - ${booking.services.map(s => s.name).join(', ')}`,
+        await addDoc(collection(db, "transactions"), {
+            customerId: selectedCustomer.id,
+            customerName: selectedCustomer.name,
+            type: 'deposit',
+            balanceType: 'normal',
+            amount,
+            previousBalance: currentBalance,
+            newBalance,
+            paymentMethod,
+            notes: `شحن رصيد - ${paymentMethod}`,
             createdAt: Timestamp.now(),
             createdBy: currentUser.name
         });
@@ -1693,155 +2153,25 @@ window.startSession = async function(bookingId) {
         try {
             const shiftModule = await import('../shift-management/shift-management.js');
             if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('بدء جلسة', `بدأت جلسة ${booking.customerName} - ${booking.doctorName}`);
+                await shiftModule.addShiftAction('شحن رصيد', `شحن ${amount.toFixed(2)} جنيه لـ ${selectedCustomer.name} - ${paymentMethod}`);
             }
         } catch (e) {
             console.log('لا يمكن تسجيل في الشيفت:', e);
         }
         
-        alert('✅ تم بدء الجلسة وتسجيل الزيارة!');
-    } catch (error) {
-        console.error("خطأ في بدء الجلسة:", error);
-        alert('❌ حدث خطأ في بدء الجلسة');
-    }
-};
-
-window.completeSession = async function(bookingId) {
-    console.log('✔️ إنهاء جلسة:', bookingId);
-    
-    if (!confirm('هل تريد إنهاء الجلسة؟')) return;
-    
-    try {
-        await updateDoc(doc(db, "bookings", bookingId), {
-            status: 'completed',
-            completedAt: Timestamp.now(),
-            completedBy: currentUser.name
-        });
+        selectedCustomer.balance = newBalance;
+        document.getElementById('selectedCustomerBalance').textContent = newBalance.toFixed(2);
+        document.getElementById('currentCustomerBalance').textContent = newBalance.toFixed(2);
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                const bookingSnap = await getDoc(doc(db, "bookings", bookingId));
-                const booking = bookingSnap.data();
-                await shiftModule.addShiftAction('إنهاء جلسة', `أنهيت جلسة ${booking.customerName}`);
-            }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
+        const totalCost = parseFloat(document.getElementById('totalCost').textContent) || 0;
+        updateBalanceStatus(newBalance, totalCost);
         
-        alert('✅ تم إنهاء الجلسة بنجاح!');
-    } catch (error) {
-        console.error("خطأ في إنهاء الجلسة:", error);
-        alert('❌ حدث خطأ في إنهاء الجلسة');
-    }
-};
-
-window.showCancelModal = function(bookingId, isNewCustomer) {
-    console.log('❌ عرض مودال إلغاء:', bookingId);
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>إلغاء الحجز</h3>
-                <button class="close-btn" onclick="this.closest('.modal').remove()">✕</button>
-            </div>
-            <div class="modal-body">
-                <p>اختر سبب الإلغاء:</p>
-                <div class="cancel-reasons">
-                    <label><input type="radio" name="cancelReason" value="العميل مردش"> العميل مردش</label>
-                    <label><input type="radio" name="cancelReason" value="العميل مجاش"> العميل مجاش</label>
-                    <label><input type="radio" name="cancelReason" value="other"> سبب آخر</label>
-                </div>
-                <textarea id="otherReason" class="hidden" placeholder="اكتب السبب..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="save-btn" onclick="executeCancelBooking('${bookingId}', ${isNewCustomer})">تأكيد الإلغاء</button>
-                <button class="cancel-btn" onclick="this.closest('.modal').remove()">إلغاء</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    modal.querySelectorAll('input[name="cancelReason"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.getElementById('otherReason').classList.toggle('hidden', this.value !== 'other');
-        });
-    });
-};
-
-window.executeCancelBooking = async function(bookingId, isNewCustomer) {
-    console.log('🗑️ تنفيذ إلغاء الحجز:', bookingId);
-    
-    const selectedReason = document.querySelector('input[name="cancelReason"]:checked');
-    if (!selectedReason) {
-        alert('⚠️ يرجى اختيار سبب الإلغاء');
-        return;
-    }
-    
-    let reason = selectedReason.value;
-    if (reason === 'other') {
-        reason = document.getElementById('otherReason').value.trim();
-        if (!reason) {
-            alert('⚠️ يرجى كتابة السبب');
-            return;
-        }
-    }
-    
-    try {
-        const bookingRef = doc(db, "bookings", bookingId);
-        const bookingSnap = await getDoc(bookingRef);
-        const booking = bookingSnap.data();
-        
-        if (!isNewCustomer && booking.status === 'confirmed' && booking.customerId) {
-            const customerRef = doc(db, "customers", booking.customerId);
-            const customerSnap = await getDoc(customerRef);
-            const currentBalance = customerSnap.data().balance || 0;
-            const newBalance = currentBalance + booking.totalCost;
-            
-            await updateDoc(customerRef, {
-                balance: newBalance,
-                updatedAt: Timestamp.now()
-            });
-            
-            await addDoc(collection(db, "transactions"), {
-                customerId: booking.customerId,
-                customerName: booking.customerName,
-                type: 'refund',
-                amount: booking.totalCost,
-                previousBalance: currentBalance,
-                newBalance,
-                paymentMethod: 'إرجاع',
-                notes: `إرجاع مبلغ حجز ملغي - السبب: ${reason}`,
-                createdAt: Timestamp.now(),
-                createdBy: currentUser.name
-            });
-        }
-        
-        await updateDoc(bookingRef, {
-            status: 'cancelled',
-            cancelReason: reason,
-            cancelledAt: Timestamp.now(),
-            cancelledBy: currentUser.name
-        });
-        
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('إلغاء حجز', `تم إلغاء حجز ${booking.customerName} - السبب: ${reason}`);
-            }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
-        
-        alert('✅ تم إلغاء الحجز' + (!isNewCustomer && booking.status === 'confirmed' ? ' وإرجاع المبلغ!' : '!'));
-        document.querySelector('.modal').remove();
+        alert('✅ تم شحن الرصيد بنجاح!');
+        closeRechargeModal();
         
     } catch (error) {
-        console.error("خطأ في إلغاء الحجز:", error);
-        alert('❌ حدث خطأ في الإلغاء');
+        console.error("خطأ في شحن الرصيد:", error);
+        alert('❌ حدث خطأ في شحن الرصيد');
     }
 };
 

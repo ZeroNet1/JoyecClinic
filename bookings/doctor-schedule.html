@@ -1,4 +1,3 @@
-/*doctor-schedule.html*/
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -69,6 +68,30 @@
                     <div id="selectedCustomerInfo" class="hidden">
                         <p><strong>العميل المختار:</strong> <span id="selectedCustomerName"></span></p>
                         <p><strong>الرصيد:</strong> <span id="selectedCustomerBalance"></span> جنيه</p>
+                    </div>
+                </div>
+
+                <!-- قسم نوع الحجز (يظهر فقط للعملاء الحاليين) -->
+                <div id="bookingTypeSection" class="hidden">
+                    <div class="input-group">
+                        <label>نوع الحجز:</label>
+                        <select id="bookingType" required>
+                            <option value="normal">حجز برصيد عادي</option>
+                            <option value="offer">حجز باستخدام عرض 🎁</option>
+                            <option value="laser">حجز برصيد الليزر ✨</option>
+                            <option value="derma">حجز برصيد الجلدية 🧴</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- قسم العروض المتاحة -->
+                <div id="offersSection" class="hidden">
+                    <div class="offers-header">
+                        <h4>🎁 العروض المتاحة</h4>
+                        <p class="offers-note">اختر عرض لاستخدام جلسة منه</p>
+                    </div>
+                    <div id="availableOffers" class="available-offers">
+                        <!-- سيتم ملء العروض هنا -->
                     </div>
                 </div>
 

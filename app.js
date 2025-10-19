@@ -11,7 +11,10 @@ import {
     getDoc,
     setDoc,
     collection,
-    getDocs
+    getDocs,
+    query,
+    where,
+    Timestamp
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // تكوين Firebase
@@ -30,6 +33,30 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ✅ دالة للتحقق من وجود شيفت نشط للمستخدم
+async function checkUserActiveShift(userId) {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const q = query(
+            collection(db, "shifts"),
+            where("userId", "==", userId),
+            where("startTime", ">=", Timestamp.fromDate(today)),
+            where("startTime", "<", Timestamp.fromDate(tomorrow)),
+            where("status", "==", "active")
+        );
+
+        const querySnapshot = await getDocs(q);
+        return !querySnapshot.empty;
+    } catch (error) {
+        console.error("خطأ في التحقق من الشيفت النشط:", error);
+        return false;
+    }
+}
+
 // دالة للتحقق من وجود مستخدمين وإنشاء مدير إذا لم يوجد
 async function initializeFirstAdmin() {
     try {
@@ -47,7 +74,6 @@ async function initializeFirstAdmin() {
                 const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
                 const user = userCredential.user;
                 
-                // استخدم setDoc مع UID كمفتاح بدلاً من addDoc
                 await setDoc(doc(db, "users", user.uid), {
                     name: adminName,
                     email: adminEmail,
@@ -62,7 +88,6 @@ async function initializeFirstAdmin() {
             } catch (authError) {
                 if (authError.code === 'auth/email-already-in-use') {
                     console.log("⚠️ الحساب موجود بالفعل في نظام المصادقة");
-                    // حاول تسجيل الدخول وإنشاء السجل في Firestore
                     try {
                         const userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
                         const user = userCredential.user;

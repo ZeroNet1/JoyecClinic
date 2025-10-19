@@ -123,7 +123,6 @@
             color: var(--primary-color);
         }
 
-        /* specific styling for the new active-offers card to make it stand out */
         .active-offers-card {
             background: linear-gradient(135deg,#fff7fb 0%, #ffeaf4 100%);
             border: 2px dashed rgba(214,51,132,0.12);
@@ -184,11 +183,101 @@
         .shift-status-indicator.inactive {
             background: #dc3545;
         }
+
+        /* ✅ نافذة تحذير منع تسجيل الخروج */
+        .logout-warning-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-warning-modal.active {
+            display: flex;
+        }
+
+        .logout-warning-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .logout-warning-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .logout-warning-content h2 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .logout-warning-content p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .logout-warning-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .logout-warning-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .logout-warning-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .logout-warning-btn.secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .logout-warning-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="shift-status-indicator" id="globalShiftStatus">
         🔄 جاري تحديث حالة الشيفت...
+    </div>
+
+    <!-- ✅ نافذة تحذير تسجيل الخروج -->
+    <div class="logout-warning-modal" id="logoutWarningModal">
+        <div class="logout-warning-content">
+            <div class="logout-warning-icon">⚠️</div>
+            <h2>لا يمكن تسجيل الخروج!</h2>
+            <p>لديك شيفت نشط حالياً. يجب عليك إنهاء الشيفت أولاً قبل تسجيل الخروج.</p>
+            <div class="logout-warning-buttons">
+                <button class="logout-warning-btn primary" onclick="goToShiftManagement()">
+                    الذهاب لإنهاء الشيفت
+                </button>
+                <button class="logout-warning-btn secondary" onclick="closeLogoutWarning()">
+                    إلغاء
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="header">
@@ -220,18 +309,16 @@
             <p>إدارة الموظفين والأرباح والصلاحيات</p>
         </div>
 
-        <!-- existing offers card -->
         <div class="card offers-card" id="offersCard" onclick="navigateTo('offers/offers.html')">
             <div class="card-icon">🎁</div>
             <h3>إدارة العروض</h3>
             <p>إضافة وإدارة العروض الترويجية والباكدجات</p>
         </div>
 
-        <!-- NEW: Active offers quick card -->
         <div class="card active-offers-card" id="activeOffersCard" onclick="navigateTo('offers/offers.html')">
             <div class="card-icon">🔥</div>
             <h3>العروض النشطة</h3>
-            <p id="activeOffersText">جارٍ التحميل...</p>
+            <p id="activeOffersText">جاري التحميل...</p>
         </div>
         
         <div class="card" id="inventoryCard" onclick="navigateTo('inventory/inventory.html')">
@@ -272,7 +359,6 @@
     </div>
 
     <script>
-        // دالة للتنقل للصفحات
         function navigateTo(url) {
             if (url !== '#') {
                 window.location.href = url;
@@ -281,19 +367,15 @@
             }
         }
 
-        // دالة للتحقق من وجود شيفت نشط قبل الانتقال للصفحات المحمية
         async function checkShiftAndNavigate(url) {
             try {
-                // جلب بيانات المستخدم الحالي
                 const userData = await getUserData();
                 
-                // إذا كان المستخدم أدمن، اسمح بالوصول مباشرة
                 if (userData.role === 'admin') {
                     navigateTo(url);
                     return;
                 }
                 
-                // التحقق من وجود شيفت نشط
                 const hasActiveShift = await checkActiveShift();
                 
                 if (hasActiveShift) {
@@ -307,9 +389,11 @@
             }
         }
 
-        // دالة محدثة للتحقق من وجود شيفت نشط
         async function checkActiveShift() {
             try {
+                const userData = await getUserData();
+                if (!userData) return false;
+
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const tomorrow = new Date(today);
@@ -317,6 +401,7 @@
 
                 const q = query(
                     collection(db, "shifts"),
+                    where("userId", "==", userData.uid),
                     where("startTime", ">=", Timestamp.fromDate(today)),
                     where("startTime", "<", Timestamp.fromDate(tomorrow)),
                     where("status", "==", "active")
@@ -330,25 +415,38 @@
             }
         }
 
-        // دالة للحصول على بيانات المستخدم
         async function getUserData() {
             const userData = localStorage.getItem('userData');
             return userData ? JSON.parse(userData) : null;
         }
 
-        // تحديث حالة الشيفت العالمية
         function updateGlobalShiftStatus(hasActiveShift, activeShifts = []) {
             const statusElement = document.getElementById('globalShiftStatus');
             
-            if (hasActiveShift) {
-                statusElement.textContent = `✅ الشيفت نشط - ${activeShifts.length} شيفت نشط`;
+            if (activeShifts.length > 0) {
+                statusElement.textContent = `✅ ${activeShifts.length} شيفت نشط`;
                 statusElement.classList.remove('inactive');
                 statusElement.style.display = 'block';
             } else {
-                statusElement.textContent = '❌ لا يوجد شيفت نشط';
+                statusElement.textContent = '❌ لا يوجد شيفتات نشطة';
                 statusElement.classList.add('inactive');
                 statusElement.style.display = 'block';
             }
+        }
+
+        // ✅ دالة لإظهار تحذير عدم تسجيل الخروج
+        function showLogoutWarning() {
+            document.getElementById('logoutWarningModal').classList.add('active');
+        }
+
+        // ✅ دالة لإخفاء التحذير
+        function closeLogoutWarning() {
+            document.getElementById('logoutWarningModal').classList.remove('active');
+        }
+
+        // ✅ دالة للذهاب لصفحة إدارة الشيفتات
+        function goToShiftManagement() {
+            window.location.href = 'shift-management/shift-management.html';
         }
     </script>
     
@@ -371,7 +469,6 @@
         } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
         import { startGlobalShiftListener } from "./shared/real-time-shift.js";
 
-        // تكوين Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAZSMTIQ9o2Aqool263jkvVq-qzhEHEFfM",
             authDomain: "beautycenter-6e1cf.firebaseapp.com",
@@ -386,7 +483,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // جعل db و Timestamp متاحين globally للدوال الأخرى
         window.db = db;
         window.Timestamp = Timestamp;
         window.collection = collection;
@@ -395,12 +491,35 @@
         window.getDocs = getDocs;
 
         let globalShiftListener = null;
+        let currentUserUid = null;
 
-        // دالة لجلب عدد العروض النشطة وعرضه في الكرت
+        // ✅ دالة للتحقق من وجود شيفت نشط للمستخدم الحالي
+        async function checkUserActiveShift(userId) {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                const q = query(
+                    collection(db, "shifts"),
+                    where("userId", "==", userId),
+                    where("startTime", ">=", Timestamp.fromDate(today)),
+                    where("startTime", "<", Timestamp.fromDate(tomorrow)),
+                    where("status", "==", "active")
+                );
+
+                const querySnapshot = await getDocs(q);
+                return !querySnapshot.empty;
+            } catch (error) {
+                console.error("❌ خطأ في التحقق من الشيفت:", error);
+                return false;
+            }
+        }
+
         async function fetchActiveOffersCount() {
             try {
                 const offersRef = collection(db, 'offers');
-                // بسيط: نعتبر العرض نشط إذا الحقل active === true
                 const q = query(offersRef, where('active', '==', true));
                 const snap = await getDocs(q);
                 const count = snap.size;
@@ -415,32 +534,26 @@
             }
         }
 
-        // التحقق من المصادقة وعرض معلومات المستخدم
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                currentUserUid = user.uid;
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     document.getElementById('userName').textContent = userData.name;
                     document.getElementById('userRole').textContent = userData.role;
                     
-                    // حفظ بيانات المستخدم في localStorage
                     localStorage.setItem('userData', JSON.stringify({
                         uid: user.uid,
                         ...userData
                     }));
                     
-                    // إظهار/إخفاء البطاقات بناءً على دور المستخدم
                     if (userData.role !== 'admin') {
                         document.getElementById('accountsCard').classList.add('hidden');
                         document.getElementById('adminCard').classList.add('hidden');
                     }
 
-                    // بدء الاستماع للتغيرات في الشيفتات
                     startGlobalShiftMonitoring();
-
-                    // جلب عدد العروض النشطة وعرضها في الكرت
-                    // استدعاء أولي، ويمكنك استدعاؤها لاحقًا لتحديث
                     fetchActiveOffersCount();
                 } else {
                     window.location.href = "index.html";
@@ -450,7 +563,6 @@
             }
         });
 
-        // بدء مراقبة الشيفتات العالمية
         function startGlobalShiftMonitoring() {
             if (globalShiftListener) {
                 globalShiftListener();
@@ -462,20 +574,33 @@
             });
         }
 
-        // تسجيل الخروج
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                if (globalShiftListener) {
-                    globalShiftListener();
+        // ✅ معالج تسجيل الخروج المحدّث
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                // التحقق من وجود شيفت نشط للمستخدم الحالي
+                const hasActiveShift = await checkUserActiveShift(currentUserUid);
+                
+                if (hasActiveShift) {
+                    // عرض تحذير منع تسجيل الخروج
+                    showLogoutWarning();
+                    return;
                 }
-                signOut(auth).then(() => {
+                
+                // إذا لم يكن هناك شيفت نشط، تأكيد تسجيل الخروج
+                if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                    if (globalShiftListener) {
+                        globalShiftListener();
+                    }
+                    await signOut(auth);
                     localStorage.removeItem('userData');
                     window.location.href = "index.html";
-                });
+                }
+            } catch (error) {
+                console.error('❌ خطأ في تسجيل الخروج:', error);
+                alert('حدث خطأ أثناء تسجيل الخروج');
             }
         });
 
-        // تنظيف المستمعين عند مغادرة الصفحة
         window.addEventListener('beforeunload', () => {
             if (globalShiftListener) {
                 globalShiftListener();

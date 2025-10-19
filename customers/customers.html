@@ -1,58 +1,108 @@
-//customers.html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة العملاء - مركز التجميل</title>
-
-    <!-- ستايلات عامة ومخصصة -->
-    <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="customers.css" />
-
-    <style>
-      /* تحسين طفيف لعرض select داخل الفورم (اختياري) */
-      select#customerPaymentMethod {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 16px;
-        background: white;
-      }
-    </style>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="customers.css">
 </head>
 <body>
     <div class="header">
         <h1>إدارة العملاء</h1>
         <div class="user-info">
-            <span id="userName"></span>
-            <button onclick="window.location.href='../main.html'" class="back-btn">العودة للرئيسية</button>
+            <span id="userName">المستخدم</span>
+            <div class="header-actions">
+                <button onclick="window.location.href='customer-list.html'" class="back-btn">قائمة العملاء</button>
+                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+            </div>
         </div>
     </div>
     
     <div class="container">
         <!-- قسم إضافة عميل جديد -->
         <div class="form-section">
-            <h2>تسجيل عميل جديد</h2>
+            <h2>📝 تسجيل عميل جديد</h2>
             <form id="addCustomerForm" autocomplete="off">
                 <div class="input-group">
                     <label for="customerName">الاسم الكامل:</label>
-                    <input type="text" id="customerName" required placeholder="أدخل الاسم الكامل" />
+                    <input type="text" id="customerName" required placeholder="أدخل الاسم الكامل">
                 </div>
+                
                 <div class="input-group">
                     <label for="customerPhone">رقم الهاتف:</label>
-                    <input type="tel" id="customerPhone" required placeholder="مثال: 01012345678" />
-                </div>
-                <div class="input-group">
-                    <label for="customerBalance">الرصيد المبدئي (اختياري):</label>
-                    <input type="number" id="customerBalance" step="0.01" min="0" placeholder="0.00" />
+                    <input type="tel" id="customerPhone" required placeholder="مثال: 01012345678">
                 </div>
 
-                <!-- خيار طريقة الدفع الافتراضية -->
+                <!-- قسم الرصيد المبدئي مع اختيار النوع -->
+                <div class="balance-options">
+                    <h3>💰 الرصيد المبدئي (اختياري)</h3>
+                    
+                    <!-- الرصيد العادي -->
+                    <div class="balance-type-card">
+                        <div class="balance-type-header">
+                            <input type="checkbox" id="enableNormalBalance" class="balance-checkbox">
+                            <label for="enableNormalBalance" class="balance-type-label">
+                                <span class="balance-icon">💵</span>
+                                <span class="balance-name">الرصيد العادي</span>
+                            </label>
+                        </div>
+                        <div class="balance-input-group hidden" id="normalBalanceGroup">
+                            <input type="number" id="customerBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
+                            <span class="currency">جنيه</span>
+                        </div>
+                    </div>
+
+                    <!-- رصيد العروض -->
+                    <div class="balance-type-card offers-card">
+                        <div class="balance-type-header">
+                            <input type="checkbox" id="enableOffersBalance" class="balance-checkbox">
+                            <label for="enableOffersBalance" class="balance-type-label">
+                                <span class="balance-icon">💰</span>
+                                <span class="balance-name">رصيد العروض</span>
+                            </label>
+                        </div>
+                        <div class="balance-input-group hidden" id="offersBalanceGroup">
+                            <input type="number" id="offersBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
+                            <span class="currency">جنيه</span>
+                        </div>
+                    </div>
+
+                    <!-- رصيد الليزر -->
+                    <div class="balance-type-card laser-card">
+                        <div class="balance-type-header">
+                            <input type="checkbox" id="enableLaserBalance" class="balance-checkbox">
+                            <label for="enableLaserBalance" class="balance-type-label">
+                                <span class="balance-icon">✨</span>
+                                <span class="balance-name">رصيد الليزر</span>
+                            </label>
+                        </div>
+                        <div class="balance-input-group hidden" id="laserBalanceGroup">
+                            <input type="number" id="laserBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
+                            <span class="currency">جنيه</span>
+                        </div>
+                    </div>
+
+                    <!-- رصيد الجلدية -->
+                    <div class="balance-type-card derma-card">
+                        <div class="balance-type-header">
+                            <input type="checkbox" id="enableDermaBalance" class="balance-checkbox">
+                            <label for="enableDermaBalance" class="balance-type-label">
+                                <span class="balance-icon">🧴</span>
+                                <span class="balance-name">رصيد الجلدية</span>
+                            </label>
+                        </div>
+                        <div class="balance-input-group hidden" id="dermaBalanceGroup">
+                            <input type="number" id="dermaBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
+                            <span class="currency">جنيه</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- طريقة الدفع -->
                 <div class="input-group">
                     <label for="customerPaymentMethod">طريقة الدفع الافتراضية:</label>
-                    <select id="customerPaymentMethod" aria-label="طريقة الدفع الافتراضية">
+                    <select id="customerPaymentMethod">
                         <option value="نقدي">نقدي</option>
                         <option value="كاش">كاش</option>
                         <option value="فيزا">فيزا</option>
@@ -60,9 +110,9 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="save-btn">حفظ العميل</button>
+                    <button type="submit" class="save-btn">💾 حفظ العميل</button>
                     <button type="button" class="view-customers-btn" onclick="window.location.href='customer-list.html'">
-                        العملاء الحاليين
+                        👥 قائمة العملاء
                     </button>
                 </div>
             </form>
@@ -72,32 +122,57 @@
         
         <!-- إحصائيات سريعة -->
         <div class="stats-section">
-            <h2>إحصائيات سريعة</h2>
+            <h2>📊 إحصائيات سريعة</h2>
             <div class="stats-grid">
-                <div class="stat-card" title="إجمالي عدد العملاء">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
                     <div class="stat-number" id="totalCustomers">0</div>
                     <div class="stat-label">إجمالي العملاء</div>
                 </div>
-                <div class="stat-card" title="مجموع أرصدة العملاء">
-                    <div class="stat-number" id="totalBalance">0.00</div>
-                    <div class="stat-label">إجمالي الأرصدة (جنيه)</div>
-                </div>
-                <div class="stat-card" title="عدد العملاء الجدد اليوم">
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
                     <div class="stat-number" id="newCustomers">0</div>
                     <div class="stat-label">عملاء جدد اليوم</div>
                 </div>
             </div>
 
-            <!-- رابط سريع لإدارة باقي العملاء -->
-            <div style="margin-top:18px; text-align:center;">
-                <button class="view-customers-btn" onclick="window.location.href='customer-list.html'">
-                    عرض قائمة العملاء
+            <div class="quick-actions">
+                <button class="action-btn" onclick="window.location.href='customer-list.html'">
+                    📋 عرض قائمة العملاء
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- سكربت التطبيق -->
     <script type="module" src="customers.js"></script>
+    <script>
+        // تفعيل/تعطيل حقول الرصيد عند تحديد الخيارات
+        document.addEventListener('DOMContentLoaded', function() {
+            const balanceTypes = [
+                { checkbox: 'enableNormalBalance', group: 'normalBalanceGroup', input: 'customerBalance' },
+                { checkbox: 'enableOffersBalance', group: 'offersBalanceGroup', input: 'offersBalance' },
+                { checkbox: 'enableLaserBalance', group: 'laserBalanceGroup', input: 'laserBalance' },
+                { checkbox: 'enableDermaBalance', group: 'dermaBalanceGroup', input: 'dermaBalance' }
+            ];
+
+            balanceTypes.forEach(type => {
+                const checkbox = document.getElementById(type.checkbox);
+                const group = document.getElementById(type.group);
+                const input = document.getElementById(type.input);
+
+                if (checkbox && group && input) {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            group.classList.remove('hidden');
+                            input.focus();
+                        } else {
+                            group.classList.add('hidden');
+                            input.value = '';
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

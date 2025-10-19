@@ -1,4 +1,4 @@
-// shared/auth.js - النسخة المحدثة
+// shared/auth.js - النسخة المحدثة مع فحص الشيفت الخاص بالمستخدم
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getAuth, 
@@ -11,7 +11,8 @@ import {
     collection,
     query,
     where,
-    getDocs
+    getDocs,
+    Timestamp
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -28,7 +29,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// دالة للتحقق من وجود شيفت نشط
+// ✅ دالة للتحقق من وجود شيفت نشط للمستخدم الحالي فقط
 export async function checkActiveShift() {
     return new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
@@ -38,7 +39,7 @@ export async function checkActiveShift() {
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
                         
-                        // إذا كان المستخدم من نوع استقبال، تحقق من وجود شيفت نشط
+                        // إذا كان المستخدم من نوع استقبال، تحقق من وجود شيفت نشط له فقط
                         if (userData.role === 'reception') {
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
@@ -47,16 +48,16 @@ export async function checkActiveShift() {
                             
                             const q = query(
                                 collection(db, "shifts"),
-                                where("userId", "==", user.uid),
-                                where("startTime", ">=", today),
-                                where("startTime", "<", tomorrow),
+                                where("userId", "==", user.uid), // ✅ فقط شيفتات المستخدم الحالي
+                                where("startTime", ">=", Timestamp.fromDate(today)),
+                                where("startTime", "<", Timestamp.fromDate(tomorrow)),
                                 where("status", "==", "active")
                             );
                             
                             const querySnapshot = await getDocs(q);
                             
                             if (querySnapshot.empty) {
-                                // لا يوجد شيفت نشط، توجيه إلى صفحة الشيفتات
+                                // لا يوجد شيفت نشط للمستخدم، توجيه إلى صفحة الشيفتات
                                 if (!window.location.href.includes('shift-management.html')) {
                                     window.location.href = '../shift-management/shift-management.html';
                                 }
@@ -96,9 +97,9 @@ export async function checkUserRoleWithShift(requiredRole = null) {
                             return;
                         }
                         
-                        // إذا كان المستخدم من نوع استقبال، تحقق من وجود شيفت نشط
+                        // ✅ إذا كان المستخدم من نوع استقبال، تحقق من وجود شيفت نشط له فقط
                         if (userData.role === 'reception') {
-                            const hasActiveShift = await checkActiveShift();
+                            const hasActiveShift = await checkUserActiveShift(user.uid);
                             if (!hasActiveShift) {
                                 resolve(false);
                                 return;
@@ -121,6 +122,39 @@ export async function checkUserRoleWithShift(requiredRole = null) {
             }
         });
     });
+}
+
+// ✅ دالة مساعدة للتحقق من شيفت مستخدم معين
+async function checkUserActiveShift(userId) {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const q = query(
+            collection(db, "shifts"),
+            where("userId", "==", userId),
+            where("startTime", ">=", Timestamp.fromDate(today)),
+            where("startTime", "<", Timestamp.fromDate(tomorrow)),
+            where("status", "==", "active")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            // لا يوجد شيفت نشط، توجيه إلى صفحة الشيفتات
+            if (!window.location.href.includes('shift-management.html')) {
+                window.location.href = '../shift-management/shift-management.html';
+            }
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error("خطأ في التحقق من الشيفت:", error);
+        return false;
+    }
 }
 
 // دالة للتحقق من صلاحية المستخدم - الإصدار الأساسي
