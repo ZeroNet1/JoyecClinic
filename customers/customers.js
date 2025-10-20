@@ -39,6 +39,38 @@ checkUserRoleWithShift().then(userData => {
   console.error('خطأ في التحقق من صلاحية المستخدم:', err);
 });
 
+checkUserRoleWithShift().then(userData => {
+    if (userData) {
+        const userNameEl = document.getElementById('userName');
+        if (userNameEl) userNameEl.textContent = userData.name || '';
+        currentUserName = userData.name || "نظام";
+        loadStats();
+        setupCustomerForm();
+        
+        // ✅ تحميل الشيفت النشط تلقائياً
+        loadActiveShift();
+    }
+}).catch(err => {
+    console.error('خطأ في التحقق من صلاحية المستخدم:', err);
+});
+
+// دالة لتحميل الشيفت النشط
+async function loadActiveShift() {
+    try {
+        const shiftModule = await import('../shift-management/shift-management.js');
+        if (shiftModule && shiftModule.hasActiveShift) {
+            const hasActive = await shiftModule.hasActiveShift();
+            if (hasActive) {
+                console.log('✅ تم تحميل الشيفت النشط في صفحة العملاء');
+            } else {
+                console.log('ℹ️ لا يوجد شيفت نشط في صفحة العملاء');
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ لا يمكن تحميل معلومات الشيفت:', error.message);
+    }
+}
+
 async function setupCustomerForm() {
   const form = document.getElementById('addCustomerForm');
   if (!form) return;
@@ -206,40 +238,49 @@ async function setupCustomerForm() {
         console.log('✅ تم تسجيل معاملة رصيد الجلدية:', dermaTransactionRef.id);
       }
 
-      // ✅ 4. تسجيل في الشيفت (آخر خطوة)
-      try {
-        const shiftModule = await import('../shift-management/shift-management.js');
-        if (shiftModule && shiftModule.addShiftAction) {
-          // بناء نص وصفي للأرصدة
-          const balancesText = [];
-          if (primaryBalance > 0) balancesText.push(`أساسي: ${primaryBalance.toFixed(2)}`);
-          if (offersBalance > 0) balancesText.push(`عروض: ${offersBalance.toFixed(2)}`);
-          if (laserBalance > 0) balancesText.push(`ليزر: ${laserBalance.toFixed(2)}`);
-          if (dermaBalance > 0) balancesText.push(`جلدية: ${dermaBalance.toFixed(2)}`);
-          
-          const balancesSummary = balancesText.length > 0 ? ` - الأرصدة: ${balancesText.join(', ')} جنيه` : '';
-          
-          await shiftModule.addShiftAction(
-            'إضافة عميل',
-            `تم تسجيل عميل جديد: ${name} - هاتف: ${phoneKey}${balancesSummary} - ${paymentMethod} - ID: ${generatedNumericId}`,
-            name,
-            totalPaidAmount,
-            paymentMethod,
-            {
-              actionCategory: 'customer',
-              customerId: String(generatedNumericId),
-              primaryBalance: primaryBalance,
-              offersBalance: offersBalance,
-              laserBalance: laserBalance,
-              dermaBalance: dermaBalance
-            }
-          );
-          
-          console.log('✅ تم تسجيل العميل في الشيفت بنجاح');
+// ✅ 4. تسجيل في الشيفت (آخر خطوة) - مع التحقق من الشيفت النشط
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // التحقق من وجود شيفت نشط أولاً
+        const hasActiveShift = await shiftModule.hasActiveShift();
+        
+        if (hasActiveShift) {
+            // بناء نص وصفي للأرصدة
+            const balancesText = [];
+            if (primaryBalance > 0) balancesText.push(`أساسي: ${primaryBalance.toFixed(2)}`);
+            if (offersBalance > 0) balancesText.push(`عروض: ${offersBalance.toFixed(2)}`);
+            if (laserBalance > 0) balancesText.push(`ليزر: ${laserBalance.toFixed(2)}`);
+            if (dermaBalance > 0) balancesText.push(`جلدية: ${dermaBalance.toFixed(2)}`);
+            
+            const balancesSummary = balancesText.length > 0 ? ` - الأرصدة: ${balancesText.join(', ')} جنيه` : '';
+            
+            // ✅ الإصلاح: تمرير جميع البارامترات المطلوبة
+            await shiftModule.addShiftAction(
+                'إضافة عميل',
+                `تم تسجيل عميل جديد: ${name} - هاتف: ${phoneKey}${balancesSummary} - ${paymentMethod} - ID: ${generatedNumericId}`,
+                name, // customerName
+                totalPaidAmount, // amount
+                paymentMethod, // paymentMethod
+                {
+                    actionCategory: 'customer',
+                    customerId: String(generatedNumericId),
+                    primaryBalance: primaryBalance,
+                    offersBalance: offersBalance,
+                    laserBalance: laserBalance,
+                    dermaBalance: dermaBalance,
+                    services: ['إنشاء حساب'] // إضافة خدمات لتظهر في التقرير
+                }
+            );
+            
+            console.log('✅ تم تسجيل العميل في الشيفت بنجاح');
+        } else {
+            console.log('⚠️ لا يوجد شيفت نشط - تم تخطي تسجيل العميل في الشيفت');
         }
-      } catch (shiftError) {
-        console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError.message);
-      }
+    }
+} catch (shiftError) {
+    console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError.message);
+}
 
       // ✅ بناء رسالة النجاح مع تفاصيل الأرصدة
       let successMessage = `✅ تم تسجيل العميل بنجاح!\n\n`;

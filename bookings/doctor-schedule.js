@@ -1247,27 +1247,52 @@ async function addNewBooking(e) {
         
         await addDoc(collection(db, "bookings"), bookingData);
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                let bookingNote = `تم إضافة حجز لـ ${customerName} - ${selectedServices.length} خدمة`;
-                if (bookingType === 'offer') {
-                    bookingNote += ` - حجز بعرض: ${selectedOfferName}`;
-                } else if (bookingType === 'laser') {
-                    bookingNote += ` - حجز برصيد الليزر`;
-                } else if (bookingType === 'derma') {
-                    bookingNote += ` - حجز برصيد الجلدية`;
-                } else {
-                    bookingNote += ` - ${totalCost.toFixed(2)} جنيه`;
-                    if (currentDiscount > 0) {
-                        bookingNote += ` (تخفيض ${currentDiscount.toFixed(2)} جنيه)`;
-                    }
-                }
-                await shiftModule.addShiftAction('إضافة حجز', bookingNote);
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        let bookingNote = `تم إضافة حجز لـ ${customerName} - ${selectedServices.length} خدمة`;
+        let shiftAmount = 0;
+        let shiftPaymentMethod = null;
+
+        if (bookingType === 'offer') {
+            bookingNote += ` - حجز بعرض: ${selectedOfferName}`;
+            shiftAmount = 0; // الحجز بالعرض بدون دفع
+            shiftPaymentMethod = 'عرض';
+        } else if (bookingType === 'laser') {
+            bookingNote += ` - حجز برصيد الليزر`;
+            shiftAmount = totalCost;
+            shiftPaymentMethod = 'رصيد ليزر';
+        } else if (bookingType === 'derma') {
+            bookingNote += ` - حجز برصيد الجلدية`;
+            shiftAmount = totalCost;
+            shiftPaymentMethod = 'رصيد جلدية';
+        } else {
+            bookingNote += ` - ${totalCost.toFixed(2)} جنيه`;
+            if (currentDiscount > 0) {
+                bookingNote += ` (تخفيض ${currentDiscount.toFixed(2)} جنيه)`;
             }
-        } catch (err) {
-            console.log('لا يمكن تسجيل في الشيفت:', err);
+            shiftAmount = totalCost;
+            shiftPaymentMethod = 'حجز مسبق';
         }
+        
+        // ✅ الإصلاح: تمرير جميع البارامترات
+        await shiftModule.addShiftAction(
+            'إضافة حجز', 
+            bookingNote,
+            customerName,
+            shiftAmount,
+            shiftPaymentMethod,
+            {
+                actionCategory: 'booking',
+                services: selectedServices.map(s => s.name),
+                bookingType: bookingType,
+                discount: currentDiscount
+            }
+        );
+    }
+} catch (err) {
+    console.log('لا يمكن تسجيل في الشيفت:', err);
+}
         
         alert('✅ تم إضافة الحجز بنجاح!');
         hideAddBookingModal();
@@ -1396,15 +1421,50 @@ window.confirmBooking = async function(bookingId, isNewCustomer, bookingData) {
                 alert(`✅ تم تأكيد الحجز وخصم المبلغ من رصيد ${balanceTypeName} بنجاح!`);
             }
             
-            // تسجيل في الشيفت
+            // تسجيل في الشيفت - الإصدار المصحح بالكامل
             try {
                 const shiftModule = await import('../shift-management/shift-management.js');
                 if (shiftModule && shiftModule.addShiftAction) {
                     let actionNote = `تأكيد حجز ${booking.customerName} - ${booking.services.map(s => s.name).join(', ')}`;
+                    let paymentMethod = 'رصيد داخلي';
+                    let amountToRecord = 0; // ✅ الإصلاح: 0 لأن الدفع من الرصيد الداخلي
+                    
                     if (bookingType === 'offer') {
                         actionNote += ` - بعرض: ${booking.offerName}`;
+                        paymentMethod = 'عرض';
+                        amountToRecord = 0; // الحجز بالعرض بدون دفع
+                    } else if (bookingType === 'laser') {
+                        paymentMethod = 'رصيد ليزر';
+                        amountToRecord = 0; // ✅ لا تسجل الدفع عند استخدام الرصيد
+                    } else if (bookingType === 'derma') {
+                        paymentMethod = 'رصيد جلدية';
+                        amountToRecord = 0; // ✅ لا تسجل الدفع عند استخدام الرصيد
                     }
-                    await shiftModule.addShiftAction('تأكيد حجز', actionNote, booking.customerName, booking.totalCost, bookingType === 'normal' ? 'رصيد داخلي' : `رصيد ${bookingType}`);
+                    
+                    // ✅ التحقق من وجود شيفت نشط قبل التسجيل
+                    const hasActiveShift = await shiftModule.hasActiveShift();
+                    if (!hasActiveShift) {
+                        console.log('⚠️ لا يوجد شيفت نشط - تم تخطي تسجيل الحجز في الشيفت');
+                        return;
+                    }
+                    
+                    // ✅ الإصلاح الكامل: تمرير جميع البارامترات المطلوبة
+                    await shiftModule.addShiftAction(
+                        'تأكيد حجز', 
+                        actionNote,
+                        booking.customerName,
+                        amountToRecord,
+                        paymentMethod,
+                        { 
+                            actionCategory: 'booking',
+                            services: booking.services.map(s => s.name),
+                            bookingType: bookingType,
+                            customerId: booking.customerId,
+                            bookingId: bookingId
+                        }
+                    );
+                    
+                    console.log('✅ تم تسجيل تأكيد الحجز في الشيفت بنجاح');
                 }
             } catch (e) {
                 console.log('لا يمكن تسجيل في الشيفت:', e);
@@ -1459,20 +1519,31 @@ window.startSession = async function(bookingId) {
             createdBy: currentUser.name
         });
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('بدء جلسة', `بدأت جلسة ${booking.customerName} - ${booking.doctorName}`);
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // ✅ الإصلاح: تمرير جميع البارامترات
+        await shiftModule.addShiftAction(
+            'بدء جلسة', 
+            `بدأت جلسة ${booking.customerName} - ${booking.doctorName}`,
+            booking.customerName,
+            0, // بدون دفع إضافي
+            null,
+            { 
+                actionCategory: 'session',
+                services: booking.services.map(s => s.name)
             }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
-        
-        alert('✅ تم بدء الجلسة وتسجيل الزيارة!');
-    } catch (error) {
-        console.error("خطأ في بدء الجلسة:", error);
-        alert('❌ حدث خطأ في بدء الجلسة');
+        );
     }
+} catch (e) {
+    console.log('لا يمكن تسجيل في الشيفت:', e);
+}
+
+alert('✅ تم بدء الجلسة وتسجيل الزيارة!');
+} catch (error) {
+console.error("خطأ في بدء الجلسة:", error);
+alert('❌ حدث خطأ في بدء الجلسة');
+}
 };
 
 window.completeSession = async function(bookingId) {
@@ -1489,20 +1560,31 @@ window.completeSession = async function(bookingId) {
             completedBy: currentUser.name
         });
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('إكمال حجز', `أنهيت جلسة ${booking.customerName} - ${booking.services?.map(s => s.name).join(', ') || 'خدمات'}`);
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // ✅ الإصلاح: تمرير جميع البارامترات
+        await shiftModule.addShiftAction(
+            'إكمال حجز', 
+            `أنهيت جلسة ${booking.customerName} - ${booking.services?.map(s => s.name).join(', ') || 'خدمات'}`,
+            booking.customerName,
+            0, // بدون دفع إضافي
+            null,
+            { 
+                actionCategory: 'session',
+                services: booking.services?.map(s => s.name) || []
             }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
-        
-        alert('✅ تم إنهاء الجلسة بنجاح!');
-    } catch (error) {
-        console.error("خطأ في إنهاء الجلسة:", error);
-        alert('❌ حدث خطأ في إنهاء الجلسة');
+        );
     }
+} catch (e) {
+    console.log('لا يمكن تسجيل في الشيفت:', e);
+}
+
+alert('✅ تم إنهاء الجلسة بنجاح!');
+} catch (error) {
+console.error("خطأ في إنهاء الجلسة:", error);
+alert('❌ حدث خطأ في إنهاء الجلسة');
+}
 };
 
 window.showCancelModal = function(bookingId, isNewCustomer) {
@@ -1618,22 +1700,33 @@ window.executeCancelBooking = async function(bookingId, isNewCustomer) {
             cancelledBy: currentUser.name
         });
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('إلغاء حجز', `تم إلغاء حجز ${booking.customerName} - السبب: ${reason}`);
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // ✅ الإصلاح: تمرير جميع البارامترات
+        await shiftModule.addShiftAction(
+            'إلغاء حجز', 
+            `تم إلغاء حجز ${booking.customerName} - السبب: ${reason}`,
+            booking.customerName,
+            0, // بدون دفع
+            null,
+            { 
+                actionCategory: 'booking',
+                cancelReason: reason
             }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
-        
-        alert('✅ تم إلغاء الحجز' + (!isNewCustomer && booking.status === 'confirmed' ? ' وإرجاع المبلغ!' : '!'));
-        document.querySelector('.modal').remove();
-        
-    } catch (error) {
-        console.error("خطأ في إلغاء الحجز:", error);
-        alert('❌ حدث خطأ في الإلغاء');
+        );
     }
+} catch (e) {
+    console.log('لا يمكن تسجيل في الشيفت:', e);
+}
+
+alert('✅ تم إلغاء الحجز' + (!isNewCustomer && booking.status === 'confirmed' ? ' وإرجاع المبلغ!' : '!'));
+document.querySelector('.modal').remove();
+
+} catch (error) {
+console.error("خطأ في إلغاء الحجز:", error);
+alert('❌ حدث خطأ في الإلغاء');
+}
 };
 
 function showPaymentModalForNewCustomer(bookingId, booking) {
@@ -1766,15 +1859,38 @@ window.processNewCustomerPayment = async function(bookingId) {
             confirmedBy: currentUser.name
         });
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('تأكيد حجز عميل جديد', `تم إنشاء حساب لـ ${booking.customerName} ودفع ${amount.toFixed(2)} جنيه مقابل ${booking.services.length} خدمة`);
-                await shiftModule.addShiftAction('إضافة عميل', `تم إضافة العميل ${booking.customerName} - رقم ${customerId}`);
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // ✅ الإصلاح: تمرير جميع البارامترات
+        await shiftModule.addShiftAction(
+            'تأكيد حجز عميل جديد', 
+            `تم إنشاء حساب لـ ${booking.customerName} ودفع ${amount.toFixed(2)} جنيه مقابل ${booking.services.length} خدمة`,
+            booking.customerName,
+            amount,
+            paymentMethod,
+            { 
+                actionCategory: 'booking',
+                services: booking.services.map(s => s.name),
+                isNewCustomer: true
             }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
+        );
+        
+        await shiftModule.addShiftAction(
+            'إضافة عميل', 
+            `تم إضافة العميل ${booking.customerName} - رقم ${customerId}`,
+            booking.customerName,
+            amount,
+            paymentMethod,
+            { 
+                actionCategory: 'customer',
+                customerId: customerId
+            }
+        );
+    }
+} catch (e) {
+    console.log('لا يمكن تسجيل في الشيفت:', e);
+}
         
         alert(`✅ تم إنشاء الحساب بنجاح!\nرقم العميل: ${customerId}\nتم الدفع والتأكيد.`);
         document.getElementById('paymentModal').remove();
@@ -1865,14 +1981,25 @@ window.confirmRecharge = async function() {
             createdBy: currentUser.name
         });
         
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                await shiftModule.addShiftAction('شحن رصيد', `شحن ${amount.toFixed(2)} جنيه لـ ${selectedCustomer.name} - ${paymentMethod}`);
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // ✅ الإصلاح: تمرير جميع البارامترات
+        await shiftModule.addShiftAction(
+            'شحن رصيد', 
+            `شحن ${amount.toFixed(2)} جنيه لـ ${selectedCustomer.name} - ${paymentMethod}`,
+            selectedCustomer.name,
+            amount,
+            paymentMethod,
+            { 
+                actionCategory: 'deposit',
+                balanceType: 'normal'
             }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
+        );
+    }
+} catch (e) {
+    console.log('لا يمكن تسجيل في الشيفت:', e);
+}
         
         selectedCustomer.balance = newBalance;
         document.getElementById('selectedCustomerBalance').textContent = newBalance.toFixed(2);
@@ -1889,6 +2016,21 @@ window.confirmRecharge = async function() {
         alert('❌ حدث خطأ في شحن الرصيد');
     }
 };
+// دالة مساعدة لتحديث إجراءات الشيفت
+async function refreshShiftActions() {
+    try {
+        const shiftModule = await import('../shift-management/shift-management.js');
+        if (shiftModule && shiftModule.refreshShiftActions) {
+            await shiftModule.refreshShiftActions();
+            console.log('✅ تم تحديث إجراءات الشيفت');
+        }
+    } catch (error) {
+        console.log('⚠️ لا يمكن تحديث إجراءات الشيفت:', error.message);
+    }
+}
+
+// استدع هذه الدالة بعد كل عملية مهمة
+window.refreshShiftActions = refreshShiftActions;
 
 function debounce(fn, wait) {
     let t;
