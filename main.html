@@ -358,97 +358,131 @@
         </div>
     </div>
 
-    <script>
-        function navigateTo(url) {
-            if (url !== '#') {
-                window.location.href = url;
-            } else {
-                alert('هذه الخدمة قيد التطوير، ستكون متاحة قريباً!');
-            }
+<script>
+    function navigateTo(url) {
+        if (url !== '#') {
+            window.location.href = url;
+        } else {
+            alert('هذه الخدمة قيد التطوير، ستكون متاحة قريباً!');
         }
+    }
 
-        async function checkShiftAndNavigate(url) {
-            try {
-                const userData = await getUserData();
+    // ✅ دالة محدثة للتحقق من الشيفت قبل التنقل
+    async function checkShiftAndNavigate(url) {
+        try {
+            const userData = await getUserData();
+            
+            // ✅ الأدمن يدخل مباشرة
+            if (userData.role === 'admin') {
+                navigateTo(url);
+                return;
+            }
+            
+            // ✅ الدكاترة: التحقق من وجود أي شيفت نشط (لأي موظف)
+            if (userData.role === 'doctor' || userData.role === 'skin_doctor') {
+                const hasAnyActiveShift = await checkAnyGlobalActiveShift();
                 
-                if (userData.role === 'admin') {
-                    navigateTo(url);
-                    return;
-                }
-                
-                const hasActiveShift = await checkActiveShift();
-                
-                if (hasActiveShift) {
+                if (hasAnyActiveShift) {
                     navigateTo(url);
                 } else {
-                    alert('❌ لا يمكن الوصول إلى هذه الصفحة إلا أثناء الشيفت النشط أو بحساب مدير!');
+                    alert('❌ لا يمكن الوصول إلى هذه الصفحة!\n\nيجب أن يكون هناك شيفت نشط في النظام.\nيرجى التواصل مع موظف الاستقبال لبدء شيفت.');
                 }
-            } catch (error) {
-                console.error('خطأ في التحقق من الشيفت:', error);
-                alert('❌ حدث خطأ أثناء التحقق من الصلاحية');
+                return;
             }
-        }
-
-        async function checkActiveShift() {
-            try {
-                const userData = await getUserData();
-                if (!userData) return false;
-
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-
-                const q = query(
-                    collection(db, "shifts"),
-                    where("userId", "==", userData.uid),
-                    where("startTime", ">=", Timestamp.fromDate(today)),
-                    where("startTime", "<", Timestamp.fromDate(tomorrow)),
-                    where("status", "==", "active")
-                );
-
-                const querySnapshot = await getDocs(q);
-                return !querySnapshot.empty;
-            } catch (error) {
-                console.error("❌ خطأ في التحقق من الشيفت النشط:", error);
-                return false;
-            }
-        }
-
-        async function getUserData() {
-            const userData = localStorage.getItem('userData');
-            return userData ? JSON.parse(userData) : null;
-        }
-
-        function updateGlobalShiftStatus(hasActiveShift, activeShifts = []) {
-            const statusElement = document.getElementById('globalShiftStatus');
             
-            if (activeShifts.length > 0) {
-                statusElement.textContent = `✅ ${activeShifts.length} شيفت نشط`;
-                statusElement.classList.remove('inactive');
-                statusElement.style.display = 'block';
+            // ✅ الاستقبال: التحقق من شيفته الخاص
+            const hasActiveShift = await checkUserOwnActiveShift(userData.uid);
+            
+            if (hasActiveShift) {
+                navigateTo(url);
             } else {
-                statusElement.textContent = '❌ لا يوجد شيفتات نشطة';
-                statusElement.classList.add('inactive');
-                statusElement.style.display = 'block';
+                alert('❌ لا يمكن الوصول إلى هذه الصفحة إلا أثناء شيفت نشط!\n\nيرجى بدء الشيفت من صفحة إدارة الشيفتات.');
             }
+        } catch (error) {
+            console.error('خطأ في التحقق من الشيفت:', error);
+            alert('❌ حدث خطأ أثناء التحقق من الصلاحية');
         }
+    }
 
-        // ✅ دالة لإظهار تحذير عدم تسجيل الخروج
-        function showLogoutWarning() {
-            document.getElementById('logoutWarningModal').classList.add('active');
-        }
+    // ✅ التحقق من وجود أي شيفت نشط (لأي موظف)
+    async function checkAnyGlobalActiveShift() {
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // ✅ دالة لإخفاء التحذير
-        function closeLogoutWarning() {
-            document.getElementById('logoutWarningModal').classList.remove('active');
-        }
+            const q = query(
+                collection(window.db, "shifts"),
+                where("startTime", ">=", Timestamp.fromDate(today)),
+                where("startTime", "<", Timestamp.fromDate(tomorrow)),
+                where("status", "==", "active")
+            );
 
-        // ✅ دالة للذهاب لصفحة إدارة الشيفتات
-        function goToShiftManagement() {
-            window.location.href = 'shift-management/shift-management.html';
+            const querySnapshot = await getDocs(q);
+            console.log('🔍 عدد الشيفتات النشطة:', querySnapshot.size);
+            return !querySnapshot.empty;
+        } catch (error) {
+            console.error("❌ خطأ في التحقق من الشيفتات النشطة:", error);
+            return false;
         }
-    </script>
+    }
+
+    // ✅ التحقق من شيفت المستخدم الخاص
+    async function checkUserOwnActiveShift(userId) {
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const q = query(
+                collection(window.db, "shifts"),
+                where("userId", "==", userId),
+                where("startTime", ">=", Timestamp.fromDate(today)),
+                where("startTime", "<", Timestamp.fromDate(tomorrow)),
+                where("status", "==", "active")
+            );
+
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        } catch (error) {
+            console.error("❌ خطأ في التحقق من الشيفت الشخصي:", error);
+            return false;
+        }
+    }
+
+    async function getUserData() {
+        const userData = localStorage.getItem('userData');
+        return userData ? JSON.parse(userData) : null;
+    }
+
+    function updateGlobalShiftStatus(hasActiveShift, activeShifts = []) {
+        const statusElement = document.getElementById('globalShiftStatus');
+        
+        if (activeShifts.length > 0) {
+            statusElement.textContent = `✅ ${activeShifts.length} شيفت نشط`;
+            statusElement.classList.remove('inactive');
+            statusElement.style.display = 'block';
+        } else {
+            statusElement.textContent = '❌ لا يوجد شيفتات نشطة';
+            statusElement.classList.add('inactive');
+            statusElement.style.display = 'block';
+        }
+    }
+
+    function showLogoutWarning() {
+        document.getElementById('logoutWarningModal').classList.add('active');
+    }
+
+    function closeLogoutWarning() {
+        document.getElementById('logoutWarningModal').classList.remove('active');
+    }
+
+    function goToShiftManagement() {
+        window.location.href = 'shift-management/shift-management.html';
+    }
+</script>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";

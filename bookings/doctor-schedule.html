@@ -60,8 +60,18 @@
                 <!-- قسم العميل الحالي -->
                 <div id="existingCustomerSection">
                     <div class="input-group">
+                        <label>نوع البحث:</label>
+                        <select id="searchFilter">
+                            <option value="all">بحث شامل (الكل)</option>
+                            <option value="id">الرقم التعريفي فقط</option>
+                            <option value="phone">رقم الهاتف فقط</option>
+                            <option value="name">الاسم فقط</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
                         <label>البحث عن عميل:</label>
-                        <input type="text" id="customerSearch" placeholder="ابحث بالاسم أو الهاتف أو الرقم التعريفي">
+                        <input type="text" id="customerSearch" placeholder="ابحث حسب الفلتر المختار...">
                         <div id="customerResults" class="hidden"></div>
                     </div>
                     
@@ -140,8 +150,21 @@
                 <div class="summary-box">
                     <h4>ملخص الحجز</h4>
                     <div class="summary-item">
-                        <span>التكلفة الإجمالية:</span>
-                        <strong><span id="totalCost">0.00</span> جنيه</strong>
+                        <span>التكلفة الأصلية:</span>
+                        <strong><span id="originalCost">0.00</span> جنيه</strong>
+                    </div>
+                    <div class="summary-item" id="discountRow" style="display:none;">
+                        <span>التخفيض:</span>
+                        <strong style="color: #dc3545;"><span id="discountAmount">0.00</span> جنيه (<span id="discountPercent">0</span>%)</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>التكلفة النهائية:</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <strong><span id="totalCost">0.00</span> جنيه</strong>
+                            <button type="button" class="edit-price-btn" id="editPriceBtn" title="تعديل السعر">
+                                ✏️
+                            </button>
+                        </div>
                     </div>
                     <div class="summary-item">
                         <span>المدة الكلية:</span>

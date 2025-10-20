@@ -1,4 +1,4 @@
-// customers.js - إصلاح تسجيل بيانات العملاء في الشيفت
+// customers.js - إصلاح ترتيب تسجيل الشيفت والبيانات
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import {
   getFirestore,
@@ -55,7 +55,7 @@ async function setupCustomerForm() {
     const laserBalanceEnabled = document.getElementById('enableLaserBalance')?.checked;
     const dermaBalanceEnabled = document.getElementById('enableDermaBalance')?.checked;
 
-    const normalBalance = normalBalanceEnabled ? (parseFloat(document.getElementById('customerBalance')?.value) || 0) : 0;
+    const primaryBalance = normalBalanceEnabled ? (parseFloat(document.getElementById('customerBalance')?.value) || 0) : 0;
     const offersBalance = offersBalanceEnabled ? (parseFloat(document.getElementById('offersBalance')?.value) || 0) : 0;
     const laserBalance = laserBalanceEnabled ? (parseFloat(document.getElementById('laserBalance')?.value) || 0) : 0;
     const dermaBalance = dermaBalanceEnabled ? (parseFloat(document.getElementById('dermaBalance')?.value) || 0) : 0;
@@ -71,17 +71,18 @@ async function setupCustomerForm() {
       return;
     }
 
-    if (normalBalance < 0 || offersBalance < 0 || laserBalance < 0 || dermaBalance < 0) {
+    if (primaryBalance < 0 || offersBalance < 0 || laserBalance < 0 || dermaBalance < 0) {
       showMessage('⚠️ لا يمكن أن تكون قيم الأرصدة سالبة!', 'error');
       return;
     }
 
-    if (normalBalance > 100000 || offersBalance > 100000 || laserBalance > 100000 || dermaBalance > 100000) {
+    if (primaryBalance > 100000 || offersBalance > 100000 || laserBalance > 100000 || dermaBalance > 100000) {
       showMessage('⚠️ قيمة الرصيد كبيرة جداً! يرجى إدخال مبلغ أقل من 100,000 جنيه', 'error');
       return;
     }
 
     try {
+      // ✅ 1. إنشاء العميل أولاً
       const generatedNumericId = await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, "counters", "customersCounter");
         const phoneRef = doc(db, "customers_by_phone", phoneKey);
@@ -110,7 +111,7 @@ async function setupCustomerForm() {
           docId: docIdString,
           name,
           phone: phoneKey,
-          balance: normalBalance,
+          balance: primaryBalance,
           offersBalance: offersBalance,
           laserBalance: laserBalance,
           dermaBalance: dermaBalance,
@@ -129,30 +130,33 @@ async function setupCustomerForm() {
         return nextSeq;
       });
 
-      // ✅ حساب إجمالي المبلغ المدفوع
-      const totalPaidAmount = normalBalance + offersBalance + laserBalance + dermaBalance;
+      console.log('✅ تم إنشاء العميل برقم:', generatedNumericId);
 
-      // ✅ تسجيل المعاملات المالية مع التفاصيل
+      // ✅ 2. حساب إجمالي المبلغ المدفوع
+      const totalPaidAmount = primaryBalance + offersBalance + laserBalance + dermaBalance;
+
+      // ✅ 3. تسجيل المعاملات المالية بالتفصيل
       const transactionsToCreate = [];
 
-      if (normalBalance > 0) {
-        transactionsToCreate.push({
+      if (primaryBalance > 0) {
+        const primaryTransactionRef = await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
-          balanceType: 'normal',
-          amount: normalBalance,
+          balanceType: 'primary',
+          amount: primaryBalance,
           previousBalance: 0,
-          newBalance: normalBalance,
+          newBalance: primaryBalance,
           paymentMethod: paymentMethod,
-          notes: `شحن رصيد عادي عند تسجيل الحساب - ${paymentMethod}`,
+          notes: `شحن الرصيد الأساسي عند تسجيل الحساب - ${paymentMethod}`,
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
+        console.log('✅ تم تسجيل معاملة الرصيد الأساسي:', primaryTransactionRef.id);
       }
 
       if (offersBalance > 0) {
-        transactionsToCreate.push({
+        const offersTransactionRef = await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -165,10 +169,11 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
+        console.log('✅ تم تسجيل معاملة رصيد العروض:', offersTransactionRef.id);
       }
 
       if (laserBalance > 0) {
-        transactionsToCreate.push({
+        const laserTransactionRef = await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -181,10 +186,11 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
+        console.log('✅ تم تسجيل معاملة رصيد الليزر:', laserTransactionRef.id);
       }
 
       if (dermaBalance > 0) {
-        transactionsToCreate.push({
+        const dermaTransactionRef = await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -197,56 +203,61 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
+        console.log('✅ تم تسجيل معاملة رصيد الجلدية:', dermaTransactionRef.id);
       }
 
-      for (const transactionData of transactionsToCreate) {
-        await addDoc(collection(db, "transactions"), transactionData);
-      }
-
-      // ✅ تسجيل في الشيفت مع المبالغ بشكل صحيح
+      // ✅ 4. تسجيل في الشيفت (آخر خطوة)
       try {
         const shiftModule = await import('../shift-management/shift-management.js');
         if (shiftModule && shiftModule.addShiftAction) {
           // بناء نص وصفي للأرصدة
           const balancesText = [];
-          if (normalBalance > 0) balancesText.push(`عادي: ${normalBalance.toFixed(2)}`);
+          if (primaryBalance > 0) balancesText.push(`أساسي: ${primaryBalance.toFixed(2)}`);
           if (offersBalance > 0) balancesText.push(`عروض: ${offersBalance.toFixed(2)}`);
           if (laserBalance > 0) balancesText.push(`ليزر: ${laserBalance.toFixed(2)}`);
           if (dermaBalance > 0) balancesText.push(`جلدية: ${dermaBalance.toFixed(2)}`);
           
           const balancesSummary = balancesText.length > 0 ? ` - الأرصدة: ${balancesText.join(', ')} جنيه` : '';
           
-          // ✅ تمرير المبلغ الإجمالي وطريقة الدفع كمعاملات منفصلة
           await shiftModule.addShiftAction(
             'إضافة عميل',
             `تم تسجيل عميل جديد: ${name} - هاتف: ${phoneKey}${balancesSummary} - ${paymentMethod} - ID: ${generatedNumericId}`,
             name,
-            totalPaidAmount, // ✅ المبلغ الإجمالي
-            paymentMethod,   // ✅ طريقة الدفع
+            totalPaidAmount,
+            paymentMethod,
             {
               actionCategory: 'customer',
               customerId: String(generatedNumericId),
-              normalBalance: normalBalance,
+              primaryBalance: primaryBalance,
               offersBalance: offersBalance,
               laserBalance: laserBalance,
               dermaBalance: dermaBalance
             }
           );
           
-          console.log('✅ تم تسجيل العميل في الشيفت:', name, totalPaidAmount, paymentMethod);
+          console.log('✅ تم تسجيل العميل في الشيفت بنجاح');
         }
       } catch (shiftError) {
-        console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError);
+        console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError.message);
       }
 
-      showMessage(
-        `✅ تم تسجيل العميل بنجاح!\n\n` +
-        `📋 رقم العميل: ${generatedNumericId}\n` +
-        `👤 الاسم: ${name}\n` +
-        `📱 الهاتف: ${phoneKey}\n` +
-        `💰 إجمالي الرصيد: ${totalPaidAmount.toFixed(2)} جنيه`,
-        'success'
-      );
+      // ✅ بناء رسالة النجاح مع تفاصيل الأرصدة
+      let successMessage = `✅ تم تسجيل العميل بنجاح!\n\n`;
+      successMessage += `📋 رقم العميل: ${generatedNumericId}\n`;
+      successMessage += `👤 الاسم: ${name}\n`;
+      successMessage += `📱 الهاتف: ${phoneKey}\n\n`;
+      successMessage += `💰 الأرصدة:\n`;
+      
+      if (primaryBalance > 0) successMessage += `   • الرصيد الأساسي: ${primaryBalance.toFixed(2)} جنيه\n`;
+      if (offersBalance > 0) successMessage += `   • رصيد العروض: ${offersBalance.toFixed(2)} جنيه\n`;
+      if (laserBalance > 0) successMessage += `   • رصيد الليزر: ${laserBalance.toFixed(2)} جنيه\n`;
+      if (dermaBalance > 0) successMessage += `   • رصيد الجلدية: ${dermaBalance.toFixed(2)} جنيه\n`;
+      
+      if (totalPaidAmount > 0) {
+        successMessage += `\n💵 إجمالي الرصيد: ${totalPaidAmount.toFixed(2)} جنيه`;
+      }
+
+      showMessage(successMessage, 'success');
       
       form.reset();
       
@@ -320,5 +331,7 @@ function showMessage(text, type = 'info') {
 
   setTimeout(() => {
     messageDiv.style.display = 'none';
-  }, 8000);
+  }, 10000);
 }
+
+console.log('✅ تم تحميل customers.js مع إصلاح ترتيب تسجيل الشيفت');

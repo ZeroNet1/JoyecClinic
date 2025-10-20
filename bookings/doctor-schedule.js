@@ -1,4 +1,4 @@
-// doctor-schedule.js - محسّن مع نظام الحجز بالعروض والأرصدة المتعددة
+// doctor-schedule.js - النسخة الكاملة المدمجة مع فلتر البحث وتعديل السعر
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getFirestore, 
@@ -41,10 +41,12 @@ let allServices = [];
 let currentUser = null;
 let selectedCustomer = null;
 let selectedServices = [];
-let customerOffers = []; // عروض العميل المتاحة
+let customerOffers = [];
 let unsubscribeBookings = null;
 let unsubscribeAlerts = null;
 let pendingAlerts = [];
+let originalTotalCost = 0;
+let currentDiscount = 0;
 
 checkUserRole().then(userData => {
     if (userData) {
@@ -94,6 +96,22 @@ function setupEventListeners() {
     document.getElementById('customerSearch').addEventListener('input', debounce(searchCustomers, 300));
     document.getElementById('servicesCount').addEventListener('change', updateServicesInputs);
     document.getElementById('bookingTime').addEventListener('change', calculateEndTime);
+    
+    // فلتر البحث
+    const searchFilter = document.getElementById('searchFilter');
+    if (searchFilter) {
+        searchFilter.addEventListener('change', function() {
+            document.getElementById('customerSearch').value = '';
+            document.getElementById('customerResults').classList.add('hidden');
+            updateSearchPlaceholder();
+        });
+    }
+    
+    // زر تعديل السعر
+    const editPriceBtn = document.getElementById('editPriceBtn');
+    if (editPriceBtn) {
+        editPriceBtn.addEventListener('click', showEditPriceModal);
+    }
     
     // استماع لتغيير نوع الحجز
     const bookingTypeSelect = document.getElementById('bookingType');
@@ -329,8 +347,6 @@ function setupRealtimeAlerts() {
             pendingAlerts.push({ id: doc.id, ...doc.data() });
         });
         
-        displayAlerts(pendingAlerts);
-        
         if (pendingAlerts.length > 0) {
             playAlertSound();
         }
@@ -338,545 +354,6 @@ function setupRealtimeAlerts() {
         console.error('❌ خطأ في الاستماع للتنبيهات:', error);
     });
 }
-
-function displayAlerts(alerts) {
-    const alertsBox = document.getElementById('alertsBox');
-    const alertsBadge = document.getElementById('alertsBadge');
-    
-    if (!alertsBox) return;
-    
-    if (alerts.length === 0) {
-        alertsBox.classList.add('hidden');
-        if (alertsBadge) alertsBadge.classList.add('hidden');
-        return;
-    }
-    
-    alertsBox.classList.remove('hidden');
-    if (alertsBadge) {
-        alertsBadge.textContent = alerts.length;
-        alertsBadge.classList.remove('hidden');
-    }
-    
-    const alertsList = document.getElementById('alertsList');
-    alertsList.innerHTML = '';
-    
-    alerts.forEach(alert => {
-        const alertCard = createAlertCard(alert);
-        alertsList.appendChild(alertCard);
-    });
-}
-
-// إنشاء بطاقة تنبيه
-function createAlertCard(alert) {
-    const card = document.createElement('div');
-    card.className = 'alert-card';
-    
-    let alertContent = '';
-    
-    if (alert.stage === 'first_notification') {
-        // التنبيه الأول - الخدمة أُضيفت ولكن الرصيد غير كافٍ
-        alertContent = `
-            <div class="alert-icon">⚠️</div>
-            <div class="alert-content">
-                <div class="alert-title">خدمة إضافية - رصيد غير كافٍ</div>
-                <div class="alert-message">${alert.message}</div>
-                <div class="alert-details">
-                    <div><strong>العميلة:</strong> ${alert.customerName}</div>
-                    <div><strong>الهاتف:</strong> ${alert.customerPhone}</div>
-                    <div><strong>الخدمة:</strong> ${alert.serviceName}</div>
-                    <div><strong>السعر:</strong> ${alert.servicePrice.toFixed(2)} جنيه</div>
-                    <div class="deficit-info">
-                        <span>الرصيد الحالي:</span>
-                        <span class="balance-negative">${alert.currentBalance.toFixed(2)} جنيه</span>
-                    </div>
-                    <div class="deficit-info">
-                        <span>النقص المطلوب:</span>
-                        <span class="deficit-amount">${alert.deficit.toFixed(2)} جنيه</span>
-                    </div>
-                </div>
-            </div>
-            <div class="alert-actions">
-                <button class="alert-action-btn primary" onclick="showRechargeFromAlert('${alert.id}')">
-                    ⚡ شحن الرصيد
-                </button>
-                <button class="alert-action-btn secondary" onclick="dismissAlert('${alert.id}')">
-                    تجاهل
-                </button>
-            </div>
-        `;
-    } else if (alert.stage === 'final_payment') {
-        // التنبيه النهائي - الجلسة انتهت والعميلة تحتاج الدفع
-        const unpaidTotal = alert.totalUnpaidAmount || 0;
-        const servicesCount = (alert.unpaidServices || []).length;
-        
-        alertContent = `
-            <div class="alert-icon urgent">🔴</div>
-            <div class="alert-content">
-                <div class="alert-title urgent">جلسة منتهية - يلزم دفع</div>
-                <div class="alert-message urgent">${alert.message}</div>
-                <div class="alert-details">
-                    <div><strong>العميلة:</strong> ${alert.customerName}</div>
-                    <div><strong>الهاتف:</strong> ${alert.customerPhone}</div>
-                    <div><strong>عدد الخدمات الإضافية:</strong> ${servicesCount}</div>
-                    <div><strong>المبلغ الإجمالي:</strong> ${unpaidTotal.toFixed(2)} جنيه</div>
-                    <div class="deficit-info">
-                        <span>الرصيد الحالي:</span>
-                        <span class="balance-negative">${alert.currentBalance.toFixed(2)} جنيه</span>
-                    </div>
-                    ${alert.amountNeeded > 0 ? `
-                    <div class="deficit-info">
-                        <span>المبلغ المطلوب تحصيله:</span>
-                        <span class="deficit-amount">${alert.amountNeeded.toFixed(2)} جنيه</span>
-                    </div>` : ''}
-                </div>
-            </div>
-            <div class="alert-actions">
-                <button class="alert-action-btn primary" onclick="showFinalPaymentModal('${alert.id}')">
-                    💰 استلام الدفع
-                </button>
-                <button class="alert-action-btn secondary" onclick="dismissAlert('${alert.id}')">
-                    تجاهل
-                </button>
-            </div>
-        `;
-    }
-    
-    card.innerHTML = alertContent;
-    return card;
-}
-
-// عرض مودال شحن الرصيد من التنبيه
-window.showRechargeFromAlert = async function(alertId) {
-    try {
-        const alert = pendingAlerts.find(a => a.id === alertId);
-        if (!alert) {
-            alert('❌ لم يتم العثور على التنبيه');
-            return;
-        }
-        
-        const customerRef = doc(db, "customers", alert.customerId);
-        const customerSnap = await getDoc(customerRef);
-        const customerData = customerSnap.data();
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = 'rechargeAlertModal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>💰 شحن رصيد ${customerData.name}</h3>
-                    <button class="close-btn" onclick="closeRechargeAlertModal()">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="customer-info-section">
-                        <h4>معلومات العميلة</h4>
-                        <div class="info-grid">
-                            <div><span>الاسم:</span><strong>${customerData.name}</strong></div>
-                            <div><span>الهاتف:</span><strong>${customerData.phone}</strong></div>
-                            <div><span>الرصيد الحالي:</span><strong class="balance-negative">${customerData.balance.toFixed(2)} جنيه</strong></div>
-                        </div>
-                    </div>
-                    
-                    <div class="service-info-section">
-                        <h4>تفاصيل الخدمة الإضافية</h4>
-                        <div class="info-grid">
-                            <div><span>الخدمة:</span><strong>${alert.serviceName}</strong></div>
-                            <div><span>السعر:</span><strong>${alert.servicePrice.toFixed(2)} جنيه</strong></div>
-                            <div><span>النقص:</span><strong class="deficit-amount">${alert.deficit.toFixed(2)} جنيه</strong></div>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>مبلغ الشحن: <span style="color: red;">*</span></label>
-                        <input type="number" id="rechargeAmount" step="0.01" min="0" value="${alert.deficit.toFixed(2)}" required>
-                        <small>الحد الأدنى المطلوب: ${alert.deficit.toFixed(2)} جنيه</small>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>طريقة الدفع: <span style="color: red;">*</span></label>
-                        <select id="rechargePaymentMethod" required>
-                            <option value="">اختر طريقة الدفع</option>
-                            <option value="نقدي">نقدي</option>
-                            <option value="كاش">كاش</option>
-                            <option value="فيزا">فيزا</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="save-btn" onclick="confirmRechargeFromAlert('${alertId}')">
-                        تأكيد الشحن والدفع
-                    </button>
-                    <button class="cancel-btn" onclick="closeRechargeAlertModal()">إلغاء</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    } catch (error) {
-        console.error('❌ خطأ في عرض مودال الشحن:', error);
-        alert('❌ حدث خطأ في فتح نافذة الشحن');
-    }
-};
-
-// إغلاق مودال الشحن
-window.closeRechargeAlertModal = function() {
-    const modal = document.getElementById('rechargeAlertModal');
-    if (modal) modal.remove();
-};
-
-// تأكيد الشحن من التنبيه
-window.confirmRechargeFromAlert = async function(alertId) {
-    try {
-        const amount = parseFloat(document.getElementById('rechargeAmount').value);
-        const paymentMethod = document.getElementById('rechargePaymentMethod').value;
-        
-        if (!amount || amount <= 0) {
-            alert('⚠️ يرجى إدخال مبلغ صحيح!');
-            return;
-        }
-        
-        if (!paymentMethod) {
-            alert('⚠️ يرجى اختيار طريقة الدفع!');
-            return;
-        }
-        
-        const alert = pendingAlerts.find(a => a.id === alertId);
-        if (!alert) {
-            alert('❌ لم يتم العثور على التنبيه');
-            return;
-        }
-        
-        if (amount < alert.deficit) {
-            if (!confirm(`⚠️ المبلغ المدخل (${amount.toFixed(2)} جنيه) أقل من النقص المطلوب (${alert.deficit.toFixed(2)} جنيه)\n\nهل تريد المتابعة؟`)) {
-                return;
-            }
-        }
-        
-        // شحن الرصيد
-        const customerRef = doc(db, "customers", alert.customerId);
-        const customerSnap = await getDoc(customerRef);
-        const currentBalance = customerSnap.data().balance || 0;
-        const newBalance = currentBalance + amount;
-        
-        await updateDoc(customerRef, {
-            balance: newBalance,
-            updatedAt: Timestamp.now()
-        });
-        
-        // إضافة معاملة الشحن
-        await addDoc(collection(db, "transactions"), {
-            customerId: alert.customerId,
-            customerName: alert.customerName,
-            type: 'deposit',
-            amount: amount,
-            previousBalance: currentBalance,
-            newBalance: newBalance,
-            paymentMethod: paymentMethod,
-            notes: `شحن رصيد - ${paymentMethod} - لدفع خدمة إضافية: ${alert.serviceName}`,
-            alertId: alertId,
-            bookingId: alert.bookingId,
-            createdAt: Timestamp.now(),
-            createdBy: currentUser.name
-        });
-        
-        // خصم ثمن الخدمة
-        const servicePrice = alert.servicePrice;
-        const balanceAfterDeduction = newBalance - servicePrice;
-        
-        await updateDoc(customerRef, {
-            balance: balanceAfterDeduction,
-            totalSpent: increment(servicePrice),
-            updatedAt: Timestamp.now()
-        });
-        
-        // إضافة معاملة الخصم
-        await addDoc(collection(db, "transactions"), {
-            customerId: alert.customerId,
-            customerName: alert.customerName,
-            type: 'withdrawal',
-            amount: servicePrice,
-            previousBalance: newBalance,
-            newBalance: balanceAfterDeduction,
-            paymentMethod: 'رصيد داخلي',
-            notes: `دفع خدمة إضافية: ${alert.serviceName}`,
-            serviceId: alert.serviceId,
-            bookingId: alert.bookingId,
-            createdAt: Timestamp.now(),
-            createdBy: currentUser.name
-        });
-        
-        // تحديث الحجز
-        const bookingRef = doc(db, "bookings", alert.bookingId);
-        const bookingSnap = await getDoc(bookingRef);
-        const bookingData = bookingSnap.data();
-        
-        const additionalServices = bookingData.additionalServices || [];
-        const updatedServices = additionalServices.map(s => {
-            if (s.serviceId === alert.serviceId && !s.paid) {
-                return { ...s, paid: true, paidAt: Timestamp.now() };
-            }
-            return s;
-        });
-        
-        const remainingUnpaid = updatedServices.filter(s => !s.paid);
-        
-        await updateDoc(bookingRef, {
-            additionalServices: updatedServices,
-            status: remainingUnpaid.length > 0 ? 'pending_payment' : 'started',
-            waitingForPayment: remainingUnpaid.length > 0,
-            unpaidAmount: remainingUnpaid.reduce((sum, s) => sum + s.price, 0),
-            updatedAt: Timestamp.now()
-        });
-        
-        // تحديث التنبيه
-        await updateDoc(doc(db, "receptionAlerts", alertId), {
-            status: 'resolved',
-            resolvedAt: Timestamp.now(),
-            resolvedBy: currentUser.name,
-            resolution: `تم شحن ${amount.toFixed(2)} جنيه وخصم ${servicePrice.toFixed(2)} جنيه`,
-            paymentMethod: paymentMethod
-        });
-        
-        alert(`✅ تم بنجاح!\n\n✔️ تم شحن ${amount.toFixed(2)} جنيه (${paymentMethod})\n✔️ تم خصم ${servicePrice.toFixed(2)} جنيه مقابل الخدمة\n✔️ الرصيد الجديد: ${balanceAfterDeduction.toFixed(2)} جنيه`);
-        
-        closeRechargeAlertModal();
-    } catch (error) {
-        console.error('❌ خطأ في تأكيد الشحن:', error);
-        alert('❌ حدث خطأ أثناء تأكيد الشحن: ' + error.message);
-    }
-};
-
-// عرض مودال الدفع النهائي
-window.showFinalPaymentModal = async function(alertId) {
-    try {
-        const alert = pendingAlerts.find(a => a.id === alertId);
-        if (!alert) {
-            alert('❌ لم يتم العثور على التنبيه');
-            return;
-        }
-        
-        const customerRef = doc(db, "customers", alert.customerId);
-        const customerSnap = await getDoc(customerRef);
-        const customerData = customerSnap.data();
-        
-        const unpaidServices = alert.unpaidServices || [];
-        const totalAmount = alert.totalUnpaidAmount || 0;
-        const amountNeeded = alert.amountNeeded || 0;
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = 'finalPaymentModal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>💰 استلام دفع الخدمات الإضافية</h3>
-                    <button class="close-btn" onclick="closeFinalPaymentModal()">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="customer-info-section">
-                        <h4>معلومات العميلة</h4>
-                        <div class="info-grid">
-                            <div><span>الاسم:</span><strong>${customerData.name}</strong></div>
-                            <div><span>الهاتف:</span><strong>${customerData.phone}</strong></div>
-                            <div><span>الرصيد الحالي:</span><strong class="balance-negative">${customerData.balance.toFixed(2)} جنيه</strong></div>
-                        </div>
-                    </div>
-                    
-                    <div class="services-list">
-                        <h4>الخدمات الإضافية غير المدفوعة</h4>
-                        ${unpaidServices.map(s => `
-                            <div class="service-item">
-                                <span>${s.serviceName}</span>
-                                <span>${s.price.toFixed(2)} جنيه</span>
-                            </div>
-                        `).join('')}
-                        <div class="total-row">
-                            <strong>الإجمالي:</strong>
-                            <strong>${totalAmount.toFixed(2)} جنيه</strong>
-                        </div>
-                    </div>
-                    
-                    ${amountNeeded > 0 ? `
-                    <div class="input-group">
-                        <label>مبلغ الشحن المطلوب: <span style="color: red;">*</span></label>
-                        <input type="number" id="finalPaymentAmount" step="0.01" min="0" value="${amountNeeded.toFixed(2)}" required>
-                        <small>المبلغ المطلوب لتغطية الخدمات: ${amountNeeded.toFixed(2)} جنيه</small>
-                    </div>
-                    ` : `
-                    <div class="info-message success">
-                        ✅ الرصيد كافٍ لتغطية جميع الخدمات
-                    </div>
-                    `}
-                    
-                    <div class="input-group">
-                        <label>طريقة الدفع: <span style="color: red;">*</span></label>
-                        <select id="finalPaymentMethod" required>
-                            <option value="">اختر طريقة الدفع</option>
-                            <option value="نقدي">نقدي</option>
-                            <option value="كاش">كاش</option>
-                            <option value="فيزا">فيزا</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="save-btn" onclick="confirmFinalPayment('${alertId}')">
-                        تأكيد الدفع
-                    </button>
-                    <button class="cancel-btn" onclick="closeFinalPaymentModal()">إلغاء</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    } catch (error) {
-        console.error('❌ خطأ في عرض مودال الدفع النهائي:', error);
-        alert('❌ حدث خطأ في فتح نافذة الدفع');
-    }
-};
-
-window.closeFinalPaymentModal = function() {
-    const modal = document.getElementById('finalPaymentModal');
-    if (modal) modal.remove();
-};
-
-// تأكيد الدفع النهائي
-window.confirmFinalPayment = async function(alertId) {
-    try {
-        const paymentMethod = document.getElementById('finalPaymentMethod').value;
-        
-        if (!paymentMethod) {
-            alert('⚠️ يرجى اختيار طريقة الدفع!');
-            return;
-        }
-        
-        const alert = pendingAlerts.find(a => a.id === alertId);
-        if (!alert) {
-            alert('❌ لم يتم العثور على التنبيه');
-            return;
-        }
-        
-        const customerRef = doc(db, "customers", alert.customerId);
-        const customerSnap = await getDoc(customerRef);
-        let currentBalance = customerSnap.data().balance || 0;
-        
-        const unpaidServices = alert.unpaidServices || [];
-        const totalAmount = alert.totalUnpaidAmount || 0;
-        const amountNeeded = alert.amountNeeded || 0;
-        
-        // إذا كان هناك مبلغ مطلوب، نشحن الرصيد أولاً
-        if (amountNeeded > 0) {
-            const rechargeAmount = parseFloat(document.getElementById('finalPaymentAmount').value);
-            
-            if (!rechargeAmount || rechargeAmount <= 0) {
-                alert('⚠️ يرجى إدخال مبلغ الشحن!');
-                return;
-            }
-            
-            // شحن الرصيد
-            currentBalance += rechargeAmount;
-            await updateDoc(customerRef, {
-                balance: currentBalance,
-                updatedAt: Timestamp.now()
-            });
-            
-            // إضافة معاملة الشحن
-            await addDoc(collection(db, "transactions"), {
-                customerId: alert.customerId,
-                customerName: alert.customerName,
-                type: 'deposit',
-                amount: rechargeAmount,
-                previousBalance: customerSnap.data().balance,
-                newBalance: currentBalance,
-                paymentMethod: paymentMethod,
-                notes: `شحن رصيد - ${paymentMethod} - لدفع خدمات إضافية عند انتهاء الجلسة`,
-                alertId: alertId,
-                bookingId: alert.bookingId,
-                createdAt: Timestamp.now(),
-                createdBy: currentUser.name
-            });
-        }
-        
-        // خصم ثمن جميع الخدمات
-        const balanceAfterDeduction = currentBalance - totalAmount;
-        await updateDoc(customerRef, {
-            balance: balanceAfterDeduction,
-            totalSpent: increment(totalAmount),
-            updatedAt: Timestamp.now()
-        });
-        
-        // إضافة معاملة الخصم
-        await addDoc(collection(db, "transactions"), {
-            customerId: alert.customerId,
-            customerName: alert.customerName,
-            type: 'withdrawal',
-            amount: totalAmount,
-            previousBalance: currentBalance,
-            newBalance: balanceAfterDeduction,
-            paymentMethod: 'رصيد داخلي',
-            notes: `دفع ${unpaidServices.length} خدمة إضافية: ${unpaidServices.map(s => s.serviceName).join(', ')}`,
-            bookingId: alert.bookingId,
-            createdAt: Timestamp.now(),
-            createdBy: currentUser.name
-        });
-        
-        // تحديث الحجز
-        const bookingRef = doc(db, "bookings", alert.bookingId);
-        const bookingSnap = await getDoc(bookingRef);
-        const bookingData = bookingSnap.data();
-        
-        const additionalServices = bookingData.additionalServices || [];
-        const updatedServices = additionalServices.map(s => {
-            if (!s.paid) {
-                return { ...s, paid: true, paidAt: Timestamp.now() };
-            }
-            return s;
-        });
-        
-        await updateDoc(bookingRef, {
-            additionalServices: updatedServices,
-            status: 'completed',
-            waitingForPayment: false,
-            unpaidAmount: 0,
-            updatedAt: Timestamp.now()
-        });
-        
-        // تحديث التنبيه
-        await updateDoc(doc(db, "receptionAlerts", alertId), {
-            status: 'resolved',
-            resolvedAt: Timestamp.now(),
-            resolvedBy: currentUser.name,
-            resolution: amountNeeded > 0 ? 
-                `تم شحن ${amountNeeded.toFixed(2)} جنيه وخصم ${totalAmount.toFixed(2)} جنيه` :
-                `تم خصم ${totalAmount.toFixed(2)} جنيه من الرصيد`,
-            paymentMethod: paymentMethod
-        });
-        
-        alert(`✅ تم بنجاح!\n\n${amountNeeded > 0 ? `✔️ تم شحن ${amountNeeded.toFixed(2)} جنيه (${paymentMethod})\n` : ''}✔️ تم خصم ${totalAmount.toFixed(2)} جنيه مقابل الخدمات\n✔️ الرصيد الجديد: ${balanceAfterDeduction.toFixed(2)} جنيه\n✔️ تم إنهاء الحجز بنجاح`);
-        
-        closeFinalPaymentModal();
-    } catch (error) {
-        console.error('❌ خطأ في تأكيد الدفع النهائي:', error);
-        alert('❌ حدث خطأ أثناء تأكيد الدفع: ' + error.message);
-    }
-};
-
-// تجاهل التنبيه
-window.dismissAlert = async function(alertId) {
-    if (!confirm('هل تريد تجاهل هذا التنبيه؟')) return;
-    
-    try {
-        await updateDoc(doc(db, "receptionAlerts", alertId), {
-            status: 'dismissed',
-            dismissedAt: Timestamp.now(),
-            dismissedBy: currentUser.name
-        });
-        
-        alert('✅ تم تجاهل التنبيه');
-    } catch (error) {
-        console.error('❌ خطأ في تجاهل التنبيه:', error);
-        alert('❌ حدث خطأ');
-    }
-};
 
 function playAlertSound() {
     try {
@@ -1117,6 +594,7 @@ function showAddBookingModal() {
     document.getElementById('servicesCount').value = '1';
     document.getElementById('bookingType').value = 'normal';
     updateServicesInputs();
+    updateSearchPlaceholder();
     
     // إخفاء قسم العروض عند فتح المودال
     const offersSection = document.getElementById('offersSection');
@@ -1132,6 +610,12 @@ function hideAddBookingModal() {
     selectedServices = [];
     selectedCustomer = null;
     customerOffers = [];
+    originalTotalCost = 0;
+    currentDiscount = 0;
+    
+    // إخفاء صف التخفيض
+    const discountRow = document.getElementById('discountRow');
+    if (discountRow) discountRow.style.display = 'none';
     
     const balanceInfo = document.getElementById('customerBalanceInfo');
     if (balanceInfo) {
@@ -1173,8 +657,26 @@ function handleCustomerTypeChange() {
     }
 }
 
+// تحديث النص التوضيحي لخانة البحث
+function updateSearchPlaceholder() {
+    const searchFilter = document.getElementById('searchFilter');
+    const searchInput = document.getElementById('customerSearch');
+    
+    if (!searchFilter || !searchInput) return;
+    
+    const placeholders = {
+        'all': 'ابحث بأي معلومة (اسم، هاتف، رقم تعريفي)...',
+        'id': 'ابحث بالرقم التعريفي فقط (مثال: 10)...',
+        'phone': 'ابحث برقم الهاتف فقط...',
+        'name': 'ابحث بالاسم فقط...'
+    };
+    
+    searchInput.placeholder = placeholders[searchFilter.value] || placeholders['all'];
+}
+
 function searchCustomers() {
     const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
+    const searchFilter = document.getElementById('searchFilter').value;
     const resultsContainer = document.getElementById('customerResults');
     
     if (!resultsContainer) return;
@@ -1184,28 +686,65 @@ function searchCustomers() {
         return;
     }
     
-    const filtered = allCustomers.filter(c => 
-        c.name.toLowerCase().includes(searchTerm) ||
-        c.phone.includes(searchTerm) ||
-        c.displayId.includes(searchTerm)
-    );
+    let filtered = [];
+    
+    switch(searchFilter) {
+        case 'id':
+            // بحث بالرقم التعريفي فقط - مطابقة دقيقة
+            filtered = allCustomers.filter(c => 
+                c.displayId.toLowerCase() === searchTerm.toLowerCase()
+            );
+            break;
+            
+        case 'phone':
+            // بحث برقم الهاتف فقط
+            filtered = allCustomers.filter(c => 
+                c.phone.includes(searchTerm)
+            );
+            break;
+            
+        case 'name':
+            // بحث بالاسم فقط
+            filtered = allCustomers.filter(c => 
+                c.name.toLowerCase().includes(searchTerm)
+            );
+            break;
+            
+        default: // 'all'
+            // بحث شامل
+            filtered = allCustomers.filter(c => 
+                c.name.toLowerCase().includes(searchTerm) ||
+                c.phone.includes(searchTerm) ||
+                c.displayId.includes(searchTerm)
+            );
+    }
     
     resultsContainer.innerHTML = '';
-    filtered.forEach(customer => {
-        const item = document.createElement('div');
-        item.className = 'customer-result-item';
-        const balanceClass = customer.balance > 0 ? 'positive' : 'zero';
-        item.innerHTML = `
-            <div><strong>${customer.name}</strong></div>
-            <div>
-                📱 ${customer.phone} | 
-                🔢 ${customer.displayId} | 
-                💰 <span class="${balanceClass}">${customer.balance.toFixed(2)} جنيه</span>
-            </div>
-        `;
-        item.addEventListener('click', () => selectCustomer(customer));
-        resultsContainer.appendChild(item);
-    });
+    
+    if (filtered.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'customer-result-item';
+        noResults.style.textAlign = 'center';
+        noResults.style.color = '#999';
+        noResults.innerHTML = '<strong>لا توجد نتائج</strong>';
+        resultsContainer.appendChild(noResults);
+    } else {
+        filtered.forEach(customer => {
+            const item = document.createElement('div');
+            item.className = 'customer-result-item';
+            const balanceClass = customer.balance > 0 ? 'positive' : 'zero';
+            item.innerHTML = `
+                <div><strong>${customer.name}</strong></div>
+                <div>
+                    📱 ${customer.phone} | 
+                    🔢 ${customer.displayId} | 
+                    💰 <span class="${balanceClass}">${customer.balance.toFixed(2)} جنيه</span>
+                </div>
+            `;
+            item.addEventListener('click', () => selectCustomer(customer));
+            resultsContainer.appendChild(item);
+        });
+    }
     
     resultsContainer.classList.remove('hidden');
 }
@@ -1315,18 +854,38 @@ function calculateTotalCostAndDuration() {
         }
     });
     
+    // حفظ التكلفة الأصلية
+    originalTotalCost = totalCost;
+    
+    // تطبيق التخفيض إذا كان موجوداً
+    const finalCost = totalCost - currentDiscount;
+    
     // إذا كان نوع الحجز بالعرض، التكلفة تكون صفر
     const bookingType = document.getElementById('bookingType')?.value;
     if (bookingType === 'offer') {
-        totalCost = 0;
+        document.getElementById('totalCost').textContent = '0.00';
+        document.getElementById('originalCost').textContent = totalCost.toFixed(2);
+    } else {
+        document.getElementById('totalCost').textContent = finalCost.toFixed(2);
+        document.getElementById('originalCost').textContent = totalCost.toFixed(2);
     }
     
-    document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+    // عرض صف التخفيض إذا كان هناك تخفيض
+    const discountRow = document.getElementById('discountRow');
+    if (currentDiscount > 0 && bookingType !== 'offer') {
+        const discountPercent = ((currentDiscount / originalTotalCost) * 100).toFixed(0);
+        document.getElementById('discountAmount').textContent = currentDiscount.toFixed(2);
+        document.getElementById('discountPercent').textContent = discountPercent;
+        if (discountRow) discountRow.style.display = 'flex';
+    } else {
+        if (discountRow) discountRow.style.display = 'none';
+    }
+    
     document.getElementById('totalDuration').textContent = totalDuration;
     
     const bookingCostDisplay = document.getElementById('bookingCostDisplay');
     if (bookingCostDisplay) {
-        bookingCostDisplay.textContent = totalCost.toFixed(2);
+        bookingCostDisplay.textContent = (bookingType === 'offer' ? 0 : finalCost).toFixed(2);
     }
     
     if (selectedCustomer) {
@@ -1339,7 +898,7 @@ function calculateTotalCostAndDuration() {
             balance = selectedCustomer.dermaBalance || 0;
         }
         
-        updateBalanceStatus(balance, totalCost);
+        updateBalanceStatus(balance, bookingType === 'offer' ? 0 : finalCost);
     }
     
     calculateEndTime();
@@ -1360,6 +919,157 @@ function calculateEndTime() {
     const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
     document.getElementById('endTime').textContent = endTime;
 }
+
+// عرض نافذة تعديل السعر
+function showEditPriceModal() {
+    if (originalTotalCost === 0) {
+        alert('⚠️ يجب اختيار الخدمات أولاً!');
+        return;
+    }
+    
+    const bookingType = document.getElementById('bookingType')?.value;
+    if (bookingType === 'offer') {
+        alert('⚠️ لا يمكن تعديل السعر عند الحجز بعرض!');
+        return;
+    }
+    
+    const minAllowedPrice = originalTotalCost * 0.5; // 50% كحد أدنى
+    const currentFinalCost = parseFloat(document.getElementById('totalCost').textContent);
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'editPriceModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ تعديل السعر</h3>
+                <button class="close-btn" onclick="closeEditPriceModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="price-info-section" style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>السعر الأصلي:</span>
+                        <strong>${originalTotalCost.toFixed(2)} جنيه</strong>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>السعر الحالي:</span>
+                        <strong>${currentFinalCost.toFixed(2)} جنيه</strong>
+                    </div>
+                    <div class="info-row warning" style="display: flex; justify-content: space-between; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                        <span>⚠️ الحد الأدنى المسموح:</span>
+                        <strong>${minAllowedPrice.toFixed(2)} جنيه (50%)</strong>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>السعر الجديد:</label>
+                    <input type="number" id="newPriceInput" step="0.01" min="${minAllowedPrice}" max="${originalTotalCost}" value="${currentFinalCost}" required>
+                    <small style="color: #666;">يجب أن يكون السعر بين ${minAllowedPrice.toFixed(2)} و ${originalTotalCost.toFixed(2)} جنيه</small>
+                </div>
+                
+                <div class="input-group">
+                    <label>نسبة التخفيض:</label>
+                    <input type="range" id="discountSlider" min="0" max="50" value="${(currentDiscount / originalTotalCost * 100).toFixed(0)}" step="1" style="width: 100%;">
+                    <div style="text-align: center; font-size: 18px; font-weight: bold; color: #667eea; margin-top: 10px;">
+                        <span id="discountPercentDisplay">${(currentDiscount / originalTotalCost * 100).toFixed(0)}</span>%
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="applyPriceEdit()">✅ تطبيق</button>
+                <button class="cancel-btn" onclick="closeEditPriceModal()">إلغاء</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // ربط السلايدر مع الإدخال
+    const slider = document.getElementById('discountSlider');
+    const priceInput = document.getElementById('newPriceInput');
+    const percentDisplay = document.getElementById('discountPercentDisplay');
+    
+    slider.addEventListener('input', function() {
+        const discountPercent = parseFloat(this.value);
+        const discountAmount = originalTotalCost * (discountPercent / 100);
+        const newPrice = originalTotalCost - discountAmount;
+        priceInput.value = newPrice.toFixed(2);
+        percentDisplay.textContent = discountPercent;
+    });
+    
+    priceInput.addEventListener('input', function() {
+        const newPrice = parseFloat(this.value);
+        if (newPrice >= minAllowedPrice && newPrice <= originalTotalCost) {
+            const discountAmount = originalTotalCost - newPrice;
+            const discountPercent = (discountAmount / originalTotalCost * 100).toFixed(0);
+            slider.value = discountPercent;
+            percentDisplay.textContent = discountPercent;
+        }
+    });
+}
+
+window.closeEditPriceModal = function() {
+    const modal = document.getElementById('editPriceModal');
+    if (modal) modal.remove();
+};
+
+window.applyPriceEdit = function() {
+    const newPrice = parseFloat(document.getElementById('newPriceInput').value);
+    const minAllowedPrice = originalTotalCost * 0.5;
+    
+    if (!newPrice || isNaN(newPrice)) {
+        alert('⚠️ يرجى إدخال سعر صحيح!');
+        return;
+    }
+    
+    if (newPrice < minAllowedPrice) {
+        alert(`⚠️ السعر أقل من الحد الأدنى المسموح (${minAllowedPrice.toFixed(2)} جنيه)!`);
+        return;
+    }
+    
+    if (newPrice > originalTotalCost) {
+        alert('⚠️ لا يمكن زيادة السعر عن السعر الأصلي!');
+        return;
+    }
+    
+    // حساب التخفيض
+    currentDiscount = originalTotalCost - newPrice;
+    const discountPercent = ((currentDiscount / originalTotalCost) * 100).toFixed(0);
+    
+    // تحديث العرض
+    document.getElementById('totalCost').textContent = newPrice.toFixed(2);
+    document.getElementById('discountAmount').textContent = currentDiscount.toFixed(2);
+    document.getElementById('discountPercent').textContent = discountPercent;
+    
+    const discountRow = document.getElementById('discountRow');
+    if (currentDiscount > 0) {
+        if (discountRow) discountRow.style.display = 'flex';
+    } else {
+        if (discountRow) discountRow.style.display = 'none';
+    }
+    
+    // تحديث معلومات الرصيد
+    if (selectedCustomer) {
+        const bookingType = document.getElementById('bookingType')?.value || 'normal';
+        let balance = selectedCustomer.balance;
+        
+        if (bookingType === 'laser') {
+            balance = selectedCustomer.laserBalance || 0;
+        } else if (bookingType === 'derma') {
+            balance = selectedCustomer.dermaBalance || 0;
+        }
+        
+        const bookingCostDisplay = document.getElementById('bookingCostDisplay');
+        if (bookingCostDisplay) {
+            bookingCostDisplay.textContent = newPrice.toFixed(2);
+        }
+        
+        updateBalanceStatus(balance, newPrice);
+    }
+    
+    alert(`✅ تم تطبيق التخفيض بنجاح!\nالسعر الجديد: ${newPrice.toFixed(2)} جنيه\nالتخفيض: ${currentDiscount.toFixed(2)} جنيه (${discountPercent}%)`);
+    closeEditPriceModal();
+};
 
 async function validateBookingTime(bookingDate, bookingTime, totalDuration) {
     const now = new Date();
@@ -1519,6 +1229,8 @@ async function addNewBooking(e) {
                 price: s.price
             })),
             totalCost,
+            originalCost: originalTotalCost,
+            discount: currentDiscount,
             totalDuration,
             status: 'pending',
             isNewCustomer,
@@ -1547,6 +1259,9 @@ async function addNewBooking(e) {
                     bookingNote += ` - حجز برصيد الجلدية`;
                 } else {
                     bookingNote += ` - ${totalCost.toFixed(2)} جنيه`;
+                    if (currentDiscount > 0) {
+                        bookingNote += ` (تخفيض ${currentDiscount.toFixed(2)} جنيه)`;
+                    }
                 }
                 await shiftModule.addShiftAction('إضافة حجز', bookingNote);
             }
@@ -2192,4 +1907,4 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-console.log('✅ تم تحميل doctor-schedule.js');
+console.log('✅ تم تحميل doctor-schedule.js المحدث مع فلتر البحث وتعديل السعر');

@@ -16,7 +16,7 @@ import {
     onSnapshot,
     increment
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { startShiftListener, checkActiveShiftImmediate } from '../shared/real-time-shift.js';
+// ✅ تم إزالة الاستيراد - هنستخدم دالة محلية
 import { checkUserRole } from '../shared/auth.js';
 
 const firebaseConfig = {
@@ -44,6 +44,57 @@ let currentReportData = null;
 
 console.log('🚀 بدء تحميل صفحة الدكتور...');
 
+// ✅ دالة محسّنة للتحقق من الشيفت النشط
+async function checkDoctorActiveShift() {
+    try {
+        console.log('🔍 بدء التحقق من الشيفت النشط...');
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        console.log('📅 البحث عن شيفتات بين:', today, 'و', tomorrow);
+
+        const q = query(
+            collection(db, "shifts"),
+            where("startTime", ">=", Timestamp.fromDate(today)),
+            where("startTime", "<", Timestamp.fromDate(tomorrow)),
+            where("status", "==", "active")
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        console.log('📊 عدد الشيفتات النشطة:', querySnapshot.size);
+        
+        if (querySnapshot.empty) {
+            console.log('❌ لا يوجد أي شيفت نشط اليوم');
+            return false;
+        }
+
+        // ✅ طباعة تفاصيل الشيفتات الموجودة
+        querySnapshot.forEach(doc => {
+            const shift = doc.data();
+            console.log('✅ تم العثور على شيفت نشط:', {
+                id: doc.id,
+                userName: shift.userName,
+                userId: shift.userId,
+                shiftType: shift.shiftType,
+                status: shift.status,
+                startTime: shift.startTime?.toDate()
+            });
+        });
+
+        console.log('✅ يوجد شيفت نشط - السماح بالدخول');
+        return true;
+    } catch (error) {
+        console.error("❌ خطأ في التحقق من الشيفت:", error);
+        console.error("تفاصيل الخطأ:", error.message);
+        console.error("Stack:", error.stack);
+        return false;
+    }
+}
+
 // التحقق من صلاحية الدكتور
 checkUserRole().then(async userData => {
     if (userData && (userData.role === 'doctor' || userData.role === 'skin_doctor' || userData.role === 'admin')) {
@@ -52,6 +103,17 @@ checkUserRole().then(async userData => {
         currentDoctorName = userData.name;
         
         console.log('✅ تم تسجيل الدخول:', currentDoctorName);
+        
+        // ✅ التحقق من الشيفت النشط (ماعدا الأدمن)
+        if (userData.role !== 'admin') {
+            const hasActiveShift = await checkDoctorActiveShift();
+            
+            if (!hasActiveShift) {
+                alert('❌ لا يمكن الوصول إلى هذه الصفحة إلا أثناء شيفت نشط!\n\nيرجى بدء الشيفت من صفحة إدارة الشيفتات.');
+                window.location.href = '../shift-management/shift-management.html';
+                return;
+            }
+        }
         
         await loadServices();
         await loadInventory();
@@ -94,21 +156,42 @@ async function loadInventory() {
 async function initializeShiftAndBookings() {
     console.log('🔧 تهيئة الشيفت والحجوزات...');
     
-    const hasActiveShift = await checkActiveShiftImmediate();
+    // ✅ استخدام دالة التحقق المحلية
+    const hasActiveShift = await checkDoctorActiveShift();
     updateUI(hasActiveShift);
     
     if (hasActiveShift) {
         await setupRealtimeBookings();
     }
     
-    startShiftListener((hasShift) => {
+    // ✅ الاستماع للتغييرات في الوقت الفعلي
+    listenToShiftChanges();
+}
+
+// ✅ دالة للاستماع لتغييرات الشيفت في الوقت الفعلي
+function listenToShiftChanges() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const q = query(
+        collection(db, "shifts"),
+        where("startTime", ">=", Timestamp.fromDate(today)),
+        where("startTime", "<", Timestamp.fromDate(tomorrow)),
+        where("status", "==", "active")
+    );
+
+    onSnapshot(q, (snapshot) => {
+        const hasShift = !snapshot.empty;
         console.log('🔄 تحديث حالة الشيفت:', hasShift);
         updateUI(hasShift);
         
-        if (hasShift) {
+        if (hasShift && !bookingsListener) {
             setupRealtimeBookings();
-        } else {
-            if (bookingsListener) bookingsListener();
+        } else if (!hasShift && bookingsListener) {
+            bookingsListener();
+            bookingsListener = null;
         }
     });
 }
@@ -996,7 +1079,7 @@ function updateUI(hasActiveShift) {
 // التحديث اليدوي
 window.checkShiftStatus = async function() {
     console.log('🔄 تحديث يدوي لحالة الشيفت...');
-    const hasActiveShift = await checkActiveShiftImmediate();
+    const hasActiveShift = await checkDoctorActiveShift(); // ✅ استخدام الدالة المحلية
     updateUI(hasActiveShift);
     
     if (!hasActiveShift) {

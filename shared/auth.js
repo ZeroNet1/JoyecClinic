@@ -1,4 +1,4 @@
-// shared/auth.js - النسخة المحدثة مع فحص الشيفت الخاص بالمستخدم
+// shared/auth.js - النسخة المحدثة مع إصلاح مشكلة الدكتور
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getAuth, 
@@ -29,7 +29,54 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ✅ دالة للتحقق من وجود أي شيفت نشط في النظام (لأي موظف)
+export async function checkAnyActiveShift() {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const q = query(
+            collection(db, "shifts"),
+            where("startTime", ">=", Timestamp.fromDate(today)),
+            where("startTime", "<", Timestamp.fromDate(tomorrow)),
+            where("status", "==", "active")
+        );
+
+        const querySnapshot = await getDocs(q);
+        return !querySnapshot.empty;
+    } catch (error) {
+        console.error("❌ خطأ في التحقق من الشيفتات النشطة:", error);
+        return false;
+    }
+}
+
 // ✅ دالة للتحقق من وجود شيفت نشط للمستخدم الحالي فقط
+export async function checkUserActiveShift(userId) {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const q = query(
+            collection(db, "shifts"),
+            where("userId", "==", userId),
+            where("startTime", ">=", Timestamp.fromDate(today)),
+            where("startTime", "<", Timestamp.fromDate(tomorrow)),
+            where("status", "==", "active")
+        );
+
+        const querySnapshot = await getDocs(q);
+        return !querySnapshot.empty;
+    } catch (error) {
+        console.error("❌ خطأ في التحقق من شيفت المستخدم:", error);
+        return false;
+    }
+}
+
+// ✅ دالة للتحقق من وجود شيفت نشط (عامة)
 export async function checkActiveShift() {
     return new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
@@ -39,25 +86,29 @@ export async function checkActiveShift() {
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
                         
-                        // إذا كان المستخدم من نوع استقبال، تحقق من وجود شيفت نشط له فقط
+                        // ✅ الأطباء يحتاجون فقط أن يكون هناك شيفت نشط في النظام (لأي موظف)
+                        if (userData.role === 'doctor' || userData.role === 'skin_doctor') {
+                            const hasAnyActiveShift = await checkAnyActiveShift();
+                            
+                            if (!hasAnyActiveShift) {
+                                // لا يوجد شيفت نشط في النظام
+                                if (!window.location.href.includes('shift-management.html')) {
+                                    alert('⚠️ لا يوجد شيفت نشط في النظام. يجب على موظف الاستقبال بدء شيفت أولاً.');
+                                    window.location.href = '../main.html';
+                                }
+                                resolve(false);
+                                return;
+                            }
+                            
+                            resolve(true);
+                            return;
+                        }
+                        
+                        // ✅ موظفو الاستقبال يحتاجون شيفت نشط خاص بهم
                         if (userData.role === 'reception') {
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const tomorrow = new Date(today);
-                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            const hasUserShift = await checkUserActiveShift(user.uid);
                             
-                            const q = query(
-                                collection(db, "shifts"),
-                                where("userId", "==", user.uid), // ✅ فقط شيفتات المستخدم الحالي
-                                where("startTime", ">=", Timestamp.fromDate(today)),
-                                where("startTime", "<", Timestamp.fromDate(tomorrow)),
-                                where("status", "==", "active")
-                            );
-                            
-                            const querySnapshot = await getDocs(q);
-                            
-                            if (querySnapshot.empty) {
-                                // لا يوجد شيفت نشط للمستخدم، توجيه إلى صفحة الشيفتات
+                            if (!hasUserShift) {
                                 if (!window.location.href.includes('shift-management.html')) {
                                     window.location.href = '../shift-management/shift-management.html';
                                 }
@@ -65,12 +116,13 @@ export async function checkActiveShift() {
                                 return;
                             }
                         }
+                        
                         resolve(true);
                     } else {
                         resolve(false);
                     }
                 } catch (error) {
-                    console.error("خطأ في التحقق من الشيفت:", error);
+                    console.error("❌ خطأ في التحقق من الشيفت:", error);
                     resolve(false);
                 }
             } else {
@@ -80,7 +132,7 @@ export async function checkActiveShift() {
     });
 }
 
-// دالة للتحقق من الصلاحية مع الشيفت
+// ✅ دالة للتحقق من الصلاحية مع الشيفت
 export async function checkUserRoleWithShift(requiredRole = null) {
     return new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
@@ -97,10 +149,29 @@ export async function checkUserRoleWithShift(requiredRole = null) {
                             return;
                         }
                         
-                        // ✅ إذا كان المستخدم من نوع استقبال، تحقق من وجود شيفت نشط له فقط
+                        // ✅ الأطباء: التحقق من وجود أي شيفت نشط
+                        if (userData.role === 'doctor' || userData.role === 'skin_doctor') {
+                            const hasAnyActiveShift = await checkAnyActiveShift();
+                            
+                            if (!hasAnyActiveShift) {
+                                alert('⚠️ لا يوجد شيفت نشط في النظام. يجب على موظف الاستقبال بدء شيفت أولاً.');
+                                window.location.href = "../main.html";
+                                resolve(false);
+                                return;
+                            }
+                            
+                            resolve(userData);
+                            return;
+                        }
+                        
+                        // ✅ موظفو الاستقبال: التحقق من شيفتهم الخاص
                         if (userData.role === 'reception') {
-                            const hasActiveShift = await checkUserActiveShift(user.uid);
-                            if (!hasActiveShift) {
+                            const hasUserShift = await checkUserActiveShift(user.uid);
+                            
+                            if (!hasUserShift) {
+                                if (!window.location.href.includes('shift-management.html')) {
+                                    window.location.href = '../shift-management/shift-management.html';
+                                }
                                 resolve(false);
                                 return;
                             }
@@ -112,7 +183,7 @@ export async function checkUserRoleWithShift(requiredRole = null) {
                         resolve(false);
                     }
                 } catch (error) {
-                    console.error("خطأ في التحقق من الصلاحية:", error);
+                    console.error("❌ خطأ في التحقق من الصلاحية:", error);
                     window.location.href = "../index.html";
                     resolve(false);
                 }
@@ -124,40 +195,7 @@ export async function checkUserRoleWithShift(requiredRole = null) {
     });
 }
 
-// ✅ دالة مساعدة للتحقق من شيفت مستخدم معين
-async function checkUserActiveShift(userId) {
-    try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        const q = query(
-            collection(db, "shifts"),
-            where("userId", "==", userId),
-            where("startTime", ">=", Timestamp.fromDate(today)),
-            where("startTime", "<", Timestamp.fromDate(tomorrow)),
-            where("status", "==", "active")
-        );
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            // لا يوجد شيفت نشط، توجيه إلى صفحة الشيفتات
-            if (!window.location.href.includes('shift-management.html')) {
-                window.location.href = '../shift-management/shift-management.html';
-            }
-            return false;
-        }
-        
-        return true;
-    } catch (error) {
-        console.error("خطأ في التحقق من الشيفت:", error);
-        return false;
-    }
-}
-
-// دالة للتحقق من صلاحية المستخدم - الإصدار الأساسي
+// ✅ دالة للتحقق من صلاحية المستخدم - الإصدار الأساسي
 export async function checkUserRole(requiredRole = null) {
     return new Promise((resolve, reject) => {
         onAuthStateChanged(auth, async (user) => {

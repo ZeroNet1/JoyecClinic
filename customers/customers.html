@@ -38,15 +38,18 @@
                 <div class="balance-options">
                     <h3>💰 الرصيد المبدئي (اختياري)</h3>
                     
-                    <!-- الرصيد العادي -->
+                    <!-- الرصيد الأساسي -->
                     <div class="balance-type-card">
                         <div class="balance-type-header">
                             <input type="checkbox" id="enableNormalBalance" class="balance-checkbox">
                             <label for="enableNormalBalance" class="balance-type-label">
                                 <span class="balance-icon">💵</span>
-                                <span class="balance-name">الرصيد العادي</span>
+                                <span class="balance-name">الرصيد الأساسي</span>
                             </label>
                         </div>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 10px 35px;">
+                            يمكن استخدامه لجميع الخدمات وتحويله لأي فئة
+                        </p>
                         <div class="balance-input-group hidden" id="normalBalanceGroup">
                             <input type="number" id="customerBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
                             <span class="currency">جنيه</span>
@@ -62,6 +65,9 @@
                                 <span class="balance-name">رصيد العروض</span>
                             </label>
                         </div>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 10px 35px;">
+                            مخصص للعروض الترويجية - يمكن تحويله للرصيد الأساسي
+                        </p>
                         <div class="balance-input-group hidden" id="offersBalanceGroup">
                             <input type="number" id="offersBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
                             <span class="currency">جنيه</span>
@@ -77,6 +83,9 @@
                                 <span class="balance-name">رصيد الليزر</span>
                             </label>
                         </div>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 10px 35px;">
+                            مخصص لخدمات الليزر - يمكن تحويله للرصيد الأساسي
+                        </p>
                         <div class="balance-input-group hidden" id="laserBalanceGroup">
                             <input type="number" id="laserBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
                             <span class="currency">جنيه</span>
@@ -92,6 +101,9 @@
                                 <span class="balance-name">رصيد الجلدية</span>
                             </label>
                         </div>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 10px 35px;">
+                            مخصص لخدمات الجلدية - يمكن تحويله للرصيد الأساسي
+                        </p>
                         <div class="balance-input-group hidden" id="dermaBalanceGroup">
                             <input type="number" id="dermaBalance" step="0.01" min="0" placeholder="0.00" class="balance-input">
                             <span class="currency">جنيه</span>
