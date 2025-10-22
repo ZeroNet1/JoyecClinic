@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الشيفتات - مركز التجميل</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="shift-management.css">
+</head>
+<body>
+    <div class="header">
+        <h1 id="pageTitle">إدارة الشيفتات</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <div class="header-actions">
+                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- بدء شيفت جديد -->
+        <div class="start-shift-section" id="startShiftSection">
+            <h2>بدء شيفت جديد</h2>
+            <div class="shift-options">
+                <div class="shift-option" data-shift="صباحي">
+                    <div class="shift-icon">🌅</div>
+                    <div class="shift-name">شيفت صباحي</div>
+                    <div class="shift-time">٦ ص - ٢ م</div>
+                </div>
+                <div class="shift-option" data-shift="مسائي">
+                    <div class="shift-icon">🌙</div>
+                    <div class="shift-name">شيفت مسائي</div>
+                    <div class="shift-time">٢ م - ١٠ م</div>
+                </div>
+            </div>
+            <button class="start-shift-btn hidden" id="startShiftBtn">بدء الشيفت</button>
+        </div>
+
+        <!-- الشيفت النشط -->
+        <div class="active-shift-section hidden" id="activeShiftSection">
+            <div class="shift-header">
+                <div class="shift-info">
+                    <h2>الشيفت النشط</h2>
+                    <div class="shift-details">
+                        <span id="currentShiftType">-</span>
+                        <span>بدأ في: <span id="shiftStartTime">-</span></span>
+                    </div>
+                </div>
+                <div class="shift-stats">
+                    <div class="shift-stat">
+                        <span class="stat-value" id="customersAdded">0</span>
+                        <span class="stat-label">عملاء جدد</span>
+                    </div>
+                    <div class="shift-stat">
+                        <span class="stat-value" id="bookingsMade">0</span>
+                        <span class="stat-label">حجوزات</span>
+                    </div>
+                    <div class="shift-stat">
+                        <span class="stat-value" id="totalRevenue">0.00</span>
+                        <span class="stat-label">إجمالي الإيرادات</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الإجراءات السريعة -->
+            <div class="quick-actions">
+                <h3>الإجراءات السريعة</h3>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="window.location.href='../customers/customers.html'">
+                        <span class="action-icon">👥</span>
+                        <span>إضافة عميل</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='../bookings/bookings.html'">
+                        <span class="action-icon">📅</span>
+                        <span>إضافة حجز</span>
+                    </button>
+                    <button class="action-btn" onclick="showShiftActions()">
+                        <span class="action-icon">📋</span>
+                        <span>سجل الإجراءات</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- إنهاء الشيفت -->
+            <div class="end-shift-section">
+                <button class="end-shift-btn" id="endShiftBtn">إنهاء الشيفت</button>
+            </div>
+        </div>
+
+        <!-- تقرير الشيفت -->
+        <div class="shift-report-section hidden" id="shiftReportSection">
+            <div class="report-header">
+                <h2>تقرير نهاية الشيفت</h2>
+                <button class="print-btn" onclick="printShiftReport()">🖨️ طباعة التقرير</button>
+            </div>
+            
+            <div class="report-content" id="reportContent">
+                <!-- سيتم ملؤه بالبيانات -->
+            </div>
+            
+            <div class="report-actions">
+                <button class="save-btn" onclick="saveShiftReport()">حفظ التقرير</button>
+                <button class="new-shift-btn" onclick="startNewShift()">بدء شيفت جديد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال سجل الإجراءات -->
+    <div id="shiftActionsModal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>سجل إجراءات الشيفت</h3>
+                <button class="close-btn" onclick="closeShiftActionsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="shiftActionsList" class="actions-list">
+                    <!-- سيتم ملؤه بالإجراءات -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="shift-management.js"></script>
+</body>
+</html>

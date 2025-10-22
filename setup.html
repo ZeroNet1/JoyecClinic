@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعداد النظام - مركز التجميل</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form">
+            <h2>إعداد النظام</h2>
+            <p>إنشاء حساب المدير الأول</p>
+            <button id="setupAdmin">إنشاء حساب المدير</button>
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZSMTIQ9o2Aqool263jkvVq-qzhEHEFfM",
+            authDomain: "beautycenter-6e1cf.firebaseapp.com",
+            projectId: "beautycenter-6e1cf",
+            storageBucket: "beautycenter-6e1cf.firebasestorage.app",
+            messagingSenderId: "706085429",
+            appId: "1:706085429:web:1f0ce5d3eb27c35372277c",
+            measurementId: "G-QL4LZG5KJZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        document.getElementById('setupAdmin').addEventListener('click', async () => {
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                // التحقق مما إذا كان هناك مستخدمين بالفعل
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                if (!usersSnapshot.empty) {
+                    messageDiv.textContent = "⚠️ النظام已经有 مستخدمين! لا حاجة للإعداد.";
+                    messageDiv.className = "message error";
+                    return;
+                }
+
+                const userCredential = await createUserWithEmailAndPassword(auth, "admin@beautycenter.com", "admin123");
+                const user = userCredential.user;
+                
+                await addDoc(collection(db, "users"), {
+                    uid: user.uid,
+                    name: "مدير النظام",
+                    email: "admin@beautycenter.com",
+                    role: "admin",
+                    createdAt: new Date()
+                });
+                
+                messageDiv.textContent = "✅ تم إنشاء حساب المدير بنجاح! \n📧 البريد: admin@beautycenter.com \n🔑 كلمة السر: admin123";
+                messageDiv.className = "message success";
+                
+            } catch (error) {
+                console.error("خطأ في إنشاء حساب المدير:", error);
+                messageDiv.textContent = "❌ حدث خطأ أثناء إنشاء الحساب: " + error.message;
+                messageDiv.className = "message error";
+            }
+        });
+    </script>
+</body>
+</html>

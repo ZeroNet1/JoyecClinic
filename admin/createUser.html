@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>إدارة الحسابات - مركز التجميل</title>
+
+    <style>
+        :root{
+            --primary-color:#d63384;
+            --secondary-color:#ff8fab;
+            --accent-color:#ffc2d1;
+            --bg:#fffafb;
+            --text-dark:#222;
+            --muted:#666;
+            --card-bg:#ffffff;
+            --max-width:1200px;
+            --gap:20px;
+        }
+
+        /* Reset */
+        *{box-sizing:border-box}
+        html,body{height:100%;margin:0;padding:0;font-family:"Segoe UI", Tahoma, Arial, "Noto Naskh Arabic", sans-serif; background: linear-gradient(135deg,var(--bg) 0%, var(--accent-color) 100%); -webkit-font-smoothing:antialiased}
+
+        /* App layout */
+        .app{min-height:100vh;display:flex;flex-direction:column}
+
+        /* Header */
+        .header{
+            background: linear-gradient(135deg,var(--primary-color) 0%, var(--secondary-color) 100%);
+            color:#fff;
+            padding: clamp(10px,2.2vw,18px);
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            box-shadow:0 6px 18px rgba(214,51,132,0.18);
+            position:sticky;
+            top:0;
+            z-index:50;
+            flex-wrap:wrap;
+        }
+        .header h1{margin:0;font-size:clamp(18px,2.6vw,24px)}
+        .user-info{display:flex;align-items:center;gap:12px}
+        .user-info #userName{background: rgba(255,255,255,0.12); padding:8px 12px;border-radius:12px;font-weight:700}
+        .back-btn{
+            background: rgba(255,255,255,0.12);
+            color:#fff;
+            border:1px solid rgba(255,255,255,0.18);
+            padding:8px 12px;
+            border-radius:12px;
+            cursor:pointer;
+        }
+        .back-btn:hover{transform:translateY(-2px)}
+
+        /* Main */
+        main.content{flex:1 1 auto;padding:16px;display:flex;justify-content:center;align-items:flex-start}
+        .container{width:100%;max-width:var(--max-width);display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);align-items:start}
+
+        /* Cards */
+        .form-section, .users-section{
+            background:var(--card-bg);
+            border-radius:12px;
+            padding: clamp(14px,2.4vw,22px);
+            box-shadow:0 8px 30px rgba(0,0,0,0.06);
+        }
+
+        h2{margin:0 0 12px 0;color:var(--text-dark);font-size:clamp(18px,2.2vw,20px);border-bottom:3px solid var(--primary-color);padding-bottom:10px}
+
+        form{display:flex;flex-direction:column;gap:12px}
+        .input-group{display:flex;flex-direction:column;gap:6px}
+        label{font-size:14px;color:var(--muted)}
+        input[type="text"], input[type="email"], input[type="password"], select{
+            padding:10px;border-radius:8px;border:1px solid #e6e6e6;font-size:clamp(14px,1.6vw,16px)
+        }
+
+        button[type="submit"]{
+            background:linear-gradient(90deg,var(--primary-color),var(--secondary-color));
+            color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;
+            box-shadow:0 8px 22px rgba(214,51,132,0.12);
+        }
+        button[type="submit"]:active{transform:translateY(1px)}
+
+        .message{margin-top:8px;min-height:20px;color:var(--muted)}
+
+        /* Users list */
+        .users-list{
+            max-height: calc(100vh - 220px); /* keeps list from making page taller than screen */
+            overflow-y:auto;padding-right:6px;
+        }
+        .user-item{
+            background:#fbfbfb;border-radius:8px;padding:12px;margin-bottom:10px;border-left:6px solid var(--primary-color);
+            display:flex;flex-direction:column;gap:8px;
+        }
+        .user-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+        .user-name{font-weight:700;color:var(--text-dark)}
+        .user-details{font-size:13px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .actions{display:flex;gap:8px}
+        .delete-btn{background:#f44336;color:#fff;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px}
+        .edit-btn{background:#607d8b;color:#fff;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px}
+        .delete-btn:hover{opacity:0.95}
+        .edit-btn:hover{opacity:0.95}
+
+        /* Responsive */
+        @media (max-width: 980px){
+            .container{grid-template-columns:1fr}
+        }
+
+        @media (max-width:520px){
+            .header{padding:10px}
+            .user-info #userName{display:none}
+            .container{padding:0}
+            main.content{padding:10px}
+            .users-list{max-height: calc(100vh - 260px)}
+        }
+
+        /* small accessibility focus */
+        button:focus, input:focus, select:focus{outline: 3px solid rgba(214,51,132,0.18); outline-offset:2px}
+
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header" role="banner">
+            <h1>إدارة الحسابات</h1>
+            <div class="user-info" role="navigation" aria-label="معلومات المستخدم والعودة">
+                <span id="userName" aria-live="polite"></span>
+                <button class="back-btn" aria-label="العودة للرئيسية" onclick="window.location.href='../main.html'">العودة للرئيسية</button>
+            </div>
+        </header>
+
+        <main class="content" role="main">
+            <div class="container" role="region" aria-label="منطقة إدارة الحسابات">
+                <section class="form-section" aria-labelledby="createAccountTitle">
+                    <h2 id="createAccountTitle">إنشاء حساب جديد</h2>
+
+                    <form id="createUserForm" novalidate>
+                        <div class="input-group">
+                            <label for="name">الاسم:</label>
+                            <input type="text" id="name" name="name" required placeholder="مثال: محمد علي">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="email">البريد الإلكتروني:</label>
+                            <input type="email" id="email" name="email" required placeholder="example@mail.com">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="password">كلمة السر:</label>
+                            <input type="password" id="password" name="password" required placeholder="كلمة سر قوية">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="role">نوع الحساب:</label>
+                            <select id="role" name="role" required>
+                                <option value="">اختر نوع الحساب</option>
+                                <option value="admin">ادمن</option>
+                                <option value="reception">استقبال</option>
+                                <option value="accountant">محاسب</option>
+                                <option value="doctor">دكتور</option>
+                                <option value="skin_doctor">دكتور جلد وعلاج طبيعي</option>
+                            </select>
+                        </div>
+
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="submit" id="createBtn">إنشاء الحساب</button>
+                            <button type="button" id="resetBtn" style="background:#e9ecef;color:#333;border-radius:10px;padding:10px 14px;border:none;cursor:pointer">إعادة تعيين</button>
+                        </div>
+
+                        <div id="message" class="message" role="status" aria-live="polite"></div>
+                    </form>
+                </section>
+
+                <section class="users-section" aria-labelledby="usersListTitle">
+                    <h2 id="usersListTitle">الحسابات الموجودة</h2>
+                    <div id="usersList" class="users-list" role="list" aria-label="قائمة الحسابات">
+                        <!-- users populated by JS -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // Script notes:
+        // 1) If you already have a module createUser.js that handles Firebase, this file will try to import it and call an exported "initAdminPage" function if present.
+        // 2) If there's no external module, a local fallback using localStorage will be used so you can test the UI immediately.
+        // 3) The fallback stores users under key "admin_users_demo" (only for UI/testing).
+
+        const userNameEl = document.getElementById('userName');
+        const createForm = document.getElementById('createUserForm');
+        const usersListEl = document.getElementById('usersList');
+        const msgEl = document.getElementById('message');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // show logged-in user name if available (from your main app)
+        (function populateLoggedInName(){
+            try {
+                const d = localStorage.getItem('userData');
+                if (d) {
+                    const u = JSON.parse(d);
+                    userNameEl.textContent = u.name ? `مرحباً، ${u.name}` : '';
+                } else {
+                    userNameEl.textContent = '';
+                }
+            } catch(e){
+                userNameEl.textContent = '';
+            }
+        })();
+
+        // Attempt to import external createUser.js (your Firebase logic)
+        let externalModule = null;
+        try {
+            // path relative to this file - adjust if your structure different
+            const mod = await import('./createUser.js').catch(()=>null);
+            if (mod) {
+                externalModule = mod;
+                // if external module exposes initAdminPage, call it to hand over rendering/logic
+                if (typeof externalModule.initAdminPage === 'function') {
+                    externalModule.initAdminPage({ renderUsers, onUserAdded, showMessage });
+                    console.info('✅ createUser.js loaded and initAdminPage called.');
+                } else {
+                    console.info('ℹ️ createUser.js loaded but did not export initAdminPage(). Falling back to local UI.');
+                }
+            }
+        } catch (err) {
+            console.info('ℹ️ لم يتم العثور على createUser.js أو فشل في استيراده، سيتم استخدام البديل المحلي لعرض الواجهة.', err);
+        }
+
+        // --- Local fallback storage (for UI/testing) ---
+        const STORAGE_KEY = 'admin_users_demo';
+
+        function loadLocalUsers(){
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function saveLocalUsers(users){
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+        }
+
+        // Render users list (used by both external module if it wants to call and fallback)
+        function renderUsers(users){
+            usersListEl.innerHTML = '';
+            if (!users || users.length === 0) {
+                usersListEl.innerHTML = '<div style="color:var(--muted);padding:8px">لا توجد حسابات حتى الآن.</div>';
+                return;
+            }
+            users.forEach((u, idx) => {
+                const item = document.createElement('div');
+                item.className = 'user-item';
+                item.setAttribute('role','listitem');
+                item.innerHTML = `
+                    <div class="user-top">
+                        <div>
+                            <div class="user-name">${escapeHtml(u.name || '—')}</div>
+                            <div class="user-details">
+                                <span>البريد: ${escapeHtml(u.email || '—')}</span>
+                                <span>•</span>
+                                <span>الدور: ${escapeHtml(u.role || '—')}</span>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="edit-btn" data-idx="${idx}" aria-label="تعديل المستخدم">تعديل</button>
+                            <button class="delete-btn" data-idx="${idx}" aria-label="حذف المستخدم">حذف</button>
+                        </div>
+                    </div>
+                `;
+                usersListEl.appendChild(item);
+            });
+        }
+
+        function escapeHtml(str){
+            return String(str).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+        }
+
+        // Local fallback behavior
+        function onUserAdded(newUser){
+            // If external module handled creation, it can call this to update UI too.
+            // For fallback we update localStorage.
+            const list = loadLocalUsers();
+            list.unshift(newUser); // newest first
+            saveLocalUsers(list);
+            renderUsers(list);
+            showMessage('تم إنشاء الحساب محلياً (تجريبي).', 'success');
+        }
+
+        // delete local user
+        function deleteLocalUser(index){
+            const list = loadLocalUsers();
+            if (index < 0 || index >= list.length) return;
+            list.splice(index,1);
+            saveLocalUsers(list);
+            renderUsers(list);
+        }
+
+        // show message
+        function showMessage(text, type='info'){
+            msgEl.textContent = text;
+            if (type === 'success') msgEl.style.color = '#155724';
+            else if (type === 'error') msgEl.style.color = '#721c24';
+            else msgEl.style.color = 'var(--muted)';
+            setTimeout(()=>{ msgEl.textContent=''; }, 4500);
+        }
+
+        // attach handlers: form submit - if external module exists and exports createUser, prefer it.
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
+            if (!name || !email || !password || !role) {
+                showMessage('يرجى ملء جميع الحقول.', 'error');
+                return;
+            }
+
+            // if external module provides createUserFirebase, use it
+            if (externalModule && typeof externalModule.createUserFirebase === 'function') {
+                try {
+                    showMessage('جاري إنشاء الحساب... الرجاء الانتظار');
+                    const res = await externalModule.createUserFirebase({ name, email, password, role });
+                    // external module should handle storing in DB; call its rendering callback if it provided
+                    if (res && typeof res === 'object') {
+                        showMessage('تم إنشاء الحساب في قاعدة البيانات.', 'success');
+                        // if external module exposes getUsers, re-fetch or call renderUsers with data
+                        if (typeof externalModule.getUsers === 'function') {
+                            const users = await externalModule.getUsers();
+                            renderUsers(users);
+                        }
+                    } else {
+                        showMessage('تم إنشاء الحساب (مردود غير معروف من الوحدة الخارجية).', 'success');
+                    }
+                    createForm.reset();
+                } catch (err) {
+                    console.error(err);
+                    showMessage('خطأ أثناء إنشاء الحساب (وحدة خارجية): ' + (err.message || ''), 'error');
+                }
+                return;
+            }
+
+            // fallback: store locally (for UI/demo)
+            const newUser = { name, email, role, createdAt: new Date().toISOString() };
+            onUserAdded(newUser);
+            createForm.reset();
+        });
+
+        // reset button
+        resetBtn.addEventListener('click', ()=> createForm.reset());
+
+        // delegate delete/edit clicks for users-list (works for both local and external render)
+        usersListEl.addEventListener('click', async (e) => {
+            const del = e.target.closest('.delete-btn');
+            const edit = e.target.closest('.edit-btn');
+
+            if (del) {
+                const idx = Number(del.getAttribute('data-idx'));
+                if (!Number.isFinite(idx)) return;
+                if (!confirm('هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع.')) return;
+
+                // if external module exposes deleteUser (e.g., by uid) prefer it
+                if (externalModule && typeof externalModule.deleteUser === 'function') {
+                    try {
+                        // external module is responsible for deletion and refreshing list
+                        await externalModule.deleteUser(idx /* or id */);
+                        // attempt to re-fetch list
+                        if (typeof externalModule.getUsers === 'function') {
+                            const users = await externalModule.getUsers();
+                            renderUsers(users);
+                        } else {
+                            // fallback: remove local index if present
+                            deleteLocalUser(idx);
+                        }
+                        showMessage('تم حذف المستخدم.', 'success');
+                    } catch (err) {
+                        console.error(err);
+                        showMessage('حدث خطأ أثناء الحذف (وحدة خارجية).', 'error');
+                    }
+                } else {
+                    // local fallback
+                    deleteLocalUser(idx);
+                    showMessage('تم حذف المستخدم (محلي).', 'success');
+                }
+            }
+
+            if (edit) {
+                const idx = Number(edit.getAttribute('data-idx'));
+                if (!Number.isFinite(idx)) return;
+                // simplistic edit: fill form with data for update (local fallback only)
+                if (externalModule && typeof externalModule.editUser === 'function') {
+                    // delegate to external module
+                    externalModule.editUser(idx);
+                } else {
+                    const users = loadLocalUsers();
+                    const u = users[idx];
+                    if (!u) return;
+                    document.getElementById('name').value = u.name || '';
+                    document.getElementById('email').value = u.email || '';
+                    document.getElementById('role').value = u.role || '';
+                    showMessage('تم تحميل بيانات المستخدم للتعديل (بعد التعديل اضغط إنشاء ليحلّ مكانه كأحدث تسجيل محلي).', 'info');
+                }
+            }
+        });
+
+        // init: render local users if external module not provided a getUsers
+        (function init(){
+            if (externalModule && typeof externalModule.getUsers === 'function') {
+                // try to fetch from external module
+                externalModule.getUsers().then(users => {
+                    if (Array.isArray(users)) renderUsers(users);
+                    else renderUsers(loadLocalUsers());
+                }).catch(()=> renderUsers(loadLocalUsers()));
+            } else {
+                renderUsers(loadLocalUsers());
+            }
+        })();
+
+    </script>
+</body>
+</html>

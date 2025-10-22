@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل العميل - مركز التجميل</title>
+    <link rel="stylesheet" href="customer-details.css">
+    <style>
+        /* إضافة أنماط خاصة بالعروض */
+        .report-service-item {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-right: 3px solid #28a745;
+        }
+
+        .report-service-item.no-report {
+            border-right-color: #6c757d;
+            opacity: 0.7;
+        }
+
+        .service-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .view-report-details-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .view-report-details-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .view-report-details-btn.no-report {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .view-report-details-btn.no-report:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .report-modal-body {
+            padding: 25px;
+        }
+
+        .report-section {
+            margin-bottom: 25px;
+        }
+
+        .report-section h4 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 17px;
+            font-weight: 700;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .report-field {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-right: 3px solid #667eea;
+        }
+
+        .report-label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .report-value {
+            display: block;
+            font-size: 15px;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .report-notes {
+            grid-column: 1 / -1;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .session-report-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-right: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .session-report-item:hover {
+            transform: translateX(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .report-date {
+            font-weight: 700;
+            color: #1a1a1a;
+            font-size: 16px;
+        }
+
+        .report-services-list {
+            margin-bottom: 15px;
+        }
+
+        .report-services-list h4 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .convert-btn {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .report-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="pageTitle">تفاصيل العميل</h1>
+        <div class="user-info">
+            <span id="userName">المستخدم</span>
+            <div class="header-actions">
+                <button onclick="window.location.href='customer-list.html'" class="back-btn">قائمة العملاء</button>
+                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- التبويبات -->
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="info">المعلومات الأساسية</button>
+                <button class="tab-btn" data-tab="visits">سجل الزيارات</button>
+                <button class="tab-btn" data-tab="transactions">الحركات المالية</button>
+                <button class="tab-btn" data-tab="offers">رصيد العروض</button>
+                <button class="tab-btn" data-tab="laser">رصيد الليزر</button>
+                <button class="tab-btn" data-tab="derma">رصيد الجلدية</button>
+            </div>
+            
+            <div class="tabs-content">
+                <!-- تبويب المعلومات الأساسية -->
+                <div id="info-tab" class="tab-pane active">
+                    <div class="customer-card">
+                        <div class="customer-header">
+                            <div class="customer-avatar">
+                                <span>👤</span>
+                            </div>
+                            <div class="customer-main-info">
+                                <h2 id="customerNameDisplay">-</h2>
+                                <p id="customerPhoneDisplay">-</p>
+                                <div class="customer-meta">
+                                    <span class="customer-id-label">معرّف العميل:</span>
+                                    <span id="customerIdDisplay" class="customer-id-value">-</span>
+                                </div>
+                            </div>
+                            <div class="customer-stats">
+                                <div class="stat">
+                                    <div class="stat-value" id="visitCount">0</div>
+                                    <div class="stat-label">عدد الزيارات</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value" id="totalSpent">0.00</div>
+                                    <div class="stat-label">إجمالي الإنفاق</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- الرصيد الأساسي -->
+                        <div class="balance-section">
+                            <div class="balance-info">
+                                <h3>💰 الرصيد الأساسي</h3>
+                                <p style="font-size: 13px; color: #666; margin: 5px 0;">يمكن استخدامه لجميع الخدمات وتحويله لأي فئة</p>
+                                <div class="balance-amount" id="currentBalance">0.00 جنيه</div>
+                            </div>
+                            <div class="balance-actions">
+                                <button class="recharge-btn" id="rechargeBtn">💵 شحن الرصيد</button>
+                                <button class="transfer-btn" id="transferNormalBtn">🔄 تحويل لعميل آخر</button>
+                                <button class="convert-btn" id="convertNormalBtn">💱 تحويل لفئة أخرى</button>
+                            </div>
+                        </div>
+                        
+                        <!-- نموذج شحن الرصيد الأساسي -->
+                        <div class="recharge-form hidden" id="normalRechargeForm">
+                            <h4>شحن الرصيد الأساسي</h4>
+                            <form id="rechargeBalanceForm">
+                                <div class="input-group">
+                                    <label for="rechargeAmount">المبلغ:</label>
+                                    <input type="number" id="rechargeAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="paymentMethod">طريقة الدفع:</label>
+                                    <select id="paymentMethod" required>
+                                        <option value="نقدي">نقدي</option>
+                                        <option value="كاش">كاش</option>
+                                        <option value="فيزا">فيزا</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="rechargeNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="rechargeNotes" placeholder="ملاحظات حول الشحن"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">تأكيد الشحن</button>
+                                    <button type="button" class="cancel-btn" id="cancelRecharge">إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- نموذج تحويل الرصيد الأساسي لعميل آخر -->
+                        <div class="transfer-form hidden" id="normalTransferForm">
+                            <h4>🔄 تحويل الرصيد الأساسي</h4>
+                            <form id="transferNormalBalanceForm">
+                                <div class="input-group">
+                                    <label for="normalTransferAmount">المبلغ المراد تحويله:</label>
+                                    <input type="number" id="normalTransferAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="normalTransferTo">رقم هاتف العميل المستقبل:</label>
+                                    <input type="tel" id="normalTransferTo" required placeholder="مثال: 01012345678">
+                                </div>
+                                <div class="input-group">
+                                    <label for="normalTransferNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="normalTransferNotes" placeholder="أضف ملاحظات حول التحويل"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">✅ تأكيد التحويل</button>
+                                    <button type="button" class="cancel-btn" id="cancelNormalTransfer">❌ إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- نموذج تحويل الرصيد الأساسي لفئة أخرى -->
+                        <div class="transfer-form hidden" id="normalConvertForm">
+                            <h4>💱 تحويل الرصيد الأساسي لفئة أخرى</h4>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px; background: #e3f2fd; padding: 10px; border-radius: 8px;">
+                                ℹ️ سيتم تحويل المبلغ من الرصيد الأساسي إلى الفئة المختارة لنفس العميل
+                            </p>
+                            <form id="convertNormalBalanceForm">
+                                <div class="input-group">
+                                    <label for="normalConvertAmount">المبلغ المراد تحويله:</label>
+                                    <input type="number" id="normalConvertAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="normalConvertToType">تحويل إلى:</label>
+                                    <select id="normalConvertToType" required>
+                                        <option value="">اختر الفئة</option>
+                                        <option value="offers">💰 رصيد العروض</option>
+                                        <option value="laser">✨ رصيد الليزر</option>
+                                        <option value="derma">🧴 رصيد الجلدية</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="normalConvertNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="normalConvertNotes" placeholder="أضف ملاحظات حول التحويل"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">✅ تأكيد التحويل</button>
+                                    <button type="button" class="cancel-btn" id="cancelNormalConvert">❌ إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- تبويب سجل الزيارات -->
+                <div id="visits-tab" class="tab-pane">
+                    <div class="visits-header">
+                        <h3>سجل الزيارات</h3>
+                        <button class="add-visit-btn" id="addVisitBtn">+ إضافة زيارة جديدة</button>
+                    </div>
+                    
+                    <div id="visitsList" class="visits-list">
+                        <div class="loading">جاري تحميل الزيارات...</div>
+                    </div>
+                </div>
+                
+                <!-- تبويب الحركات المالية -->
+                <div id="transactions-tab" class="tab-pane">
+                    <div class="transactions-header">
+                        <h3>الحركات المالية</h3>
+                        <div class="transactions-summary">
+                            <div class="summary-item">
+                                <span>إجمالي الإيداعات:</span>
+                                <span id="totalDeposits">0.00 جنيه</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>إجمالي الخصومات:</span>
+                                <span id="totalWithdrawals">0.00 جنيه</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- فلتر التاريخ -->
+                    <div class="transactions-filter">
+                        <div class="filter-group">
+                            <label for="transactionDateFilter">📅 تصفية حسب التاريخ:</label>
+                            <select id="transactionDateFilter">
+                                <option value="all">جميع الفترات</option>
+                                <option value="today">اليوم</option>
+                                <option value="yesterday">أمس</option>
+                                <option value="this_week">هذا الأسبوع</option>
+                                <option value="this_month">هذا الشهر</option>
+                                <option value="last_month">الشهر الماضي</option>
+                                <option value="custom">تاريخ محدد</option>
+                            </select>
+                        </div>
+                        <div class="filter-group custom-date-group hidden" id="customDateGroup">
+                            <label for="customTransactionDate">اختر التاريخ:</label>
+                            <input type="date" id="customTransactionDate">
+                        </div>
+                        <button class="clear-filter-btn" id="clearTransactionFilter">🔄 إعادة تعيين</button>
+                    </div>
+                    
+                    <div id="transactionsList" class="transactions-list">
+                        <div class="loading">جاري تحميل الحركات المالية...</div>
+                    </div>
+                </div>
+
+                <!-- تبويب رصيد العروض -->
+                <div id="offers-tab" class="tab-pane">
+                    <div class="offers-container">
+                        <div class="balance-type-section offers-bg">
+                            <div class="balance-info">
+                                <h3>💰 رصيد العروض</h3>
+                                <div class="balance-amount" id="offersBalance">0.00 جنيه</div>
+                                <p class="balance-description">رصيد مخصص لشراء العروض الترويجية<br>
+                                <small style="opacity: 0.9;">✅ يمكن تحويله للرصيد الأساسي لنفس العميل</small></p>
+                            </div>
+                            <div class="balance-actions-group">
+                                <button class="recharge-btn" id="rechargeOffersBtn">شحن</button>
+                                <button class="transfer-btn" id="transferOffersBtn">➡️ تحويل للرصيد الأساسي</button>
+                            </div>
+                        </div>
+
+                        <!-- نموذج شحن رصيد العروض -->
+                        <div class="recharge-form hidden" id="offersRechargeForm">
+                            <h4>شحن رصيد العروض</h4>
+                            <form id="rechargeOffersBalanceForm">
+                                <div class="input-group">
+                                    <label for="offersRechargeAmount">المبلغ:</label>
+                                    <input type="number" id="offersRechargeAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="offersPaymentMethod">طريقة الدفع:</label>
+                                    <select id="offersPaymentMethod" required>
+                                        <option value="نقدي">نقدي</option>
+                                        <option value="كاش">كاش</option>
+                                        <option value="فيزا">فيزا</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="offersRechargeNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="offersRechargeNotes" placeholder="ملاحظات حول الشحن"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">تأكيد الشحن</button>
+                                    <button type="button" class="cancel-btn" id="cancelOffersRecharge">إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- نموذج تحويل رصيد العروض -->
+                        <div class="transfer-form hidden" id="offersTransferForm">
+                            <h4>🔄 تحويل رصيد العروض للرصيد الأساسي</h4>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                                ⚠️ سيتم تحويل المبلغ من رصيد العروض إلى الرصيد الأساسي لنفس العميل
+                            </p>
+                            <form id="transferOffersBalanceForm">
+                                <div class="input-group">
+                                    <label for="offersTransferAmount">المبلغ المراد تحويله:</label>
+                                    <input type="number" id="offersTransferAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="offersTransferNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="offersTransferNotes" placeholder="أضف ملاحظات حول التحويل"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">✅ تأكيد التحويل</button>
+                                    <button type="button" class="cancel-btn" id="cancelOffersTransfer">❌ إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب رصيد الليزر -->
+                <div id="laser-tab" class="tab-pane">
+                    <div class="offers-container">
+                        <div class="balance-type-section laser-bg">
+                            <div class="balance-info">
+                                <h3>✨ رصيد الليزر</h3>
+                                <div class="balance-amount" id="laserBalance">0.00 جنيه</div>
+                                <p class="balance-description">رصيد مخصص لخدمات الليزر<br>
+                                <small style="opacity: 0.9;">✅ يمكن تحويله للرصيد الأساسي لنفس العميل</small></p>
+                            </div>
+                            <div class="balance-actions-group">
+                                <button class="recharge-btn" id="rechargeLaserBtn">شحن</button>
+                                <button class="transfer-btn" id="transferLaserBtn">➡️ تحويل للرصيد الأساسي</button>
+                            </div>
+                        </div>
+
+                        <!-- نموذج شحن رصيد الليزر -->
+                        <div class="recharge-form hidden" id="laserRechargeForm">
+                            <h4>شحن رصيد الليزر</h4>
+                            <form id="rechargeLaserBalanceForm">
+                                <div class="input-group">
+                                    <label for="laserRechargeAmount">المبلغ:</label>
+                                    <input type="number" id="laserRechargeAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="laserPaymentMethod">طريقة الدفع:</label>
+                                    <select id="laserPaymentMethod" required>
+                                        <option value="نقدي">نقدي</option>
+                                        <option value="كاش">كاش</option>
+                                        <option value="فيزا">فيزا</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="laserRechargeNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="laserRechargeNotes" placeholder="ملاحظات حول الشحن"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">تأكيد الشحن</button>
+                                    <button type="button" class="cancel-btn" id="cancelLaserRecharge">إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- نموذج تحويل رصيد الليزر -->
+                        <div class="transfer-form hidden" id="laserTransferForm">
+                            <h4>🔄 تحويل رصيد الليزر للرصيد الأساسي</h4>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px; background: #e3f2fd; padding: 10px; border-radius: 8px;">
+                                ⚠️ سيتم تحويل المبلغ من رصيد الليزر إلى الرصيد الأساسي لنفس العميل
+                            </p>
+                            <form id="transferLaserBalanceForm">
+                                <div class="input-group">
+                                    <label for="laserTransferAmount">المبلغ المراد تحويله:</label>
+                                    <input type="number" id="laserTransferAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="laserTransferNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="laserTransferNotes" placeholder="أضف ملاحظات حول التحويل"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">✅ تأكيد التحويل</button>
+                                    <button type="button" class="cancel-btn" id="cancelLaserTransfer">❌ إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب رصيد الجلدية -->
+                <div id="derma-tab" class="tab-pane">
+                    <div class="offers-container">
+                        <div class="balance-type-section derma-bg">
+                            <div class="balance-info">
+                                <h3>🧴 رصيد الجلدية</h3>
+                                <div class="balance-amount" id="dermaBalance">0.00 جنيه</div>
+                                <p class="balance-description">رصيد مخصص لخدمات الجلدية<br>
+                                <small style="opacity: 0.9;">✅ يمكن تحويله للرصيد الأساسي لنفس العميل</small></p>
+                            </div>
+                            <div class="balance-actions-group">
+                                <button class="recharge-btn" id="rechargeDermaBtn">شحن</button>
+                                <button class="transfer-btn" id="transferDermaBtn">➡️ تحويل للرصيد الأساسي</button>
+                            </div>
+                        </div>
+
+                        <!-- نموذج شحن رصيد الجلدية -->
+                        <div class="recharge-form hidden" id="dermaRechargeForm">
+                            <h4>شحن رصيد الجلدية</h4>
+                            <form id="rechargeDermaBalanceForm">
+                                <div class="input-group">
+                                    <label for="dermaRechargeAmount">المبلغ:</label>
+                                    <input type="number" id="dermaRechargeAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="dermaPaymentMethod">طريقة الدفع:</label>
+                                    <select id="dermaPaymentMethod" required>
+                                        <option value="نقدي">نقدي</option>
+                                        <option value="كاش">كاش</option>
+                                        <option value="فيزا">فيزا</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="dermaRechargeNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="dermaRechargeNotes" placeholder="ملاحظات حول الشحن"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">تأكيد الشحن</button>
+                                    <button type="button" class="cancel-btn" id="cancelDermaRecharge">إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- نموذج تحويل رصيد الجلدية -->
+                        <div class="transfer-form hidden" id="dermaTransferForm">
+                            <h4>🔄 تحويل رصيد الجلدية للرصيد الأساسي</h4>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                ⚠️ سيتم تحويل المبلغ من رصيد الجلدية إلى الرصيد الأساسي لنفس العميل
+                            </p>
+                            <form id="transferDermaBalanceForm">
+                                <div class="input-group">
+                                    <label for="dermaTransferAmount">المبلغ المراد تحويله:</label>
+                                    <input type="number" id="dermaTransferAmount" step="0.01" min="1" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="dermaTransferNotes">ملاحظات (اختياري):</label>
+                                    <textarea id="dermaTransferNotes" placeholder="أضف ملاحظات حول التحويل"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn">✅ تأكيد التحويل</button>
+                                    <button type="button" class="cancel-btn" id="cancelDermaTransfer">❌ إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نموذج إضافة زيارة -->
+    <div id="addVisitModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إضافة زيارة جديدة</h3>
+                <button class="close-btn" id="closeVisitModal">✕</button>
+            </div>
+            <form id="addVisitForm">
+                <div class="input-group">
+                    <label for="visitDate">تاريخ الزيارة:</label>
+                    <input type="datetime-local" id="visitDate" required>
+                </div>
+                <div class="input-group">
+                    <label for="visitDoctor">الدكتور:</label>
+                    <select id="visitDoctor" required>
+                        <option value="">اختر الدكتور</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="visitService">الخدمة:</label>
+                    <select id="visitService" required>
+                        <option value="">اختر الخدمة</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="visitAmount">المبلغ المدفوع:</label>
+                    <input type="number" id="visitAmount" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="input-group">
+                    <label for="visitNotes">ملاحظات:</label>
+                    <textarea id="visitNotes" placeholder="ملاحظات حول الزيارة"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="save-btn">حفظ الزيارة</button>
+                    <button type="button" class="cancel-btn" id="cancelVisit">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="customer-details.js"></script>
+</body>
+</html>

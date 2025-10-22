@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحة الدكتور - مركز الجمال</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* الهيدر */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            margin-bottom: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        #userName {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+
+        .shift-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .shift-status.waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .shift-status.active {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* Grid الحجوزات */
+        .bookings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* بطاقة الحجز */
+        .booking-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-right: 5px solid #667eea;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .booking-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .booking-card.status-confirmed {
+            border-right-color: #28a745;
+        }
+
+        .booking-card.status-started {
+            border-right-color: #17a2b8;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .booking-card.status-pending_payment {
+            border-right-color: #ffc107;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3); }
+            50% { box-shadow: 0 8px 25px rgba(23, 162, 184, 0.5); }
+        }
+
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .booking-time {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .booking-status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .booking-status.confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .booking-status.started {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .booking-status.pending_payment {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .customer-info h3 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 20px;
+        }
+
+        .customer-info p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .services-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .services-list strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .service-item {
+            margin: 8px 0;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .service-item-content {
+            flex: 1;
+        }
+
+        .add-details-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .add-details-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .add-details-btn.has-report {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        /* خدمات إضافية غير مدفوعة */
+        .unpaid-services {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe5b4 100%);
+            border-right: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .unpaid-services strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #856404;
+            font-weight: 700;
+        }
+
+        .unpaid-service-item {
+            background: white;
+            padding: 10px 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-right: 3px solid #ffc107;
+        }
+
+        .pending-payment-badge {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 16px;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.85; }
+        }
+
+        .booking-meta {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .booking-meta > div {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .booking-meta strong {
+            color: #333;
+        }
+
+        .booking-actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn.start {
+            background: #28a745;
+            color: white;
+        }
+
+        .action-btn.end {
+            background: #dc3545;
+            color: white;
+        }
+
+        .action-btn.history {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .action-btn.add-service {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .action-btn.inventory {
+            background: #6c757d;
+            color: white;
+        }
+
+        .action-btn.details {
+            background: #007bff;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .session-timer {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        /* المودال الاحترافي */
+        .professional-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+
+        .professional-modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .customer-info-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-right: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .customer-info-box h3 {
+            margin: 0 0 15px 0;
+            color: #1565c0;
+            font-size: 18px;
+        }
+
+        .customer-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .customer-info-grid div {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .customer-info-grid span:first-child {
+            color: #555;
+        }
+
+        .customer-info-grid span:last-child {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .balance-positive {
+            color: #28a745 !important;
+        }
+
+        .balance-negative {
+            color: #dc3545 !important;
+        }
+
+        /* قائمة الخدمات/المنتجات في المودال */
+        .items-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .item-card {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .item-card:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .item-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transform: scale(1.02);
+        }
+
+        .item-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .item-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .item-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* تحذير الرصيد */
+        .balance-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe5b4 100%);
+            border-right: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .balance-warning h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .balance-warning p {
+            margin: 5px 0;
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .balance-warning .warning-details {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .warning-details div {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .warning-details div:last-child {
+            border-top: 2px solid #ffc107;
+            padding-top: 8px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        /* تأكيد الدفع */
+        .balance-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-right: 4px solid #28a745;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .balance-success h4 {
+            margin: 0 0 10px 0;
+            color: #155724;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .balance-success p {
+            margin: 5px 0;
+            color: #155724;
+            font-size: 14px;
+        }
+
+        /* أزرار المودال */
+        .modal-footer {
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* نموذج التقرير */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* حالات التحميل */
+        .loading, .empty-state, .waiting-message {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            font-size: 18px;
+            color: #666;
+        }
+
+        .waiting-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 991px) {
+            .bookings-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .bookings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .customer-info-grid, .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 98%;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👨‍⚕️ لوحة الدكتور</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <div id="shiftStatus" class="shift-status waiting">⏳ في انتظار بدء الشيفت...</div>
+            <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="doctorContent" class="hidden">
+            <div class="bookings-grid" id="bookingsGrid">
+                <div class="loading">جاري تحميل الحجوزات...</div>
+            </div>
+        </div>
+
+        <div id="waitingContent">
+            <div class="waiting-message">
+                <div class="waiting-icon">⏳</div>
+                <h2>في انتظار بدء الشيفت</h2>
+                <p>يرجى الانتظار حتى يبدأ موظف الاستقبال الشيفت.</p>
+                <button onclick="checkShiftStatus()" class="refresh-btn">تحديث الحالة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة خدمة احترافي -->
+    <div id="addServiceModal" class="professional-modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span>➕</span>
+                    إضافة خدمة إضافية
+                </h2>
+                <button class="close-btn" onclick="closeAddServiceModal()">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="customer-info-box" id="serviceCustomerInfo">
+                    <!-- سيتم ملؤها ديناميكياً -->
+                </div>
+
+                <label style="display: block; font-weight: bold; margin-bottom: 15px; font-size: 18px; color: #333;">
+                    اختر الخدمة الإضافية:
+                </label>
+
+                <div class="items-grid" id="servicesList">
+                    <!-- سيتم ملؤها ديناميكياً -->
+                </div>
+
+                <div id="balanceWarning" class="hidden">
+                    <!-- سيتم ملؤها ديناميكياً -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn primary" id="confirmAddService" onclick="confirmAddService()">
+                    تأكيد الإضافة
+                </button>
+                <button class="modal-btn secondary" onclick="closeAddServiceModal()">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة تفاصيل الجلسة -->
+    <div id="serviceReportModal" class="professional-modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span>📝</span>
+                    تفاصيل الجلسة
+                </h2>
+                <button class="close-btn" onclick="closeServiceReportModal()">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="serviceReportForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>الاسم:</label>
+                            <input type="text" id="reportPatientName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>رقم التليفون:</label>
+                            <input type="text" id="reportPatientPhone" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>التاريخ:</label>
+                            <input type="date" id="reportDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الوقت:</label>
+                            <input type="time" id="reportTime" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>رقم الجلسة:</label>
+                            <input type="text" id="reportSessionNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label>نوع الجلسة:</label>
+                            <input type="text" id="reportSessionType" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>عدد النبضات:</label>
+                            <input type="number" id="reportPulseCount" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Power:</label>
+                            <input type="text" id="reportPower" placeholder="مثال: 2.5 J/cm²">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Pulse Duration:</label>
+                            <input type="text" id="reportPulseDuration" placeholder="مثال: 3 ms">
+                        </div>
+                        <div class="form-group">
+                            <label>Spot Size:</label>
+                            <input type="text" id="reportSpotSize" placeholder="مثال: 8mm">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Skin Type:</label>
+                        <select id="reportSkinType">
+                            <option value="">اختر نوع البشرة</option>
+                            <option value="I">Type I - Very fair</option>
+                            <option value="II">Type II - Fair</option>
+                            <option value="III">Type III - Medium</option>
+                            <option value="IV">Type IV - Olive</option>
+                            <option value="V">Type V - Brown</option>
+                            <option value="VI">Type VI - Black</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ملاحظات إضافية:</label>
+                        <textarea id="reportNotes" rows="4" placeholder="أي ملاحظات عن الجلسة..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="saveServiceReport()">
+                    💾 حفظ التقرير
+                </button>
+                <button class="modal-btn secondary" onclick="closeServiceReportModal()">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- صوت التنبيه -->
+    <audio id="beepSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHGS57OihUBELTKXh8bllHgU2jdXzxnkpBSh+zPLaizsIGGS56+mjUxEJS6Hd8bpmHwU0iM/zy3UsBS1+zPDaizsIGGO46+qiUhEJSp/c8bplHwU0h87zynUsBS1+y+/biz0IFWO36OiiURAJSZ7b8bhkHgQzhs3zyHQrBSt8ye7Zij4IF2K15+ihTxAJR5zZ77hjHQQyhczyw3MrBCp6x+zYiT4IF2G05+efTQ8JRprX7rZiHAQxg8ryvXIqBCl4xurWiD0HFl+y5eadTAkIP5jV7LVhGwMwgcjxu3AoBCh1xerUhzwHFVyv4uSbSggHPZbT6rNfGgIvf8bwuG4nAydyweHP" type="audio/wav">
+    </audio>
+
+    <script type="module" src="enhanced-doctor-page.js"></script>
+</body>
+</html>

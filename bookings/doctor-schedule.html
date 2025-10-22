@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول الدكتور - مركز التجميل</title>
+    <link rel="stylesheet" href="doctor-schedule.css">
+    <style>
+        /* ستايلات نظام الخدمات المحسن */
+        .service-input-group {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .service-input-group:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .service-selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .service-selection-header label {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .remove-service-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .remove-service-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .service-filter-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333; /* تغيير اللون إلى أسود داكن */
+            font-size: 14px;
+        }
+
+        .category-select-filter,
+        .service-search-filter {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            color: #333; /* تغيير اللون إلى أسود داكن */
+        }
+
+        .service-search-filter:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .service-results-info {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .service-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+            color: #333; /* تغيير اللون إلى أسود داكن */
+            transition: all 0.3s;
+        }
+
+        .service-select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* تحسين قسم تصفية الخدمات الرئيسي */
+        .services-filter-section {
+            background: white; /* تغيير الخلفية إلى أبيض */
+            border: 2px solid #e9ecef;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .services-filter-section h4 {
+            color: #333; /* تغيير اللون إلى أسود داكن */
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .services-filter-section label {
+            color: #333; /* تغيير اللون إلى أسود داكن */
+            font-weight: 600;
+        }
+
+        .services-filter-section select,
+        .services-filter-section input {
+            border: 1px solid #ddd;
+            background: white;
+            color: #333; /* تغيير اللون إلى أسود داكن */
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .services-filter-section select::placeholder,
+        .services-filter-section input::placeholder {
+            color: #666; /* لون أفتح للنص التوضيحي */
+        }
+
+        .services-filter-section select:focus,
+        .services-filter-section input:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* إضافة أيقونة البحث */
+        .services-filter-section h4::before {
+            content: "🔍 ";
+            margin-left: 8px;
+        }
+
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-selection-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .remove-service-btn {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="pageTitle">جدول الدكتور</h1>
+        <div>
+            <span id="userName"></span>
+            <button onclick="window.location.href='bookings.html'" class="back-btn">قائمة الدكاترة</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <label>دكتور: <strong id="doctorName"></strong></label>
+            <input type="date" id="scheduleDate">
+            <button class="add-booking-btn" id="addBookingBtn">+ إضافة حجز جديد</button>
+        </div>
+
+        <div class="bookings-cards" id="bookingsCards">
+            <!-- سيتم ملء الحجوزات هنا -->
+        </div>
+    </div>
+
+    <!-- مودال إضافة حجز -->
+    <div id="addBookingModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إضافة حجز جديد</h3>
+                <button class="close-btn" id="closeBookingModal">✕</button>
+            </div>
+            
+            <form id="addBookingForm">
+                <!-- اختيار نوع العميل -->
+                <div class="input-group">
+                    <label>نوع العميل:</label>
+                    <select id="customerType" required>
+                        <option value="existing">عميل حالي</option>
+                        <option value="new">عميل جديد</option>
+                    </select>
+                </div>
+
+                <!-- قسم العميل الجديد -->
+                <div id="newCustomerSection" class="hidden">
+                    <div class="input-group">
+                        <label>الاسم:</label>
+                        <input type="text" id="newCustomerName" placeholder="أدخل اسم العميل">
+                    </div>
+                    <div class="input-group">
+                        <label>رقم الهاتف:</label>
+                        <input type="tel" id="newCustomerPhone" placeholder="01012345678">
+                    </div>
+                </div>
+
+                <!-- قسم العميل الحالي -->
+                <div id="existingCustomerSection">
+                    <div class="input-group">
+                        <label>نوع البحث:</label>
+                        <select id="searchFilter">
+                            <option value="all">بحث شامل (الكل)</option>
+                            <option value="id">الرقم التعريفي فقط</option>
+                            <option value="phone">رقم الهاتف فقط</option>
+                            <option value="name">الاسم فقط</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>البحث عن عميل:</label>
+                        <input type="text" id="customerSearch" placeholder="ابحث حسب الفلتر المختار...">
+                        <div id="customerResults" class="hidden"></div>
+                    </div>
+                    
+                    <div id="selectedCustomerInfo" class="hidden">
+                        <p><strong>العميل المختار:</strong> <span id="selectedCustomerName"></span></p>
+                        <p><strong>الرصيد:</strong> <span id="selectedCustomerBalance"></span> جنيه</p>
+                    </div>
+                </div>
+
+                <!-- قسم نوع الحجز (يظهر فقط للعملاء الحاليين) -->
+                <div id="bookingTypeSection" class="hidden">
+                    <div class="input-group">
+                        <label>نوع الحجز:</label>
+                        <select id="bookingType" required>
+                            <option value="normal">حجز برصيد عادي</option>
+                            <option value="offer">حجز باستخدام عرض 🎁</option>
+                            <option value="laser">حجز برصيد الليزر ✨</option>
+                            <option value="derma">حجز برصيد الجلدية 🧴</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- قسم تصفية الخدمات العام - تم تحديث التصميم -->
+                <div class="services-filter-section">
+                    <h4>تصفية الخدمات</h4>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>القسم:</label>
+                            <select id="categoryFilter">
+                                <option value="">جميع الأقسام</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>بحث بالاسم:</label>
+                            <input type="text" id="serviceSearch" 
+                                   placeholder="اكتب اسم الخدمة للبحث...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- قسم العروض المتاحة -->
+                <div id="offersSection" class="hidden">
+                    <div class="offers-header">
+                        <h4>🎁 العروض المتاحة</h4>
+                        <p class="offers-note">اختر عرض لاستخدام جلسة منه</p>
+                    </div>
+                    <div id="availableOffers" class="available-offers">
+                        <!-- سيتم ملء العروض هنا -->
+                    </div>
+                </div>
+
+                <!-- صندوق معلومات الرصيد -->
+                <div id="customerBalanceInfo" class="balance-info-box hidden">
+                    <h4>💰 معلومات الرصيد</h4>
+                    <div class="balance-row">
+                        <span class="balance-label">الرصيد الحالي:</span>
+                        <span class="balance-value" id="currentCustomerBalance">0.00</span>
+                    </div>
+                    <div class="balance-row">
+                        <span class="balance-label">تكلفة الحجز:</span>
+                        <span class="balance-value" id="bookingCostDisplay">0.00</span>
+                    </div>
+                    <div class="balance-row">
+                        <span class="balance-label">الرصيد بعد الحجز:</span>
+                        <span class="balance-value" id="remainingBalanceAfter">0.00</span>
+                    </div>
+                    <button type="button" class="recharge-btn hidden" id="rechargeBalanceBtn">
+                        ⚡ شحن الرصيد الآن
+                    </button>
+                </div>
+
+                <!-- عدد الخدمات -->
+                <div class="input-group">
+                    <label>عدد الخدمات:</label>
+                    <select id="servicesCount" required>
+                        <option value="1">خدمة واحدة</option>
+                        <option value="2">خدمتين</option>
+                        <option value="3">3 خدمات</option>
+                        <option value="4">4 خدمات</option>
+                        <option value="5">5 خدمات</option>
+                    </select>
+                </div>
+
+                <!-- قسم الخدمات المحسن -->
+                <div id="servicesSection">
+                    <div id="servicesInputs"></div>
+                </div>
+
+                <!-- وقت الحجز -->
+                <div class="input-group">
+                    <label>وقت الحجز:</label>
+                    <input type="time" id="bookingTime" required>
+                </div>
+
+                <!-- الملخص -->
+                <div class="summary-box">
+                    <h4>ملخص الحجز</h4>
+                    <div class="summary-item">
+                        <span>التكلفة الأصلية:</span>
+                        <strong><span id="originalCost">0.00</span> جنيه</strong>
+                    </div>
+                    <div class="summary-item" id="discountRow" style="display:none;">
+                        <span>التخفيض:</span>
+                        <strong style="color: #dc3545;"><span id="discountAmount">0.00</span> جنيه (<span id="discountPercent">0</span>%)</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>التكلفة النهائية:</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <strong><span id="totalCost">0.00</span> جنيه</strong>
+                            <button type="button" class="edit-price-btn" id="editPriceBtn" title="تعديل السعر">
+                                ✏️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <span>المدة الكلية:</span>
+                        <strong><span id="totalDuration">0</span> دقيقة</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>وقت الانتهاء:</span>
+                        <strong><span id="endTime">--:--</span></strong>
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn">حفظ الحجز</button>
+                <button type="button" class="cancel-btn" id="cancelBooking" style="margin-top:10px;">إلغاء</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال تعديل السعر -->
+    <div id="editPriceModal" class="modal hidden">
+        <!-- سيتم إنشاؤه ديناميكياً -->
+    </div>
+
+    <!-- مودال شحن الرصيد -->
+    <div id="rechargeModal" class="modal hidden">
+        <!-- سيتم إنشاؤه ديناميكياً -->
+    </div>
+
+    <!-- مودال الدفع للعميل الجديد -->
+    <div id="paymentModal" class="modal hidden">
+        <!-- سيتم إنشاؤه ديناميكياً -->
+    </div>
+
+    <script type="module" src="doctor-schedule.js"></script>
+</body>
+</html>

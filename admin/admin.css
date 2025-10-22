@@ -1,0 +1,94 @@
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-section, .users-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-section h2, .users-section h2 {
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #8a4fff;
+    padding-bottom: 10px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.back-btn {
+    background: #607d8b;
+    padding: 8px 15px;
+    width: auto;
+}
+
+.back-btn:hover {
+    background: #546e7a;
+}
+
+.users-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.user-item {
+    background: #f5f5f5;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #8a4fff;
+}
+
+.user-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.user-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
+.delete-btn {
+    background: #f44336;
+    padding: 5px 10px;
+    width: auto;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.delete-btn:hover {
+    background: #d32f2f;
+}
+
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+}

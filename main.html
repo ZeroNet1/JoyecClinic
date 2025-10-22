@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مركز الجمال - الصفحة الرئيسية</title>
+
+    <style>
+        :root {
+            --primary-color: #d63384;
+            --secondary-color: #ff8fab;
+            --accent-color: #ffc2d1;
+            --text-dark: #590d22;
+            --text-light: #fff0f3;
+            --background: #fffafb;
+            --max-width: 1200px;
+            --gap: 16px;
+        }
+
+        /* reset & box-sizing */
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; }
+
+        body {
+            direction: rtl;
+            font-family: "Segoe UI", Tahoma, Arial, "Noto Naskh Arabic", sans-serif;
+            background: linear-gradient(135deg, var(--background) 0%, var(--accent-color) 100%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* app layout */
+        .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: clamp(10px, 2.2vw, 18px);
+            box-shadow: 0 4px 15px rgba(214, 51, 132, 0.3);
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .header h1 { margin: 0; font-size: clamp(18px, 3vw, 26px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .user-info { display: flex; align-items: center; gap: 10px; font-size: clamp(12px, 1.6vw, 14px); }
+        .user-details { display:flex; flex-direction:column; align-items:flex-end; background: rgba(255,255,255,0.12); padding:6px 10px; border-radius:12px; min-width:110px; }
+        .user-name{ font-weight:700; color:var(--text-light); }
+        .user-role{ font-size:0.9rem; color:var(--text-light); opacity:0.95; }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.18);
+            padding: 8px 12px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .logout-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+
+        /* main area grows and scrolls if needed */
+        main.content { display:flex; flex-direction:column; flex:1 1 auto; width:100%; overflow:auto; padding:12px; }
+
+        .container { width:100%; max-width: var(--max-width); margin: 0 auto; }
+
+        .welcome-section {
+            text-align:center;
+            padding: 12px 16px;
+            background: white;
+            margin: 8px 0;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .welcome-section h2{ color:var(--primary-color); margin:6px 0; font-size:clamp(16px,2.4vw,22px); }
+        .welcome-section p{ color:#666; margin:0; font-size:clamp(13px,1.6vw,15px); }
+
+        /* ===== DASHBOARD: flexible rows and horizontal behaviour on small screens ===== */
+        .dashboard {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap; /* on large screens allow wrapping into rows */
+            gap: var(--gap);
+            padding: 8px 0 20px 0;
+            align-content: flex-start;
+            overflow: visible;
+        }
+
+        /* Card base */
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 8px 22px rgba(214,51,132,0.08);
+            text-align:center;
+            cursor:pointer;
+            transition: transform .22s ease, box-shadow .22s ease;
+            border: 1px solid rgba(214,51,132,0.06);
+            position: relative;
+            overflow: hidden;
+
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            gap:10px;
+            min-height:120px;
+            scroll-snap-align: center;
+        }
+
+        .card::before {
+            content:'';
+            position:absolute;
+            top:0; left:0; right:0;
+            height:4px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        .card:hover { transform: translateY(-6px); box-shadow: 0 15px 35px rgba(214,51,132,0.12); }
+
+        .card-icon{ font-size: clamp(28px,4.6vw,44px); color:var(--primary-color); }
+        .card h3{ margin:0; font-size: clamp(14px,2.2vw,18px); color:var(--text-dark); font-weight:600; }
+        .card p{ margin:0; color:#666; font-size: clamp(12px,1.6vw,14px); line-height:1.4; }
+
+        /* ===== Column sizing rules (large -> multiple columns) ===== */
+        /* Default desktop: 4 columns */
+        .card { flex: 1 1 calc(25% - (var(--gap) * 0.75)); max-width: calc(25% - (var(--gap) * 0.75)); }
+
+        @media (max-width: 1100px) {
+            /* tablet: 3 columns */
+            .card { flex: 1 1 calc(33.333% - (var(--gap) * 0.66)); max-width: calc(33.333% - (var(--gap) * 0.66)); }
+        }
+
+        @media (max-width: 800px) {
+            /* small tablet / large phones: 2 columns */
+            .card { flex: 1 1 calc(50% - (var(--gap) * 0.5)); max-width: calc(50% - (var(--gap) * 0.5)); }
+        }
+
+        /* ===== Small screens: force horizontal single-row scroll (rows show horizontally) ===== */
+        @media (max-width: 520px) {
+            .dashboard {
+                flex-wrap: nowrap;            /* keep only one row, scroll horizontally */
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+                padding-bottom: 14px;
+            }
+
+            /* Each card becomes a wide item in the horizontal row */
+            .card {
+                flex: 0 0 78%;               /* card width in the horizontal row */
+                max-width: 78%;
+                min-height: 160px;
+            }
+
+            /* tighten padding so nothing overflows vertically */
+            .welcome-section { padding: 10px; margin-bottom: 10px; }
+            .container { padding-left: 8px; padding-right: 8px; }
+        }
+
+        /* Very small devices: slightly reduce width */
+        @media (max-width: 380px) {
+            .card { flex: 0 0 86%; max-width: 86%; min-height: 150px; }
+        }
+
+        /* shift status indicator (moved top-right for RTL) */
+        .shift-status-indicator {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            background: #28a745;
+            color: white;
+            padding: 7px 12px;
+            border-radius: 18px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+            display: none;
+        }
+        .shift-status-indicator.inactive { background: #dc3545; }
+
+        /* logout modal */
+        .logout-warning-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.65); z-index:10000; align-items:center; justify-content:center; }
+        .logout-warning-modal.active { display:flex; }
+        .logout-warning-content { background:white; padding:18px; border-radius:12px; max-width:520px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+        .logout-warning-icon { font-size:44px; margin-bottom:6px; }
+        .logout-warning-content h2 { color:#dc3545; margin:6px 0 10px; font-size:18px; }
+
+        /* utility hidden */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>🌸 مركز الجمال - النظام الإداري 🌸</h1>
+            <div class="user-info">
+                <div class="user-details">
+                    <div id="userName" class="user-name"></div>
+                    <div id="userRole" class="user-role"></div>
+                </div>
+                <button id="logoutBtn" class="logout-btn">تسجيل الخروج</button>
+            </div>
+        </div>
+
+        <main class="content">
+            <div class="container">
+                <div class="welcome-section">
+                    <h2>مرحباً بك في نظام إدارة مركز الجمال</h2>
+                    <p>اختر الخدمة التي تريد إدارتها من البطاقات أدناه</p>
+                </div>
+
+                <div class="dashboard" id="dashboard">
+                    <div class="card" id="accountsCard" onclick="navigateTo('admin/createUser.html')">
+                        <div class="card-icon">👥</div>
+                        <h3>إدارة الحسابات</h3>
+                        <p>إنشاء وإدارة حسابات المستخدمين والموظفين</p>
+                    </div>
+
+                    <div class="card" id="adminCard" onclick="navigateTo('admin/admin-page.html')">
+                        <div class="card-icon">👑</div>
+                        <h3>لوحة الإدمن</h3>
+                        <p>إدارة الموظفين والأرباح والصلاحيات</p>
+                    </div>
+
+                    <div class="card offers-card" onclick="navigateTo('offers/offers.html')">
+                        <div class="card-icon">🎁</div>
+                        <h3>إدارة العروض</h3>
+                        <p>إضافة وإدارة العروض الترويجية والباكدجات</p>
+                    </div>
+
+                    <div class="card" id="inventoryCard" onclick="navigateTo('inventory/inventory.html')">
+                        <div class="card-icon">📦</div>
+                        <h3>إدارة المخزون</h3>
+                        <p>إضافة وعرض المنتجات في المخزون ومتابعة الكميات</p>
+                    </div>
+
+                    <div class="card" onclick="navigateTo('services/services.html')">
+                        <div class="card-icon">💅</div>
+                        <h3>الخدمات</h3>
+                        <p>إدارة أقسام وخدمات المركز المختلفة</p>
+                    </div>
+
+                    <div class="card" id="bookingsCard" onclick="checkShiftAndNavigate('bookings/bookings.html')">
+                        <div class="card-icon">📅</div>
+                        <h3>الحجوزات</h3>
+                        <p>إدارة مواعيد العملاء والحجوزات</p>
+                    </div>
+
+                    <div class="card" id="customersCard" onclick="checkShiftAndNavigate('customers/customers.html')">
+                        <div class="card-icon">👥</div>
+                        <h3>إدارة العملاء</h3>
+                        <p>إضافة وعرض بيانات العملاء وإدارة أرصدتهم</p>
+                    </div>
+
+                    <div class="card" onclick="navigateTo('shift-management/shift-management.html')">
+                        <div class="card-icon">⏰</div>
+                        <h3>إدارة الشيفتات</h3>
+                        <p>بدء وإنهاء الشيفتات ومتابعة الإجراءات اليومية</p>
+                    </div>
+
+                    <div class="card" id="doctorCard" onclick="checkShiftAndNavigate('Doctor/doctor-page.html')">
+                        <div class="card-icon">👨‍⚕️</div>
+                        <h3>الدكتور</h3>
+                        <p>إدارة بيانات الأطباء والاستشارات</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- shift status indicator -->
+    <div class="shift-status-indicator" id="globalShiftStatus">
+        🔄 جاري تحديث حالة الشيفت...
+    </div>
+
+    <!-- logout modal -->
+    <div class="logout-warning-modal" id="logoutWarningModal">
+        <div class="logout-warning-content">
+            <div class="logout-warning-icon">⚠️</div>
+            <h2>لا يمكن تسجيل الخروج!</h2>
+            <p>لديك شيفت نشط حالياً. يجب عليك إنهاء الشيفت أولاً قبل تسجيل الخروج.</p>
+            <div style="display:flex;gap:10px;justify-content:center;margin-top:8px;">
+                <button onclick="goToShiftManagement()" style="padding:10px 16px;border-radius:14px;background:var(--primary-color);color:#fff;border:none;cursor:pointer;">الذهاب لإنهاء الشيفت</button>
+                <button onclick="closeLogoutWarning()" style="padding:10px 16px;border-radius:14px;background:#e9ecef;color:#333;border:none;cursor:pointer;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation helpers
+        function navigateTo(url) {
+            if (url !== '#') {
+                window.location.href = url;
+            } else {
+                alert('هذه الخدمة قيد التطوير، ستكون متاحة قريباً!');
+            }
+        }
+
+        async function checkShiftAndNavigate(url) {
+            try {
+                const userData = getUserData();
+
+                if (!userData) {
+                    alert('هناك خلل في بيانات المستخدم. الرجاء إعادة تسجيل الدخول.');
+                    return;
+                }
+
+                if (userData.role === 'admin') {
+                    navigateTo(url);
+                    return;
+                }
+
+                if (userData.role === 'doctor' || userData.role === 'skin_doctor') {
+                    const hasAnyActiveShift = await checkAnyGlobalActiveShift();
+                    if (hasAnyActiveShift) {
+                        navigateTo(url);
+                    } else {
+                        alert('❌ لا يمكن الوصول إلى هذه الصفحة!\n\nيجب أن يكون هناك شيفت نشط في النظام.\nيرجى التواصل مع موظف الاستقبال لبدء شيفت.');
+                    }
+                    return;
+                }
+
+                const hasActiveShift = await checkUserOwnActiveShift(userData.uid);
+                if (hasActiveShift) {
+                    navigateTo(url);
+                } else {
+                    alert('❌ لا يمكن الوصول إلى هذه الصفحة إلا أثناء شيفت نشط!\n\nيرجى بدء الشيفت من صفحة إدارة الشيفتات.');
+                }
+            } catch (error) {
+                console.error('خطأ في التحقق من الشيفت:', error);
+                alert('❌ حدث خطأ أثناء التحقق من الصلاحية');
+            }
+        }
+
+        function getUserData() {
+            const userData = localStorage.getItem('userData');
+            return userData ? JSON.parse(userData) : null;
+        }
+
+        function updateGlobalShiftStatus(hasActiveShift, activeShifts = []) {
+            const statusElement = document.getElementById('globalShiftStatus');
+            if (!statusElement) return;
+
+            if (activeShifts.length > 0) {
+                statusElement.textContent = `✅ ${activeShifts.length} شيفت نشط`;
+                statusElement.classList.remove('inactive');
+                statusElement.style.display = 'block';
+            } else if (hasActiveShift) {
+                statusElement.textContent = '✅ يوجد شيفت واحد نشط';
+                statusElement.classList.remove('inactive');
+                statusElement.style.display = 'block';
+            } else {
+                statusElement.textContent = '❌ لا يوجد شيفتات نشطة';
+                statusElement.classList.add('inactive');
+                statusElement.style.display = 'block';
+            }
+        }
+
+        function showLogoutWarning() {
+            document.getElementById('logoutWarningModal').classList.add('active');
+        }
+
+        function closeLogoutWarning() {
+            document.getElementById('logoutWarningModal').classList.remove('active');
+        }
+
+        function goToShiftManagement() {
+            window.location.href = 'shift-management/shift-management.html';
+        }
+    </script>
+
+    <!-- Firebase & app-specific scripts (module) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            Timestamp
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        import { startGlobalShiftListener } from "./shared/real-time-shift.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZSMTIQ9o2Aqool263jkvVq-qzhEHEFfM",
+            authDomain: "beautycenter-6e1cf.firebaseapp.com",
+            projectId: "beautycenter-6e1cf",
+            storageBucket: "beautycenter-6e1cf.firebasestorage.app",
+            messagingSenderId: "706085429",
+            appId: "1:706085429:web:1f0ce5d3eb27c35372277c",
+            measurementId: "G-QL4LZG5KJZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Compatibility stubs used by checkShiftAndNavigate earlier
+        window.checkAnyGlobalActiveShiftImpl = async function () {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                const q = query(
+                    collection(db, "shifts"),
+                    where("startTime", ">=", Timestamp.fromDate(today)),
+                    where("startTime", "<", Timestamp.fromDate(tomorrow)),
+                    where("status", "==", "active")
+                );
+
+                const querySnapshot = await getDocs(q);
+                return !querySnapshot.empty;
+            } catch (err) {
+                console.error("خطأ في checkAnyGlobalActiveShiftImpl:", err);
+                return false;
+            }
+        };
+
+        window.checkUserOwnActiveShiftImpl = async function (userId) {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                const q = query(
+                    collection(db, "shifts"),
+                    where("userId", "==", userId),
+                    where("startTime", ">=", Timestamp.fromDate(today)),
+                    where("startTime", "<", Timestamp.fromDate(tomorrow)),
+                    where("status", "==", "active")
+                );
+
+                const querySnapshot = await getDocs(q);
+                return !querySnapshot.empty;
+            } catch (err) {
+                console.error("خطأ في checkUserOwnActiveShiftImpl:", err);
+                return false;
+            }
+        };
+
+        // expose for older inline helpers
+        window.checkAnyGlobalActiveShift = window.checkAnyGlobalActiveShiftImpl;
+        window.checkUserOwnActiveShift = window.checkUserOwnActiveShiftImpl;
+
+        window.db = db;
+        window.Timestamp = Timestamp;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.getDocs = getDocs;
+
+        let globalShiftListener = null;
+        let currentUserUid = null;
+
+        function startGlobalShiftMonitoring() {
+            if (globalShiftListener) {
+                globalShiftListener();
+            }
+
+            globalShiftListener = startGlobalShiftListener((activeShifts) => {
+                console.log('🔄 تحديث حالة الشيفتات على الصفحة الرئيسية:', activeShifts);
+                updateGlobalShiftStatus(activeShifts.length > 0, activeShifts);
+            });
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('userName').textContent = userData.name || '';
+                    document.getElementById('userRole').textContent = userData.role || '';
+
+                    localStorage.setItem('userData', JSON.stringify({
+                        uid: user.uid,
+                        ...userData
+                    }));
+
+                    // hide admin cards for non-admins
+                    if (userData.role !== 'admin') {
+                        const acc = document.getElementById('accountsCard');
+                        const adm = document.getElementById('adminCard');
+                        if (acc) acc.classList.add('hidden');
+                        if (adm) adm.classList.add('hidden');
+                    }
+
+                    startGlobalShiftMonitoring();
+                } else {
+                    window.location.href = "index.html";
+                }
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                const hasActiveShift = await window.checkUserOwnActiveShiftImpl(currentUserUid);
+
+                if (hasActiveShift) {
+                    showLogoutWarning();
+                    return;
+                }
+
+                if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                    if (globalShiftListener) {
+                        globalShiftListener();
+                    }
+                    await signOut(auth);
+                    localStorage.removeItem('userData');
+                    window.location.href = "index.html";
+                }
+            } catch (error) {
+                console.error('❌ خطأ في تسجيل الخروج:', error);
+                alert('حدث خطأ أثناء تسجيل الخروج');
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (globalShiftListener) {
+                globalShiftListener();
+            }
+        });
+    </script>
+</body>
+</html>

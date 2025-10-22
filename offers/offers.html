@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>العروض الترويجية - Joyec Clinic</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 15px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.6rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            min-height: calc(100vh - 100px);
+        }
+
+        .filter-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-controls select {
+            padding: 0.8rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            color: var(--dark);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .filter-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .offers-count {
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 120px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card h3 {
+            margin: 0 0 1.5rem 0;
+            color: #667eea;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .required {
+            color: #f45c43;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            font-family: inherit;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .helper-text {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        .price-display {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            border: 2px solid #dee2e6;
+            margin-top: 0.5rem;
+        }
+
+        .price-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .price-currency {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .discount-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .discount-label {
+            font-weight: 600;
+        }
+
+        .discount-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .offer-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .offer-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+            border-color: #667eea;
+        }
+
+        .offer-status-bar {
+            padding: 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+            color: white;
+        }
+
+        .offer-status-bar.active {
+            background: var(--success);
+        }
+
+        .offer-status-bar.expired {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+        }
+
+        .offer-status-bar.upcoming {
+            background: var(--info);
+        }
+
+        .offer-content {
+            padding: 1.5rem;
+        }
+
+        .offer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+            gap: 1rem;
+        }
+
+        .offer-title {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .offer-service-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.3rem;
+            word-wrap: break-word;
+        }
+
+        .offer-category {
+            font-size: 0.8rem;
+            color: #666;
+            background: #f8f9fa;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .offer-type-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .offer-type-badge.package {
+            background: var(--info);
+            color: white;
+        }
+
+        .offer-type-badge.discount {
+            background: var(--warning);
+            color: white;
+        }
+
+        .offer-pricing {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.2rem;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .pricing-row:last-child {
+            margin-bottom: 0;
+            padding-top: 0.8rem;
+            border-top: 2px solid #dee2e6;
+        }
+
+        .pricing-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .pricing-value {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .offer-price {
+            color: #11998e;
+            font-size: 1.5rem;
+        }
+
+        .savings-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .offer-details {
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .detail-icon {
+            font-size: 1.1rem;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .offer-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .action-btn {
+            padding: 0.8rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .edit-btn {
+            background: var(--info);
+            color: white;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(235, 51, 73, 0.3);
+        }
+
+        .customers-btn {
+            grid-column: 1 / -1;
+            background: var(--primary);
+            color: white;
+        }
+
+        .customers-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* أنماط جديدة للخدمات المتعددة */
+        .services-container {
+            margin-bottom: 1rem;
+        }
+
+        .service-group {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .service-group-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .services-list {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .service-item {
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .service-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .service-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .service-price {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .add-service-btn {
+            background: var(--info);
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .add-service-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+        }
+
+        .remove-service-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .remove-service-btn:hover {
+            background: #5a6268;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 1rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        .modal-content.large {
+            max-width: 900px;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .save-btn, .cancel-btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .save-btn {
+            background: var(--success);
+            color: white;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.3);
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .loading, .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            grid-column: 1 / -1;
+        }
+
+        .loading {
+            color: #667eea;
+            font-size: 1.1rem;
+            font-weight: 600;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .empty-state .icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .empty-state p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .message {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-hover);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: var(--success);
+            color: white;
+        }
+
+        .message.error {
+            background: var(--danger);
+            color: white;
+        }
+
+        .message.warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .customer-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            border-right: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .customer-item:hover {
+            background: #e9ecef;
+            transform: translateX(-4px);
+        }
+
+        .customer-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .customer-details {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        @media (max-width: 1200px) {
+            .content-wrapper {
+                grid-template-columns: 350px 1fr;
+            }
+            
+            .offers-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 991px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+                order: 2;
+            }
+            
+            .offers-grid {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem 0.5rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .offers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+
+            .offer-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+            
+            .offer-service-name {
+                font-size: 1rem;
+            }
+            
+            .offer-price {
+                font-size: 1.2rem;
+            }
+
+            .message {
+                left: 10px;
+                right: 10px;
+                max-width: calc(100% - 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🎁 إدارة العروض الترويجية</h1>
+            <div class="user-info">
+                <div class="user-badge" id="userName">جاري التحميل...</div>
+                <button onclick="window.location.href='../main.html'" class="back-btn">🏠 العودة للرئيسية</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message" class="message" style="display: none;"></div>
+
+    <div class="container">
+        <div class="filter-section">
+            <div class="filter-controls">
+                <select id="categoryFilter" aria-label="فلتر الأقسام">
+                    <option value="all">جميع الأقسام</option>
+                </select>
+
+                <select id="offerTypeFilter" aria-label="نوع العرض">
+                    <option value="all">جميع الأنواع</option>
+                    <option value="package">باكدج جلسات</option>
+                    <option value="discount">تخفيض سعر</option>
+                </select>
+
+                <select id="statusFilter" aria-label="حالة العرض">
+                    <option value="active">العروض النشطة</option>
+                    <option value="expired">العروض المنتهية</option>
+                    <option value="all">جميع العروض</option>
+                </select>
+
+                <div class="offers-count" id="offersCount" aria-live="polite">0 عرض</div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <aside class="sidebar" aria-label="شريط جانبي">
+                <div class="card">
+                    <h3>📊 إحصائيات العروض</h3>
+                    <div class="stat-row">
+                        <div class="stat-label">العروض النشطة</div>
+                        <div class="stat-value" id="activeOffersCount">0</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">العروض المنتهية</div>
+                        <div class="stat-value" id="expiredOffersCount">0</div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">إجمالي العروض</div>
+                        <div class="stat-value" id="totalOffersCount">0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>➕ إضافة عرض جديد</h3>
+                    <form id="addOfferForm">
+                        <div class="input-group">
+                            <label>القسم: <span class="required">*</span></label>
+                            <select id="offerCategory" required>
+                                <option value="">اختر القسم</option>
+                            </select>
+                        </div>
+
+                        <div class="services-container">
+                            <div class="service-group">
+                                <div class="service-group-title">🔸 الخدمة الأولى (مطلوبة)</div>
+                                <select id="offerService1" class="service-select" required>
+                                    <option value="">اختر الخدمة الأولى</option>
+                                </select>
+                            </div>
+
+                            <div class="service-group">
+                                <div class="service-group-title">🔸 الخدمة الثانية (اختيارية)</div>
+                                <select id="offerService2" class="service-select">
+                                    <option value="">اختر الخدمة الثانية</option>
+                                </select>
+                                <small class="helper-text">يمكنك إضافة خدمة ثانية لتقديم عرض مجمّع</small>
+                            </div>
+
+                            <button type="button" id="addServiceBtn" class="add-service-btn">
+                                ➕ إضافة خدمة ثالثة
+                            </button>
+                        </div>
+
+                        <div class="input-group">
+                            <label>نوع العرض: <span class="required">*</span></label>
+                            <select id="offerType" required>
+                                <option value="">اختر نوع العرض</option>
+                                <option value="package">باكدج جلسات محددة</option>
+                                <option value="discount">تخفيض على سعر الخدمة</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group hidden" id="sessionsGroup">
+                            <label>عدد الجلسات: <span class="required">*</span></label>
+                            <input type="number" id="sessionsCount" min="2" placeholder="مثال: 10">
+                            <small class="helper-text">عدد الجلسات في الباكدج (لكل خدمة)</small>
+                        </div>
+
+                        <div class="input-group">
+                            <label>السعر الأصلي:</label>
+                            <div class="price-display">
+                                <span class="price-value" id="originalPriceDisplay">0.00</span>
+                                <span class="price-currency">جنيه</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>سعر العرض: <span class="required">*</span></label>
+                            <input type="number" id="offerPrice" step="0.01" min="0" placeholder="أدخل سعر العرض" required>
+                            <small class="helper-text">السعر الذي سيدفعه العميل</small>
+                        </div>
+
+                        <div class="discount-badge" id="discountPercentage" style="display: none;">
+                            <span class="discount-label">نسبة التخفيض:</span>
+                            <span class="discount-value">0%</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label>تاريخ بداية العرض: <span class="required">*</span></label>
+                            <input type="date" id="startDate" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label>تاريخ نهاية العرض: <span class="required">*</span></label>
+                            <input type="date" id="endDate" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label>ملاحظات (اختياري):</label>
+                            <textarea id="offerNotes" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">✨ إضافة العرض</button>
+                    </form>
+                </div>
+            </aside>
+
+            <main class="offers-main" role="main">
+                <div id="loadingOffers" class="loading" style="display: none;">⏳ جاري التحميل...</div>
+
+                <div id="offersGrid" class="offers-grid"></div>
+
+                <div id="emptyOffersState" class="empty-state" style="display: none;">
+                    <div class="icon">🎁</div>
+                    <h3>لا توجد عروض</h3>
+                    <p>ابدأ بإضافة عرض جديد من الشريط الجانبي</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="editOfferModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ تعديل العرض</h3>
+                <button class="close-btn" onclick="closeEditModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="editOfferForm">
+                    <input type="hidden" id="editOfferId">
+                    
+                    <div class="input-group">
+                        <label>سعر العرض الجديد: <span class="required">*</span></label>
+                        <input type="number" id="editOfferPrice" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>تاريخ نهاية العرض: <span class="required">*</span></label>
+                        <input type="date" id="editEndDate" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>ملاحظات:</label>
+                        <textarea id="editOfferNotes" rows="3"></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="save-btn">💾 حفظ التعديلات</button>
+                        <button type="button" class="cancel-btn" onclick="closeEditModal()">❌ إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="customersModal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>👥 العملاء المستفيدين من العرض</h3>
+                <button class="close-btn" onclick="closeCustomersModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="customersList" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs,
+            doc,
+            getDoc,
+            updateDoc,
+            deleteDoc,
+            query,
+            where,
+            orderBy,
+            Timestamp
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZSMTIQ9o2Aqool263jkvVq-qzhEHEFfM",
+            authDomain: "beautycenter-6e1cf.firebaseapp.com",
+            projectId: "beautycenter-6e1cf",
+            storageBucket: "beautycenter-6e1cf.firebasestorage.app",
+            messagingSenderId: "706085429",
+            appId: "1:706085429:web:1f0ce5d3eb27c35372277c",
+            measurementId: "G-QL4LZG5KJZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let allCategories = [];
+        let allServices = [];
+        let allOffers = [];
+        let serviceCount = 2; // بداية من خدمتين
+
+        // Check Authentication - ADMIN ONLY
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        
+                        // ✅ Check if ADMIN ONLY
+                        if (userData.role !== 'admin') {
+                            showMessage('❌ هذه الصفحة مخصصة للمدير فقط!', 'error');
+                            setTimeout(() => {
+                                window.location.href = '../main.html';
+                            }, 2000);
+                            return;
+                        }
+                        
+                        currentUser = { uid: user.uid, ...userData };
+                        document.getElementById('userName').textContent = userData.name || 'المدير';
+                        
+                        await initializePage();
+                    } else {
+                        redirectToLogin();
+                    }
+                } catch (error) {
+                    console.error("خطأ في التحقق من المستخدم:", error);
+                    redirectToLogin();
+                }
+            } else {
+                redirectToLogin();
+            }
+        });
+
+        function redirectToLogin() {
+            showMessage('⚠️ يجب تسجيل الدخول أولاً', 'warning');
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 1500);
+        }
+
+        async function initializePage() {
+            await loadCategories();
+            await loadServices();
+            await loadOffers();
+            setupEventListeners();
+            setMinDates();
+        }
+
+        async function loadCategories() {
+            try {
+                const querySnapshot = await getDocs(query(collection(db, "categories"), orderBy("name")));
+                allCategories = [];
+                
+                const categoryFilter = document.getElementById('categoryFilter');
+                const offerCategory = document.getElementById('offerCategory');
+                
+                categoryFilter.innerHTML = '<option value="all">جميع الأقسام</option>';
+                offerCategory.innerHTML = '<option value="">اختر القسم</option>';
+                
+                querySnapshot.forEach(docSnap => {
+                    const category = { id: docSnap.id, ...docSnap.data() };
+                    allCategories.push(category);
+                    
+                    const filterOption = document.createElement('option');
+                    filterOption.value = category.id;
+                    filterOption.textContent = category.name;
+                    categoryFilter.appendChild(filterOption.cloneNode(true));
+                    offerCategory.appendChild(filterOption);
+                });
+            } catch (error) {
+                console.error("خطأ في تحميل الأقسام:", error);
+                showMessage('❌ خطأ في تحميل الأقسام', 'error');
+            }
+        }
+
+        async function loadServices() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "services"));
+                allServices = [];
+                
+                querySnapshot.forEach(docSnap => {
+                    const service = { id: docSnap.id, ...docSnap.data() };
+                    allServices.push(service);
+                });
+            } catch (error) {
+                console.error("خطأ في تحميل الخدمات:", error);
+                showMessage('❌ خطأ في تحميل الخدمات', 'error');
+            }
+        }
+
+        async function loadOffers() {
+            try {
+                document.getElementById('loadingOffers').style.display = 'block';
+                document.getElementById('emptyOffersState').style.display = 'none';
+                
+                const querySnapshot = await getDocs(query(collection(db, "offers"), orderBy("createdAt", "desc")));
+                allOffers = [];
+                
+                querySnapshot.forEach(docSnap => {
+                    const offer = { id: docSnap.id, ...docSnap.data() };
+                    allOffers.push(offer);
+                });
+                
+                updateStatistics();
+                filterOffers();
+            } catch (error) {
+                console.error("خطأ في تحميل العروض:", error);
+                showMessage('❌ خطأ في تحميل العروض', 'error');
+            } finally {
+                document.getElementById('loadingOffers').style.display = 'none';
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('offerCategory').addEventListener('change', function() {
+                updateServicesDropdowns(this.value);
+            });
+            
+            document.getElementById('offerType').addEventListener('change', function() {
+                const sessionsGroup = document.getElementById('sessionsGroup');
+                if (this.value === 'package') {
+                    sessionsGroup.classList.remove('hidden');
+                    document.getElementById('sessionsCount').required = true;
+                } else {
+                    sessionsGroup.classList.add('hidden');
+                    document.getElementById('sessionsCount').required = false;
+                    document.getElementById('sessionsCount').value = '';
+                }
+                calculateOriginalPrice();
+            });
+            
+            document.getElementById('offerService1').addEventListener('change', calculateOriginalPrice);
+            document.getElementById('offerService2').addEventListener('change', calculateOriginalPrice);
+            document.getElementById('sessionsCount').addEventListener('input', calculateOriginalPrice);
+            document.getElementById('offerPrice').addEventListener('input', calculateDiscount);
+            
+            document.getElementById('addServiceBtn').addEventListener('click', addServiceField);
+            
+            document.getElementById('addOfferForm').addEventListener('submit', addNewOffer);
+            document.getElementById('editOfferForm').addEventListener('submit', saveOfferEdit);
+            
+            document.getElementById('categoryFilter').addEventListener('change', filterOffers);
+            document.getElementById('offerTypeFilter').addEventListener('change', filterOffers);
+            document.getElementById('statusFilter').addEventListener('change', filterOffers);
+        }
+
+        function updateServicesDropdowns(categoryId) {
+            updateServiceDropdown('offerService1', categoryId);
+            updateServiceDropdown('offerService2', categoryId);
+            
+            // تحديث الخدمات الإضافية
+            for (let i = 3; i <= serviceCount; i++) {
+                updateServiceDropdown(`offerService${i}`, categoryId);
+            }
+        }
+
+        function updateServiceDropdown(selectId, categoryId) {
+            const serviceSelect = document.getElementById(selectId);
+            if (!serviceSelect) return;
+            
+            serviceSelect.innerHTML = '<option value="">اختر الخدمة</option>';
+            
+            if (!categoryId) {
+                serviceSelect.disabled = true;
+                return;
+            }
+            
+            const categoryServices = allServices.filter(s => s.categoryId === categoryId);
+            
+            if (categoryServices.length === 0) {
+                serviceSelect.disabled = true;
+                if (selectId === 'offerService1') {
+                    showMessage('⚠️ لا توجد خدمات في هذا القسم', 'warning');
+                }
+                return;
+            }
+            
+            serviceSelect.disabled = false;
+            categoryServices.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.id;
+                option.textContent = `${service.name} - ${service.duration} دقيقة - ${service.price.toFixed(2)} جنيه`;
+                option.dataset.price = service.price;
+                option.dataset.duration = service.duration;
+                serviceSelect.appendChild(option);
+            });
+        }
+
+        function addServiceField() {
+            serviceCount++;
+            const servicesContainer = document.querySelector('.services-container');
+            
+            const serviceGroup = document.createElement('div');
+            serviceGroup.className = 'service-group';
+            serviceGroup.innerHTML = `
+                <div class="service-group-title">🔸 الخدمة ${serviceCount} (اختيارية)</div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <select id="offerService${serviceCount}" class="service-select" style="flex: 1;">
+                        <option value="">اختر الخدمة ${serviceCount}</option>
+                    </select>
+                    <button type="button" class="remove-service-btn" onclick="removeServiceField(${serviceCount})">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            servicesContainer.insertBefore(serviceGroup, document.getElementById('addServiceBtn'));
+            
+            // تحديث قائمة الخدمات للخدمة الجديدة
+            const categoryId = document.getElementById('offerCategory').value;
+            if (categoryId) {
+                updateServiceDropdown(`offerService${serviceCount}`, categoryId);
+            }
+            
+            // إضافة حدث التغيير
+            document.getElementById(`offerService${serviceCount}`).addEventListener('change', calculateOriginalPrice);
+        }
+
+        window.removeServiceField = function(serviceNumber) {
+            const serviceGroup = document.querySelector(`#offerService${serviceNumber}`).closest('.service-group');
+            if (serviceGroup) {
+                serviceGroup.remove();
+                serviceCount--;
+                calculateOriginalPrice();
+            }
+        };
+
+        function calculateOriginalPrice() {
+            let totalPrice = 0;
+            
+            // حساب سعر جميع الخدمات المختارة
+            for (let i = 1; i <= serviceCount; i++) {
+                const serviceSelect = document.getElementById(`offerService${i}`);
+                if (serviceSelect && serviceSelect.value) {
+                    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+                    totalPrice += parseFloat(selectedOption.dataset.price);
+                }
+            }
+            
+            // ضرب في عدد الجلسات إذا كان نوع العرض "باكدج"
+            const offerType = document.getElementById('offerType').value;
+            const sessionsCount = parseInt(document.getElementById('sessionsCount').value) || 1;
+            
+            if (offerType === 'package' && sessionsCount > 0) {
+                totalPrice = totalPrice * sessionsCount;
+            }
+            
+            updatePriceDisplay(totalPrice);
+            calculateDiscount();
+        }
+
+        function updatePriceDisplay(price) {
+            document.getElementById('originalPriceDisplay').textContent = price.toFixed(2);
+        }
+
+        function calculateDiscount() {
+            const originalPrice = parseFloat(document.getElementById('originalPriceDisplay').textContent);
+            const offerPrice = parseFloat(document.getElementById('offerPrice').value) || 0;
+            
+            if (originalPrice === 0 || offerPrice === 0) {
+                document.getElementById('discountPercentage').style.display = 'none';
+                return;
+            }
+            
+            const discount = ((originalPrice - offerPrice) / originalPrice) * 100;
+            
+            if (discount > 0) {
+                document.getElementById('discountPercentage').style.display = 'flex';
+                document.querySelector('.discount-value').textContent = discount.toFixed(1) + '%';
+            } else {
+                document.getElementById('discountPercentage').style.display = 'none';
+            }
+        }
+
+        async function addNewOffer(e) {
+            e.preventDefault();
+            
+            const categoryId = document.getElementById('offerCategory').value;
+            const offerType = document.getElementById('offerType').value;
+            const sessionsCount = parseInt(document.getElementById('sessionsCount').value) || 1;
+            const originalPrice = parseFloat(document.getElementById('originalPriceDisplay').textContent);
+            const offerPrice = parseFloat(document.getElementById('offerPrice').value);
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const notes = document.getElementById('offerNotes').value.trim();
+            
+            // جمع الخدمات المختارة
+            const selectedServices = [];
+            for (let i = 1; i <= serviceCount; i++) {
+                const serviceSelect = document.getElementById(`offerService${i}`);
+                if (serviceSelect && serviceSelect.value) {
+                    const service = allServices.find(s => s.id === serviceSelect.value);
+                    if (service) {
+                        selectedServices.push({
+                            id: service.id,
+                            name: service.name,
+                            price: service.price,
+                            duration: service.duration
+                        });
+                    }
+                }
+            }
+            
+            // التحقق من البيانات
+            if (selectedServices.length === 0) {
+                showMessage('⚠️ يجب اختيار خدمة واحدة على الأقل!', 'warning');
+                return;
+            }
+            
+            if (offerPrice >= originalPrice) {
+                showMessage('⚠️ سعر العرض يجب أن يكون أقل من السعر الأصلي!', 'warning');
+                return;
+            }
+            
+            if (new Date(endDate) <= new Date(startDate)) {
+                showMessage('⚠️ تاريخ النهاية يجب أن يكون بعد تاريخ البداية!', 'warning');
+                return;
+            }
+            
+            try {
+                const category = allCategories.find(c => c.id === categoryId);
+                
+                // إنشاء اسم مجمع للعرض
+                const serviceNames = selectedServices.map(s => s.name);
+                const serviceName = serviceNames.join(' + ');
+                
+                const offerData = {
+                    categoryId,
+                    categoryName: category.name,
+                    services: selectedServices,
+                    serviceName: serviceName,
+                    offerType,
+                    originalPrice,
+                    offerPrice,
+                    sessionsCount: offerType === 'package' ? sessionsCount : 1,
+                    startDate: Timestamp.fromDate(new Date(startDate)),
+                    endDate: Timestamp.fromDate(new Date(endDate)),
+                    notes,
+                    isActive: true,
+                    customersCount: 0,
+                    createdAt: Timestamp.now(),
+                    createdBy: currentUser.uid,
+                    createdByName: currentUser.name
+                };
+                
+                await addDoc(collection(db, "offers"), offerData);
+                
+                showMessage('✅ تم إضافة العرض بنجاح!', 'success');
+                document.getElementById('addOfferForm').reset();
+                document.getElementById('discountPercentage').style.display = 'none';
+                updatePriceDisplay(0);
+                
+                // إعادة تعيين عدد الخدمات
+                resetServiceFields();
+                
+                await loadOffers();
+                
+            } catch (error) {
+                console.error("خطأ في إضافة العرض:", error);
+                showMessage('❌ حدث خطأ أثناء إضافة العرض', 'error');
+            }
+        }
+
+        function resetServiceFields() {
+            // إزالة جميع حقول الخدمات الإضافية
+            const servicesContainer = document.querySelector('.services-container');
+            const serviceGroups = servicesContainer.querySelectorAll('.service-group');
+            
+            for (let i = 2; i < serviceGroups.length; i++) {
+                if (serviceGroups[i].querySelector('.remove-service-btn')) {
+                    serviceGroups[i].remove();
+                }
+            }
+            
+            serviceCount = 2;
+            
+            // إعادة تعيين الخدمات الأساسية
+            document.getElementById('offerService1').value = '';
+            document.getElementById('offerService2').value = '';
+        }
+
+        function filterOffers() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const offerTypeFilter = document.getElementById('offerTypeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filtered = [...allOffers];
+            
+            if (categoryFilter !== 'all') {
+                filtered = filtered.filter(o => o.categoryId === categoryFilter);
+            }
+            
+            if (offerTypeFilter !== 'all') {
+                filtered = filtered.filter(o => o.offerType === offerTypeFilter);
+            }
+            
+            const now = new Date();
+            if (statusFilter === 'active') {
+                filtered = filtered.filter(o => o.endDate.toDate() >= now);
+            } else if (statusFilter === 'expired') {
+                filtered = filtered.filter(o => o.endDate.toDate() < now);
+            }
+            
+            displayOffers(filtered);
+        }
+
+        function displayOffers(offers) {
+            const offersGrid = document.getElementById('offersGrid');
+            const emptyState = document.getElementById('emptyOffersState');
+            const offersCount = document.getElementById('offersCount');
+            
+            offersCount.textContent = `${offers.length} عرض`;
+            
+            if (offers.length === 0) {
+                offersGrid.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            offersGrid.innerHTML = '';
+            
+            offers.forEach(offer => {
+                const card = createOfferCard(offer);
+                offersGrid.appendChild(card);
+            });
+        }
+
+        function createOfferCard(offer) {
+            const card = document.createElement('div');
+            card.className = 'offer-card';
+            
+            const now = new Date();
+            const startDate = offer.startDate.toDate();
+            const endDate = offer.endDate.toDate();
+            
+            let status = 'upcoming';
+            let statusText = 'قريباً';
+            
+            if (now >= startDate && now <= endDate) {
+                status = 'active';
+                statusText = '🔥 نشط الآن';
+            } else if (now > endDate) {
+                status = 'expired';
+                statusText = '⏰ منتهي';
+            }
+            
+            const discount = ((offer.originalPrice - offer.offerPrice) / offer.originalPrice) * 100;
+            const savings = offer.originalPrice - offer.offerPrice;
+            
+            // إنشاء قائمة الخدمات
+            const services = offer.services || [];
+            let servicesHTML = '';
+            if (services.length > 0) {
+                servicesHTML = `
+                    <div class="services-list">
+                        <strong>🔸 الخدمات المشمولة:</strong>
+                        ${services.map(service => `
+                            <div class="service-item">
+                                <span class="service-name">${service.name}</span>
+                                <span class="service-price">${service.price.toFixed(2)} جنيه</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = `
+                <div class="offer-status-bar ${status}">${statusText}</div>
+                
+                <div class="offer-content">
+                    <div class="offer-header">
+                        <div class="offer-title">
+                            <div class="offer-service-name">${offer.serviceName}</div>
+                            <div class="offer-category">${offer.categoryName}</div>
+                        </div>
+                        <div class="offer-type-badge ${offer.offerType}">
+                            ${offer.offerType === 'package' ? '📦 باكدج' : '🏷️ تخفيض'}
+                        </div>
+                    </div>
+                    
+                    ${servicesHTML}
+                    
+                    <div class="offer-pricing">
+                        <div class="pricing-row">
+                            <span class="pricing-label">السعر الأصلي:</span>
+                            <span class="pricing-value original-price">${offer.originalPrice.toFixed(2)} جنيه</span>
+                        </div>
+                        <div class="pricing-row">
+                            <span class="pricing-label">سعر العرض:</span>
+                            <span class="pricing-value offer-price">${offer.offerPrice.toFixed(2)} جنيه</span>
+                        </div>
+                        <div class="pricing-row">
+                            <span class="pricing-label">التوفير:</span>
+                            <span class="savings-badge">وفر ${savings.toFixed(2)} جنيه (${discount.toFixed(0)}%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="offer-details">
+                        ${offer.offerType === 'package' ? `
+                            <div class="detail-item">
+                                <span class="detail-icon">🎫</span>
+                                <span>عدد الجلسات: <span class="detail-value">${offer.sessionsCount} جلسة لكل خدمة</span></span>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="detail-item">
+                            <span class="detail-icon">📅</span>
+                            <span>من: <span class="detail-value">${formatDate(startDate)}</span></span>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <span class="detail-icon">🏁</span>
+                            <span>إلى: <span class="detail-value">${formatDate(endDate)}</span></span>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <span class="detail-icon">👥</span>
+                            <span>المستفيدين: <span class="detail-value">${offer.customersCount || 0}</span></span>
+                        </div>
+                    </div>
+                    
+                    ${offer.notes ? `
+                        <div style="background: #fff3cd; padding: 0.8rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.85rem;">
+                            <strong>📝 ملاحظات:</strong> ${offer.notes}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="offer-actions">
+                        ${status !== 'expired' ? `
+                            <button class="action-btn edit-btn" onclick="window.editOffer('${offer.id}')">
+                                ✏️ تعديل
+                            </button>
+                        ` : ''}
+                        <button class="action-btn delete-btn" onclick="window.deleteOffer('${offer.id}')">
+                            🗑️ حذف
+                        </button>
+                        ${(offer.customersCount || 0) > 0 ? `
+                            <button class="action-btn customers-btn" onclick="window.viewCustomers('${offer.id}')">
+                                👥 عرض العملاء (${offer.customersCount})
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        window.editOffer = async function(offerId) {
+            const offer = allOffers.find(o => o.id === offerId);
+            if (!offer) return;
+            
+            document.getElementById('editOfferId').value = offerId;
+            document.getElementById('editOfferPrice').value = offer.offerPrice;
+            document.getElementById('editEndDate').value = formatDateForInput(offer.endDate.toDate());
+            document.getElementById('editOfferNotes').value = offer.notes || '';
+            
+            document.getElementById('editOfferModal').classList.remove('hidden');
+        };
+
+        async function saveOfferEdit(e) {
+            e.preventDefault();
+            
+            const offerId = document.getElementById('editOfferId').value;
+            const newPrice = parseFloat(document.getElementById('editOfferPrice').value);
+            const newEndDate = document.getElementById('editEndDate').value;
+            const newNotes = document.getElementById('editOfferNotes').value.trim();
+            
+            try {
+                await updateDoc(doc(db, "offers", offerId), {
+                    offerPrice: newPrice,
+                    endDate: Timestamp.fromDate(new Date(newEndDate)),
+                    notes: newNotes,
+                    updatedAt: Timestamp.now(),
+                    updatedBy: currentUser.uid
+                });
+                
+                showMessage('✅ تم تحديث العرض بنجاح!', 'success');
+                closeEditModal();
+                await loadOffers();
+                
+            } catch (error) {
+                console.error("خطأ في تحديث العرض:", error);
+                showMessage('❌ حدث خطأ أثناء تحديث العرض', 'error');
+            }
+        }
+
+        window.closeEditModal = function() {
+            document.getElementById('editOfferModal').classList.add('hidden');
+        };
+
+        window.deleteOffer = async function(offerId) {
+            if (!confirm('⚠️ هل أنت متأكد من حذف هذا العرض؟\nلن يتمكن العملاء من استخدامه بعد الحذف.')) {
+                return;
+            }
+            
+            try {
+                await deleteDoc(doc(db, "offers", offerId));
+                showMessage('✅ تم حذف العرض بنجاح!', 'success');
+                await loadOffers();
+            } catch (error) {
+                console.error("خطأ في حذف العرض:", error);
+                showMessage('❌ حدث خطأ أثناء حذف العرض', 'error');
+            }
+        };
+
+        window.viewCustomers = async function(offerId) {
+            try {
+                const q = query(collection(db, "customerOffers"), where("offerId", "==", offerId));
+                const querySnapshot = await getDocs(q);
+                
+                const customersList = document.getElementById('customersList');
+                customersList.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    customersList.innerHTML = '<div class="empty-state"><p>لا يوجد عملاء استفادوا من هذا العرض بعد</p></div>';
+                } else {
+                    querySnapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const item = document.createElement('div');
+                        item.className = 'customer-item';
+                        
+                        item.innerHTML = `
+                            <div class="customer-name">${data.customerName}</div>
+                            <div class="customer-details">
+                                📅 تاريخ الشراء: ${formatDate(data.purchaseDate.toDate())} |
+                                🎫 الجلسات المتبقية: ${data.remainingSessions}/${data.totalSessions} |
+                                💰 المبلغ المدفوع: ${data.purchasePrice.toFixed(2)} جنيه
+                            </div>
+                        `;
+                        
+                        customersList.appendChild(item);
+                    });
+                }
+                
+                document.getElementById('customersModal').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error("خطأ في جلب العملاء:", error);
+                showMessage('❌ حدث خطأ أثناء جلب بيانات العملاء', 'error');
+            }
+        };
+
+        window.closeCustomersModal = function() {
+            document.getElementById('customersModal').classList.add('hidden');
+        };
+
+        function updateStatistics() {
+            const now = new Date();
+            
+            const activeOffers = allOffers.filter(o => o.endDate.toDate() >= now).length;
+            const expiredOffers = allOffers.filter(o => o.endDate.toDate() < now).length;
+            
+            document.getElementById('activeOffersCount').textContent = activeOffers;
+            document.getElementById('expiredOffersCount').textContent = expiredOffers;
+            document.getElementById('totalOffersCount').textContent = allOffers.length;
+        }
+
+        function setMinDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').min = today;
+            document.getElementById('endDate').min = today;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('ar-EG', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function showMessage(text, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

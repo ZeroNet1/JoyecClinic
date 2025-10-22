@@ -1,0 +1,1664 @@
+/* doctor-schedule.css - التصميم الكامل مع التحسينات */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    direction: rtl;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.alerts-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+    padding: 15px;
+}
+
+.payment-alert {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.alert-header h3 {
+    margin: 0;
+    color: #856404;
+}
+
+.customer-info {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.services-list {
+    margin-bottom: 10px;
+}
+
+.service-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.payment-summary {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.total-amount, .balance-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.alert-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.methods-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.method-btn {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: left;
+}
+
+.method-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+.method-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.method-text small {
+    display: block;
+    opacity: 0.7;
+}
+
+/* الهيدر */
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px;
+    margin-bottom: 25px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.header div {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+#userName {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-size: 14px;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-2px);
+}
+
+/* عناصر التحكم */
+.controls {
+    background: white;
+    padding: 20px 25px;
+    border-radius: 15px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.controls label {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+}
+
+.controls strong {
+    color: #667eea;
+    margin-right: 8px;
+}
+
+.controls input[type="date"] {
+    padding: 12px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+.controls input[type="date"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.add-booking-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.add-booking-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(40, 167, 69, 0.4);
+}
+
+/* Grid للحجوزات */
+.bookings-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* بطاقات الحجوزات */
+.booking-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border-right: 5px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.booking-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+/* ألوان الحالات الجديدة */
+.booking-card.status-pending {
+    border-right-color: #ffc107;
+}
+
+.booking-card.status-confirmed {
+    border-right-color: #28a745;
+}
+
+.booking-card.status-started {
+    border-right-color: #17a2b8;
+}
+
+.booking-card.status-completed {
+    border-right-color: #6c757d;
+    opacity: 0.85;
+}
+
+.booking-card.status-cancelled {
+    border-right-color: #dc3545;
+    opacity: 0.7;
+}
+
+/* رأس البطاقة */
+.booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.booking-time .time-label {
+    font-size: 12px;
+    color: #666;
+}
+
+.booking-time .time-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+}
+
+.booking-status {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* ألوان حالات الحجز */
+.booking-status.status-yellow {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.booking-status.status-green {
+    background: #d4edda;
+    color: #155724;
+}
+
+.booking-status.status-blue {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.booking-status.status-gray {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.booking-status.status-red {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.booking-status.status-orange {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* محتوى البطاقة */
+.booking-body {
+    margin-bottom: 18px;
+}
+
+.customer-info h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 20px;
+}
+
+.customer-info p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* قائمة الخدمات */
+.services-list {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    margin: 15px 0;
+}
+
+.services-list strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.service-item {
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* معلومات الحجز */
+.booking-meta {
+    display: grid;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.booking-meta > div {
+    font-size: 14px;
+    color: #666;
+}
+
+.booking-meta strong {
+    color: #333;
+}
+
+/* تنبيه عميل جديد */
+.new-customer-badge {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    border: 2px solid #ffc107;
+}
+
+/* سبب الإلغاء */
+.cancel-reason {
+    background: #fff3cd;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 12px;
+    color: #856404;
+    font-size: 13px;
+}
+
+/* أزرار الإجراءات */
+.booking-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.confirm-btn, .cancel-btn, .start-btn, .complete-btn {
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.confirm-btn {
+    background: #28a745;
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.start-btn {
+    background: #17a2b8;
+    color: white;
+}
+
+.start-btn:hover {
+    background: #138496;
+    transform: translateY(-2px);
+}
+
+.complete-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.complete-btn:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.cancel-btn {
+    background: #dc3545;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+}
+
+.started-badge, .cancelled-badge, .completed-badge {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.started-badge {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.completed-badge {
+    background: #d6d8db;
+    color: #383d41;
+}
+
+.cancelled-badge {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* حالة فارغة */
+.loading, .empty-state, .error {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    font-size: 18px;
+    color: #666;
+}
+
+.empty-state {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #7f8c8d;
+    font-size: 16px;
+    margin: 20px 0;
+}
+
+.loading {
+    color: #3498db;
+    font-weight: 500;
+}
+
+.loading::after {
+    content: '...';
+    display: inline-block;
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+/* المودال */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 650px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px 20px 0 0;
+    margin: -30px -30px 25px -30px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: white;
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* حقول الإدخال */
+.input-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.input-group input, 
+.input-group select, 
+.input-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.input-group input:focus, 
+.input-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* نتائج البحث */
+#customerResults {
+    position: absolute;
+    width: 100%;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    margin-top: 5px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.customer-result-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.customer-result-item:last-child {
+    border-bottom: none;
+}
+
+.customer-result-item:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.customer-result-item strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.customer-result-item .positive {
+    color: #28a745;
+    font-weight: 700;
+}
+
+.customer-result-item:hover .positive {
+    color: #a8e6cf;
+}
+
+.customer-result-item .zero {
+    color: #dc3545;
+    font-weight: 700;
+}
+
+.customer-result-item:hover .zero {
+    color: #ffcdd2;
+}
+
+/* معلومات العميل المختار */
+#selectedCustomerInfo {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 12px;
+}
+
+#selectedCustomerInfo p {
+    margin: 5px 0;
+    color: #2c3e50;
+}
+
+/* صندوق الرصيد */
+.balance-info-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    color: white;
+}
+
+.balance-info-box h4 {
+    margin: 0 0 15px 0;
+    color: white;
+    font-size: 18px;
+}
+
+.balance-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.balance-row:last-child {
+    border-bottom: none;
+}
+
+.balance-label {
+    color: white;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.balance-value {
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+}
+
+.recharge-btn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 15px;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.recharge-btn:hover {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+}
+
+/* صندوق الملخص */
+.summary-box {
+    background: #e7f3ff;
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 20px;
+    border: 2px solid #2196f3;
+}
+
+.summary-box h4 {
+    margin: 0 0 15px 0;
+    color: #0d47a1;
+    font-size: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(33, 150, 243, 0.3);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: #1565c0;
+}
+
+.summary-item strong {
+    color: #0d47a1;
+    font-size: 16px;
+}
+
+/* زر الحفظ */
+.save-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 28px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 2px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-footer .save-btn {
+    width: auto;
+    margin: 0;
+}
+
+.modal-footer .cancel-btn {
+    background: #95a5a6;
+}
+
+.modal-footer .cancel-btn:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
+/* أسباب الإلغاء */
+.cancel-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.cancel-reasons label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.cancel-reasons label:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+}
+
+/* قسم العروض */
+.offers-header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.offers-header h4 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.offers-note {
+    margin: 0;
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.available-offers {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+/* بطاقة العرض */
+.offer-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.offer-card:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+    transform: translateY(-2px);
+}
+
+.offer-card input[type="radio"]:checked ~ .offer-details {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.offer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.offer-header input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.offer-header label {
+    cursor: pointer;
+    flex: 1;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.offer-details {
+    padding-right: 30px;
+    transition: all 0.3s ease;
+}
+
+.offer-sessions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.sessions-count {
+    color: #27ae60;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.offer-progress {
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #ecf0f1;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.offer-meta {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+/* شارات نوع الحجز */
+.booking-type-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 8px 0;
+}
+
+.booking-type-badge.offer {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.booking-type-badge.laser {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.booking-type-badge.derma {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+/* معلومات النقص */
+.deficit-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.deficit-amount {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.balance-negative {
+    color: #e74c3c;
+}
+
+.balance-positive {
+    color: #27ae60;
+}
+
+/* الإخفاء */
+.hidden {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .bookings-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .bookings-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .booking-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        max-height: 95vh;
+    }
+    
+    .offer-card {
+        padding: 12px;
+    }
+    
+    .balance-info-box {
+        padding: 15px;
+    }
+    
+    .modal-header h3 {
+        font-size: 18px;
+    }
+}
+
+/* ستايلات نظام الخدمات المحسن */
+.service-input-group {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.service-input-group:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.service-selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.service-selection-header label {
+    font-weight: 700;
+    color: #333;
+    font-size: 16px;
+}
+
+.remove-service-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.remove-service-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.service-filter-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #555;
+    font-size: 14px;
+}
+
+.category-select-filter,
+.service-search-filter {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.service-search-filter:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.service-results-info {
+    text-align: center;
+    padding: 8px;
+    background: white;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #666;
+}
+
+.service-select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 15px;
+    background: white;
+    transition: all 0.3s;
+}
+
+.service-select:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.services-filter-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.services-filter-section h4 {
+    color: white;
+    margin: 0 0 15px 0;
+}
+
+.services-filter-section label {
+    color: white;
+}
+
+.services-filter-section select,
+.services-filter-section input {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.services-filter-section select::placeholder,
+.services-filter-section input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.services-filter-section select:focus,
+.services-filter-section input:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ستايلات العروض المحسنة */
+.offer-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.offer-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.offer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.offer-title h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.offer-category {
+    background: #667eea;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.offer-sessions {
+    text-align: center;
+}
+
+.sessions-count {
+    display: block;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 5px;
+}
+
+.progress-bar {
+    width: 80px;
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+/* ستايلات اختيار الخدمات */
+.service-selection-info {
+    margin: 15px 0;
+}
+
+.single-service {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.multiple-services {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.services-list {
+    margin: 10px 0;
+}
+
+.service-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.service-option:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateX(-5px);
+}
+
+.service-option .service-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.service-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.service-duration, .service-price {
+    color: #666;
+    font-size: 14px;
+}
+
+.select-indicator {
+    color: #667eea;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.service-option:hover .select-indicator {
+    opacity: 1;
+}
+
+.use-full-offer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.use-single-service-btn,
+.use-full-offer-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.use-single-service-btn:hover,
+.use-full-offer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.service-details {
+    display: flex;
+    gap: 15px;
+    margin-top: 8px;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.offer-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* ستايلات العروض المحسنة */
+.offer-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.offer-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.offer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.offer-title h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.offer-category {
+    background: #667eea;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.offer-sessions {
+    text-align: center;
+}
+
+.sessions-count {
+    display: block;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 5px;
+}
+
+.progress-bar {
+    width: 80px;
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+/* ستايلات اختيار الخدمات */
+.service-selection-info {
+    margin: 15px 0;
+}
+
+.single-service {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.multiple-services {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.services-list {
+    margin: 10px 0;
+}
+
+.service-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.service-option:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateX(-5px);
+}
+
+.service-option .service-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.service-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.service-duration, .service-price {
+    color: #666;
+    font-size: 14px;
+}
+
+.select-indicator {
+    color: #667eea;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.service-option:hover .select-indicator {
+    opacity: 1;
+}
+
+.use-full-offer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.use-single-service-btn,
+.use-full-offer-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.use-single-service-btn:hover,
+.use-full-offer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.service-details {
+    display: flex;
+    gap: 15px;
+    margin-top: 8px;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.offer-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #666;
+}
+
+.no-services-warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #ffeaa7;
+}
+
+.empty-state, .error-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #e9ecef;
+}
+
+.loading {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .offer-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .service-option .service-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .offer-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .offer-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .service-option .service-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .offer-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .service-selection-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .remove-service-btn {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .booking-card {
+        padding: 18px;
+    }
+    
+    .modal-header {
+        padding: 15px 20px;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .offer-sessions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
