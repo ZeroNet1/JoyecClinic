@@ -320,95 +320,37 @@
     </div>
 </main>
 
-<script>
-/* ============================
-   تفعيل/تعطيل حقول الرصيد
-   ============================ */
-document.addEventListener('DOMContentLoaded', () => {
-    const balanceTypes = [
-        { checkbox: 'enableNormalBalance', group: 'normalBalanceGroup', input: 'customerBalance' },
-        { checkbox: 'enableOffersBalance', group: 'offersBalanceGroup', input: 'offersBalance' },
-        { checkbox: 'enableLaserBalance', group: 'laserBalanceGroup', input: 'laserBalance' },
-        { checkbox: 'enableDermaBalance', group: 'dermaBalanceGroup', input: 'dermaBalance' }
-    ];
+    <script type="module" src="customers.js"></script>
+    <script>
+        // تفعيل/تعطيل حقول الرصيد عند تحديد الخيارات
+        document.addEventListener('DOMContentLoaded', function() {
+            const balanceTypes = [
+                { checkbox: 'enableNormalBalance', group: 'normalBalanceGroup', input: 'customerBalance' },
+                { checkbox: 'enableOffersBalance', group: 'offersBalanceGroup', input: 'offersBalance' },
+                { checkbox: 'enableLaserBalance', group: 'laserBalanceGroup', input: 'laserBalance' },
+                { checkbox: 'enableDermaBalance', group: 'dermaBalanceGroup', input: 'dermaBalance' }
+            ];
 
-    balanceTypes.forEach(type => {
-        const checkbox = document.getElementById(type.checkbox);
-        const group = document.getElementById(type.group);
-        const input = document.getElementById(type.input);
+            balanceTypes.forEach(type => {
+                const checkbox = document.getElementById(type.checkbox);
+                const group = document.getElementById(type.group);
+                const input = document.getElementById(type.input);
 
-        if (checkbox && group && input) {
-            checkbox.addEventListener('change', function() {
-                if (this.checked) {
-                    group.classList.remove('hidden');
-                    input.focus();
-                } else {
-                    group.classList.add('hidden');
-                    input.value = '';
+                if (checkbox && group && input) {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            group.classList.remove('hidden');
+                            input.focus();
+                        } else {
+                            group.classList.add('hidden');
+                            input.value = '';
+                        }
+                    });
                 }
             });
-        }
-    });
-
-    // Demo: تحديث الأرقام من localStorage إن وُجد (يمكن استبداله باستدعاء Firestore لاحقاً)
-    try {
-        const demoList = JSON.parse(localStorage.getItem('demo_customers') || '[]');
-        const totalEl = document.getElementById('totalCustomers');
-        const todayEl = document.getElementById('newCustomers');
-
-        totalEl.textContent = demoList.length;
-        const today = new Date().toISOString().slice(0,10);
-        const newToday = demoList.filter(c => (c.createdAt||'').startsWith(today)).length;
-        todayEl.textContent = newToday;
-    } catch (e) {
-        console.warn('demo stats skipped', e);
-    }
-
-    // Form submit: تخزين مؤقت (تجريبي)
-    const form = document.getElementById('addCustomerForm');
-    const msg = document.getElementById('message');
-    form.addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        const name = document.getElementById('customerName').value.trim();
-        const phone = document.getElementById('customerPhone').value.trim();
-        if (!name || !phone) {
-            showMessage('يرجى ملء الاسم ورقم الهاتف.', 'error');
-            return;
-        }
-
-        // جمع الأرصدة المفعلة
-        const balances = {};
-        ['customerBalance','offersBalance','laserBalance','dermaBalance'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el && el.value) balances[id] = Number(el.value);
         });
+    </script>
 
-        // demo save to localStorage
-        const list = JSON.parse(localStorage.getItem('demo_customers') || '[]');
-        list.unshift({ name, phone, balances, createdAt: new Date().toISOString() });
-        localStorage.setItem('demo_customers', JSON.stringify(list));
-
-        showMessage('تم حفظ العميل محلياً (تجريبي).', 'success');
-
-        // تحديث الإحصائيات الفورية
-        document.getElementById('totalCustomers').textContent = list.length;
-        const today = new Date().toISOString().slice(0,10);
-        document.getElementById('newCustomers').textContent = list.filter(c => c.createdAt.startsWith(today)).length;
-
-        form.reset();
-        // إخفاء كل حقول الرصيد بعد الحفظ
-        ['normalBalanceGroup','offersBalanceGroup','laserBalanceGroup','dermaBalanceGroup'].forEach(g => document.getElementById(g).classList.add('hidden'));
-    });
-
-    function showMessage(text, type='info') {
-        msg.className = 'message';
-        if (type === 'success') msg.classList.add('success');
-        else if (type === 'error') msg.classList.add('error');
-        msg.textContent = text;
-        setTimeout(()=> { msg.textContent=''; msg.className='message'; }, 4000);
-    }
-});
-</script>
 
 </body>
 </html>
