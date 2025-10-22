@@ -1,79 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>قائمة العملاء - مركز التجميل</title>
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="customer-list.css">
-</head>
-<body>
-    <div class="header">
-        <h1>قائمة العملاء</h1>
-        <div class="user-info">
-            <span id="userName">المستخدم</span>
-            <div class="header-actions">
-                <button onclick="window.location.href='customers.html'" class="back-btn">إضافة عميل</button>
-                <button onclick="window.location.href='../main.html'" class="back-btn">الرئيسية</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <!-- شريط البحث والتصفية -->
-        <div class="filter-section">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو رقم الهاتف أو رقم العميل...">
-                <button id="clearSearch" class="clear-btn">✕</button>
-            </div>
-            <div class="filter-controls">
-                <select id="sortSelect">
-                    <option value="newest">الأحدث أولاً</option>
-                    <option value="oldest">الأقدم أولاً</option>
-                    <option value="name">حسب الاسم</option>
-                    <option value="balance">أعلى رصيد</option>
-                    <option value="visits">الأكثر زيارات</option>
-                </select>
-            </div>
-        </div>
-        
-        <!-- قائمة العملاء -->
-        <div class="customers-list-section">
-            <div class="section-header">
-                <h2>📋 العملاء المسجلين</h2>
-                <div class="customers-count" id="customersCount">0 عميل</div>
-            </div>
-            
-            <div id="customersList" class="customers-list">
-                <!-- سيتم ملء هذه القائمة بالعملاء -->
-            </div>
-        </div>
-    </div>
-
-    <!-- مودال تأكيد الحذف -->
-    <div id="deleteModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>⚠️ تأكيد حذف العميل</h3>
-                <button class="close-btn" id="closeDeleteModal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="warning-icon">🗑️</div>
-                <p class="warning-text">هل أنت متأكد من حذف العميل؟</p>
-                <div class="customer-delete-info">
-                    <p><strong>الاسم:</strong> <span id="deleteCustomerName"></span></p>
-                    <p><strong>الهاتف:</strong> <span id="deleteCustomerPhone"></span></p>
-                    <p><strong>رقم العميل:</strong> <span id="deleteCustomerId"></span></p>
-                </div>
-                <p class="warning-note">⚠️ تحذير: سيتم حذف جميع بيانات العميل بما في ذلك الزيارات والمعاملات!</p>
-            </div>
-            <div class="modal-actions">
-                <button class="delete-confirm-btn" id="confirmDeleteBtn">حذف العميل</button>
-                <button class="cancel-btn" id="cancelDeleteBtn">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module" src="customer-list.js"></script>
-</body>
-</html>

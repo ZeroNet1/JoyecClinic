@@ -1,112 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>إدارة الخدمات - مركز الجمال</title>
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="services.css">
-</head>
-<body>
-    <!-- الهيدر ثابت -->
-    <div class="header sticky-header">
-        <h1>🌸 إدارة الخدمات 🌸</h1>
-        <div class="user-info">
-            <div class="user-details">
-                <div id="userName" class="user-name"></div>
-                <div id="userRole" class="user-role"></div>
-            </div>
-            <button onclick="window.location.href='../main.html'" class="back-btn">العودة للرئيسية</button>
-        </div>
-    </div>
-
-    <!-- مساحة لرسائل النظام (يستخدمها services.js) -->
-    <div id="message" class="message-container" aria-live="polite" role="status" hidden></div>
-
-    <div class="container">
-        <!-- قسم الفلتر ثابت -->
-        <div class="filter-section sticky-filter">
-            <div class="filter-controls">
-                <select id="categoryFilter" aria-label="فلتر الأقسام">
-                    <option value="all">جميع الأقسام</option>
-                </select>
-
-                <input type="text" id="searchInput" placeholder="🔍 ابحث عن خدمة..." aria-label="بحث عن خدمة">
-
-                <div class="services-count" id="servicesCount" aria-live="polite">0 خدمة</div>
-            </div>
-        </div>
-
-        <div class="content-wrapper">
-            <!-- الشريط الجانبي (grid-area = sidebar) -->
-            <aside class="sidebar" aria-label="شريط جانبي" id="sidebar">
-                <!-- إحصائيات الأقسام -->
-                <div class="form-section stats-section">
-                    <h3>إحصائيات الأقسام</h3>
-                    <div class="stat-row">
-                        <div>إجمالي الأقسام</div>
-                        <div id="totalCategories">0</div>
-                    </div>
-                    <div id="categoryStats" class="category-stats" aria-live="polite">
-                        <!-- تُملأ ديناميكياً -->
-                    </div>
-                </div>
-
-                <!-- قسم إضافة قسم جديد -->
-                <div class="form-section">
-                    <h3>إضافة قسم جديد</h3>
-                    <form id="addCategoryForm">
-                        <div class="input-group">
-                            <input type="text" id="categoryName" required placeholder="اسم القسم" aria-label="اسم القسم">
-                        </div>
-                        <button type="submit">إضافة القسم</button>
-                    </form>
-                </div>
-
-                <!-- قسم إضافة خدمة جديدة -->
-                <div class="form-section">
-                    <h3>إضافة خدمة جديدة</h3>
-                    <form id="addServiceForm">
-                        <div class="input-group">
-                            <select id="serviceCategory" required aria-label="اختيار القسم">
-                                <option value="">اختر القسم</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="serviceName" required placeholder="اسم الخدمة" aria-label="اسم الخدمة">
-                        </div>
-                        <div class="input-group two-cols">
-                            <input type="number" id="serviceDuration" required min="1" placeholder="المدة (دقيقة)" aria-label="مدة الخدمة">
-                            <input type="number" id="servicePrice" step="0.01" required min="0" placeholder="السعر (جنيه مصري)" aria-label="سعر الخدمة">
-                        </div>
-                        <div class="input-group">
-                            <textarea id="serviceDescription" placeholder="وصف اختياري للخدمة" rows="2"></textarea>
-                        </div>
-                        <button type="submit">إضافة الخدمة</button>
-                    </form>
-                </div>
-            </aside>
-
-            <!-- المنطقة الرئيسية للخدمات (grid-area = services) -->
-            <main class="services-main" id="mainContent" role="main">
-                <!-- مؤشر التحميل العام -->
-                <div id="loadingServices" class="loading" hidden>جاري التحميل...</div>
-
-                <!-- شبكة الخدمات -->
-                <div id="servicesGrid" class="services-grid" aria-live="polite">
-                    <!-- سيتم ملئها بالبيانات -->
-                </div>
-
-                <!-- حالة الفراغ (لو مافيش خدمات) -->
-                <div id="emptyServicesState" class="empty-state" hidden>
-                    <div class="icon">💅</div>
-                    <h3>لا توجد خدمات</h3>
-                    <p>ابدأ بإضافة خدمات جديدة من الشريط الجانبي</p>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <script type="module" src="services.js"></script>
-</body>
-</html>
