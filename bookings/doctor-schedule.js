@@ -1978,53 +1978,58 @@ if (bookingType === 'offer') {
         
         await addDoc(collection(db, "bookings"), bookingData);
         
-        // ✅ تسجيل إجراء الشيفت
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                let bookingNote = `تم إضافة حجز لـ ${customerName} - ${selectedServices.length} خدمة`;
-                let shiftAmount = 0;
-                let shiftPaymentMethod = null;
+// ✅ تسجيل إجراء الشيفت
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        let bookingNote = `تم إضافة حجز لـ ${customerName} - ${selectedServices.length} خدمة`;
+        let shiftAmount = 0; // ✅ صفر - لأن الحجز لم يتم تأكيده بعد
+        let shiftPaymentMethod = 'حجز مسبق';
 
-                if (bookingType === 'offer') {
-                    bookingNote += ` - حجز بعرض: ${selectedOfferName}`;
-                    shiftAmount = 0;
-                    shiftPaymentMethod = 'عرض';
-                } else if (bookingType === 'laser') {
-                    bookingNote += ` - حجز برصيد الليزر`;
-                    shiftAmount = totalCost;
-                    shiftPaymentMethod = 'رصيد ليزر';
-                } else if (bookingType === 'derma') {
-                    bookingNote += ` - حجز برصيد الجلدية`;
-                    shiftAmount = totalCost;
-                    shiftPaymentMethod = 'رصيد جلدية';
-                } else {
-                    bookingNote += ` - ${totalCost.toFixed(2)} جنيه`;
-                    if (currentDiscount > 0) {
-                        bookingNote += ` (تخفيض ${currentDiscount.toFixed(2)} جنيه)`;
-                    }
-                    shiftAmount = totalCost;
-                    shiftPaymentMethod = 'حجز مسبق';
-                }
-                
-                await shiftModule.addShiftAction(
-                    'إضافة حجز', 
-                    bookingNote,
-                    customerName,
-                    shiftAmount,
-                    shiftPaymentMethod,
-                    {
-                        actionCategory: 'booking',
-                        services: selectedServices.map(s => s.name),
-                        bookingType: bookingType,
-                        discount: currentDiscount,
-                        createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
-                    }
-                );
+        if (bookingType === 'offer') {
+            bookingNote += ` - حجز بعرض: ${selectedOfferName}`;
+            shiftAmount = 0;
+            shiftPaymentMethod = 'عرض';
+        } else if (bookingType === 'laser') {
+            bookingNote += ` - حجز برصيد الليزر`;
+            shiftAmount = 0;
+            shiftPaymentMethod = 'رصيد ليزر';
+        } else if (bookingType === 'derma') {
+            bookingNote += ` - حجز برصيد الجلدية`;
+            shiftAmount = 0;
+            shiftPaymentMethod = 'رصيد جلدية';
+        } else {
+            bookingNote += ` - ${totalCost.toFixed(2)} جنيه`;
+            if (currentDiscount > 0) {
+                bookingNote += ` (تخفيض ${currentDiscount.toFixed(2)} جنيه)`;
             }
-        } catch (err) {
-            console.log('لا يمكن تسجيل في الشيفت:', err);
+            shiftAmount = 0; // ✅ صفر - الحجز في حالة pending
+            shiftPaymentMethod = 'حجز مسبق';
         }
+        
+        await shiftModule.addShiftAction(
+            'إضافة حجز', 
+            bookingNote,
+            customerName,
+            shiftAmount, // ✅ دائماً صفر عند إضافة الحجز
+            shiftPaymentMethod,
+            {
+                actionCategory: 'booking',
+                services: selectedServices.map(s => s.name),
+                bookingType: bookingType,
+                discount: currentDiscount,
+                bookingStatus: 'pending', // ✅ الحجز في حالة انتظار
+                isNewCustomer: isNewCustomer, // ✅ إضافة علامة عميل جديد
+                actualCost: totalCost, // ✅ حفظ المبلغ الفعلي للمرجعية
+                willBeChargedOnConfirm: !isNewCustomer, // ✅ سيتم الخصم عند التأكيد للعملاء الحاليين
+                alreadyPaidInRecharge: isNewCustomer, // ✅ تم الدفع في الشحن للعملاء الجدد
+                createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
+            }
+        );
+    }
+} catch (err) {
+    console.log('لا يمكن تسجيل في الشيفت:', err);
+}
         
         alert('✅ تم إضافة الحجز بنجاح!');
         hideAddBookingModal();
