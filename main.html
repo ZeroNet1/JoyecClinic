@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>مركز الجمال - الصفحة الرئيسية</title>
+    <title>Joyce Clinic - مركز جويس للتجميل والليزر والعناية بالبشرة</title>
 
     <style>
         :root {
-            --primary-color: #d63384;
-            --secondary-color: #ff8fab;
-            --accent-color: #ffc2d1;
-            --text-dark: #590d22;
-            --text-light: #fff0f3;
-            --background: #fffafb;
+            /* Joyce Clinic Theme Colors - Gold & Navy Blue */
+            --primary-color: #1a3a5c;      /* Navy Blue */
+            --secondary-color: #c9a961;     /* Gold */
+            --accent-color: #e8d4a0;        /* Light Gold */
+            --text-dark: #0d1f33;
+            --text-light: #f5f5f5;
+            --background: #f8f6f3;
             --max-width: 1200px;
             --gap: 16px;
         }
@@ -24,7 +25,7 @@
         body {
             direction: rtl;
             font-family: "Segoe UI", Tahoma, Arial, "Noto Naskh Arabic", sans-serif;
-            background: linear-gradient(135deg, var(--background) 0%, var(--accent-color) 100%);
+            background: linear-gradient(135deg, var(--background) 0%, #e8dcc8 100%);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -33,57 +34,168 @@
         .app { min-height: 100vh; display: flex; flex-direction: column; }
 
         .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            padding: clamp(10px, 2.2vw, 18px);
-            box-shadow: 0 4px 15px rgba(214, 51, 132, 0.3);
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2c4f73 100%);
+            padding: clamp(12px, 2.2vw, 20px);
+            box-shadow: 0 4px 20px rgba(26, 58, 92, 0.4);
             display: flex;
-            gap: 12px;
+            gap: 15px;
             justify-content: space-between;
             align-items: center;
             color: white;
             flex-shrink: 0;
             flex-wrap: wrap;
+            position: relative;
         }
 
-        .header h1 { margin: 0; font-size: clamp(18px, 3vw, 26px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+        }
 
-        .user-info { display: flex; align-items: center; gap: 10px; font-size: clamp(12px, 1.6vw, 14px); }
-        .user-details { display:flex; flex-direction:column; align-items:flex-end; background: rgba(255,255,255,0.12); padding:6px 10px; border-radius:12px; min-width:110px; }
-        .user-name{ font-weight:700; color:var(--text-light); }
-        .user-role{ font-size:0.9rem; color:var(--text-light); opacity:0.95; }
+        .logo-title-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-container {
+            width: clamp(50px, 8vw, 70px);
+            height: clamp(50px, 8vw, 70px);
+            background: white;
+            border-radius: 50%;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(201, 169, 97, 0.3);
+            border: 2px solid var(--secondary-color);
+        }
+
+        .logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .header h1 { 
+            margin: 0; 
+            font-size: clamp(16px, 2.8vw, 24px); 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            color: var(--accent-color);
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .user-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: clamp(12px, 1.6vw, 14px); 
+        }
+
+        .user-details { 
+            display:flex; 
+            flex-direction:column; 
+            align-items:flex-end; 
+            background: rgba(201, 169, 97, 0.15); 
+            padding:8px 12px; 
+            border-radius:12px; 
+            min-width:110px;
+            border: 1px solid rgba(201, 169, 97, 0.3);
+        }
+
+        .user-name{ 
+            font-weight:700; 
+            color: var(--accent-color); 
+        }
+
+        .user-role{ 
+            font-size:0.85rem; 
+            color: var(--text-light); 
+            opacity:0.9; 
+        }
 
         .logout-btn {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.18);
-            padding: 8px 12px;
-            border-radius: 18px;
+            background: linear-gradient(135deg, var(--secondary-color), #b89650);
+            color: var(--primary-color);
+            border: 1px solid rgba(201, 169, 97, 0.3);
+            padding: 10px 16px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: transform .18s ease, box-shadow .18s ease;
+            transition: all .25s ease;
+            font-weight: 600;
+            box-shadow: 0 3px 10px rgba(201, 169, 97, 0.3);
         }
-        .logout-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+
+        .logout-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(201, 169, 97, 0.5);
+            background: linear-gradient(135deg, #d4b876, var(--secondary-color));
+        }
 
         /* main area grows and scrolls if needed */
-        main.content { display:flex; flex-direction:column; flex:1 1 auto; width:100%; overflow:auto; padding:12px; }
+        main.content { 
+            display:flex; 
+            flex-direction:column; 
+            flex:1 1 auto; 
+            width:100%; 
+            overflow:auto; 
+            padding:15px; 
+        }
 
-        .container { width:100%; max-width: var(--max-width); margin: 0 auto; }
+        .container { 
+            width:100%; 
+            max-width: var(--max-width); 
+            margin: 0 auto; 
+        }
 
         .welcome-section {
             text-align:center;
-            padding: 12px 16px;
-            background: white;
-            margin: 8px 0;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 20px 16px;
+            background: linear-gradient(135deg, white 0%, #faf8f5 100%);
+            margin: 10px 0 20px 0;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(26, 58, 92, 0.08);
+            border: 2px solid rgba(201, 169, 97, 0.2);
+            position: relative;
+            overflow: hidden;
         }
-        .welcome-section h2{ color:var(--primary-color); margin:6px 0; font-size:clamp(16px,2.4vw,22px); }
-        .welcome-section p{ color:#666; margin:0; font-size:clamp(13px,1.6vw,15px); }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+        }
+
+        .welcome-section h2{ 
+            color: var(--primary-color); 
+            margin:8px 0; 
+            font-size:clamp(18px, 3vw, 26px);
+            font-weight: 700;
+        }
+
+        .welcome-section p{ 
+            color: #555; 
+            margin:0; 
+            font-size:clamp(14px, 2vw, 16px); 
+        }
 
         /* ===== DASHBOARD: flexible rows and horizontal behaviour on small screens ===== */
         .dashboard {
             display: flex;
             flex-direction: row;
-            flex-wrap: wrap; /* on large screens allow wrapping into rows */
+            flex-wrap: wrap;
             gap: var(--gap);
             padding: 8px 0 20px 0;
             align-content: flex-start;
@@ -92,22 +204,21 @@
 
         /* Card base */
         .card {
-            background: white;
-            border-radius: 14px;
-            padding: 14px;
-            box-shadow: 0 8px 22px rgba(214,51,132,0.08);
+            background: linear-gradient(135deg, white 0%, #fdfcfa 100%);
+            border-radius: 16px;
+            padding: 18px 14px;
+            box-shadow: 0 8px 25px rgba(26, 58, 92, 0.1);
             text-align:center;
             cursor:pointer;
-            transition: transform .22s ease, box-shadow .22s ease;
-            border: 1px solid rgba(214,51,132,0.06);
+            transition: all .28s ease;
+            border: 2px solid rgba(201, 169, 97, 0.2);
             position: relative;
             overflow: hidden;
-
             display:flex;
             flex-direction:column;
             justify-content:center;
-            gap:10px;
-            min-height:120px;
+            gap:12px;
+            min-height:140px;
             scroll-snap-align: center;
         }
 
@@ -115,80 +226,229 @@
             content:'';
             position:absolute;
             top:0; left:0; right:0;
-            height:4px;
-            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            height:5px;
+            background: linear-gradient(90deg, var(--secondary-color) 0%, var(--accent-color) 100%);
         }
 
-        .card:hover { transform: translateY(-6px); box-shadow: 0 15px 35px rgba(214,51,132,0.12); }
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201, 169, 97, 0.1), transparent);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s ease, height 0.5s ease;
+        }
 
-        .card-icon{ font-size: clamp(28px,4.6vw,44px); color:var(--primary-color); }
-        .card h3{ margin:0; font-size: clamp(14px,2.2vw,18px); color:var(--text-dark); font-weight:600; }
-        .card p{ margin:0; color:#666; font-size: clamp(12px,1.6vw,14px); line-height:1.4; }
+        .card:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 15px 40px rgba(26, 58, 92, 0.18);
+            border-color: var(--secondary-color);
+        }
+
+        .card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-icon{ 
+            font-size: clamp(32px, 5vw, 48px); 
+            filter: drop-shadow(2px 2px 4px rgba(26, 58, 92, 0.2));
+        }
+
+        .card h3{ 
+            margin:0; 
+            font-size: clamp(15px, 2.5vw, 19px); 
+            color: var(--primary-color); 
+            font-weight:700; 
+        }
+
+        .card p{ 
+            margin:0; 
+            color:#666; 
+            font-size: clamp(12px, 1.8vw, 14px); 
+            line-height:1.5; 
+        }
 
         /* ===== Column sizing rules (large -> multiple columns) ===== */
-        /* Default desktop: 4 columns */
-        .card { flex: 1 1 calc(25% - (var(--gap) * 0.75)); max-width: calc(25% - (var(--gap) * 0.75)); }
+        .card { 
+            flex: 1 1 calc(25% - (var(--gap) * 0.75)); 
+            max-width: calc(25% - (var(--gap) * 0.75)); 
+        }
 
         @media (max-width: 1100px) {
-            /* tablet: 3 columns */
-            .card { flex: 1 1 calc(33.333% - (var(--gap) * 0.66)); max-width: calc(33.333% - (var(--gap) * 0.66)); }
+            .card { 
+                flex: 1 1 calc(33.333% - (var(--gap) * 0.66)); 
+                max-width: calc(33.333% - (var(--gap) * 0.66)); 
+            }
         }
 
         @media (max-width: 800px) {
-            /* small tablet / large phones: 2 columns */
-            .card { flex: 1 1 calc(50% - (var(--gap) * 0.5)); max-width: calc(50% - (var(--gap) * 0.5)); }
+            .card { 
+                flex: 1 1 calc(50% - (var(--gap) * 0.5)); 
+                max-width: calc(50% - (var(--gap) * 0.5)); 
+            }
         }
 
-        /* ===== Small screens: force horizontal single-row scroll (rows show horizontally) ===== */
+        /* ===== Small screens: force horizontal single-row scroll ===== */
         @media (max-width: 520px) {
             .dashboard {
-                flex-wrap: nowrap;            /* keep only one row, scroll horizontally */
+                flex-wrap: nowrap;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 scroll-snap-type: x mandatory;
                 padding-bottom: 14px;
             }
 
-            /* Each card becomes a wide item in the horizontal row */
             .card {
-                flex: 0 0 78%;               /* card width in the horizontal row */
+                flex: 0 0 78%;
                 max-width: 78%;
-                min-height: 160px;
+                min-height: 170px;
             }
 
-            /* tighten padding so nothing overflows vertically */
-            .welcome-section { padding: 10px; margin-bottom: 10px; }
+            .welcome-section { padding: 15px 10px; margin-bottom: 15px; }
             .container { padding-left: 8px; padding-right: 8px; }
+            
+            .logo-title-container {
+                gap: 10px;
+            }
         }
 
-        /* Very small devices: slightly reduce width */
         @media (max-width: 380px) {
-            .card { flex: 0 0 86%; max-width: 86%; min-height: 150px; }
+            .card { flex: 0 0 86%; max-width: 86%; min-height: 160px; }
         }
 
-        /* shift status indicator (moved top-right for RTL) */
+        /* shift status indicator */
         .shift-status-indicator {
             position: fixed;
             top: 12px;
-            right: 12px;
-            background: #28a745;
-            color: white;
-            padding: 7px 12px;
-            border-radius: 18px;
-            font-size: 12px;
+            left: 12px;
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
             font-weight: bold;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+            box-shadow: 0 3px 12px rgba(26, 58, 92, 0.3);
             display: none;
+            border: 2px solid var(--primary-color);
         }
-        .shift-status-indicator.inactive { background: #dc3545; }
+
+        .shift-status-indicator.inactive { 
+            background: #dc3545; 
+            color: white;
+            border-color: #b02a37;
+        }
 
         /* logout modal */
-        .logout-warning-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.65); z-index:10000; align-items:center; justify-content:center; }
+        .logout-warning-modal { 
+            display:none; 
+            position:fixed; 
+            inset:0; 
+            background: rgba(26, 58, 92, 0.75);
+            backdrop-filter: blur(5px);
+            z-index:10000; 
+            align-items:center; 
+            justify-content:center; 
+        }
+
         .logout-warning-modal.active { display:flex; }
-        .logout-warning-content { background:white; padding:18px; border-radius:12px; max-width:520px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
-        .logout-warning-icon { font-size:44px; margin-bottom:6px; }
-        .logout-warning-content h2 { color:#dc3545; margin:6px 0 10px; font-size:18px; }
+
+        .logout-warning-content { 
+            background: linear-gradient(135deg, white 0%, #fdfcfa 100%);
+            padding:25px; 
+            border-radius:16px; 
+            max-width:520px; 
+            text-align:center; 
+            box-shadow:0 10px 50px rgba(26, 58, 92, 0.4);
+            border: 3px solid var(--secondary-color);
+        }
+
+        .logout-warning-icon { 
+            font-size:52px; 
+            margin-bottom:10px; 
+        }
+
+        .logout-warning-content h2 { 
+            color: var(--primary-color); 
+            margin:10px 0; 
+            font-size:20px; 
+        }
+
+        .logout-warning-content p {
+            color: #555;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modal-btn-primary {
+            padding: 12px 24px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--secondary-color), #b89650);
+            color: var(--primary-color);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(201, 169, 97, 0.5);
+        }
+
+        .modal-btn-secondary {
+            padding: 12px 24px;
+            border-radius: 18px;
+            background: #e9ecef;
+            color: #333;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #dee2e6;
+            transform: translateY(-2px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--accent-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
 
         /* utility hidden */
         .hidden { display: none !important; }
@@ -197,7 +457,11 @@
 <body>
     <div class="app">
         <div class="header">
-            <h1>🌸 مركز الجمال - النظام الإداري 🌸</h1>
+            <div class="logo-title-container">
+                <div class="logo-container">
+<img src="logo.png" alt="Joyce Clinic Logo">                </div>
+                <h1>🌸 Joyce Clinic - مركز جويس للعناية بالبشرة 🌸</h1>
+            </div>
             <div class="user-info">
                 <div class="user-details">
                     <div id="userName" class="user-name"></div>
@@ -210,7 +474,7 @@
         <main class="content">
             <div class="container">
                 <div class="welcome-section">
-                    <h2>مرحباً بك في نظام إدارة مركز الجمال</h2>
+                    <h2>مرحباً بك في نظام إدارة Joyce Clinic</h2>
                     <p>اختر الخدمة التي تريد إدارتها من البطاقات أدناه</p>
                 </div>
 
@@ -284,9 +548,9 @@
             <div class="logout-warning-icon">⚠️</div>
             <h2>لا يمكن تسجيل الخروج!</h2>
             <p>لديك شيفت نشط حالياً. يجب عليك إنهاء الشيفت أولاً قبل تسجيل الخروج.</p>
-            <div style="display:flex;gap:10px;justify-content:center;margin-top:8px;">
-                <button onclick="goToShiftManagement()" style="padding:10px 16px;border-radius:14px;background:var(--primary-color);color:#fff;border:none;cursor:pointer;">الذهاب لإنهاء الشيفت</button>
-                <button onclick="closeLogoutWarning()" style="padding:10px 16px;border-radius:14px;background:#e9ecef;color:#333;border:none;cursor:pointer;">إلغاء</button>
+            <div class="modal-buttons">
+                <button onclick="goToShiftManagement()" class="modal-btn-primary">الذهاب لإنهاء الشيفت</button>
+                <button onclick="closeLogoutWarning()" class="modal-btn-secondary">إلغاء</button>
             </div>
         </div>
     </div>
@@ -404,7 +668,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Compatibility stubs used by checkShiftAndNavigate earlier
         window.checkAnyGlobalActiveShiftImpl = async function () {
             try {
                 const today = new Date();
@@ -450,7 +713,6 @@
             }
         };
 
-        // expose for older inline helpers
         window.checkAnyGlobalActiveShift = window.checkAnyGlobalActiveShiftImpl;
         window.checkUserOwnActiveShift = window.checkUserOwnActiveShiftImpl;
 

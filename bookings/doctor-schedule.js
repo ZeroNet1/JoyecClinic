@@ -303,7 +303,7 @@ async function loadServices() {
     }
 }
 
-// تحميل عروض العميل المتاحة (محدث لدعم الخدمات المتعددة)
+// تحميل عروض العميل المتاحة (محدث لدعم الجلسات لكل خدمة)
 async function loadCustomerOffers(customerId) {
     try {
         const q = query(
@@ -318,15 +318,26 @@ async function loadCustomerOffers(customerId) {
         
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            customerOffers.push({
+            const offer = {
                 id: docSnap.id,
                 ...data,
-                // ✅ التأكد من وجود مصفوفة الخدمات
+                // ✅ التأكد من وجود مصفوفة الخدمات مع عدد الجلسات لكل خدمة
                 services: data.services || []
-            });
+            };
+            
+            // ✅ إذا كانت الخدمات لا تحتوي على remainingSessions، ننشئها
+            if (offer.services && offer.services.length > 0) {
+                offer.services = offer.services.map(service => ({
+                    ...service,
+                    sessionsCount: service.sessionsCount || offer.sessionsCount || 1,
+                    remainingSessions: service.remainingSessions || service.sessionsCount || offer.sessionsCount || 1
+                }));
+            }
+            
+            customerOffers.push(offer);
         });
         
-        console.log('✅ تم تحميل', customerOffers.length, 'عرض متاح');
+        console.log('✅ تم تحميل', customerOffers.length, 'عرض متاح مع تفاصيل الجلسات:', customerOffers);
         return customerOffers;
     } catch (error) {
         console.error("خطأ في تحميل عروض العميل:", error);
@@ -408,7 +419,7 @@ async function handleBookingTypeChange() {
     }
 }
 
-// عرض عروض العميل (محدث بدون أزرار radio)
+// عرض عروض العميل (محدث لعرض عدد الجلسات لكل خدمة)
 async function displayCustomerOffers() {
     const offersContainer = document.getElementById('availableOffers');
     if (!offersContainer) {
@@ -442,52 +453,63 @@ async function displayCustomerOffers() {
             const purchaseDate = offer.purchaseDate ? offer.purchaseDate.toDate().toLocaleDateString('ar-EG') : '-';
             const progress = (offer.remainingSessions / offer.totalSessions) * 100;
             
-            // ✅ بناء واجهة اختيار الخدمات بدون أزرار radio
+            // ✅ بناء واجهة اختيار الخدمات مع عرض عدد الجلسات لكل خدمة
             let servicesSelectionHTML = '';
-            if (offer.services && offer.services.length > 0) {
-                if (offer.services.length === 1) {
-                    // عرض واحد - اختيار تلقائي
-                    servicesSelectionHTML = `
-                        <div class="service-selection-info">
-                            <div class="single-service">
-                                <strong>📦 الخدمة المشمولة:</strong>
-                                <div class="service-details">
-                                    <span>${offer.services[0].name}</span>
-                                    <span>${offer.services[0].duration} دقيقة</span>
-                                    <span>${offer.services[0].price.toFixed(2)} جنيه</span>
+if (offer.services && offer.services.length > 0) {
+    if (offer.services.length === 1) {
+        // عرض واحد - اختيار تلقائي
+        const service = offer.services[0];
+        const remaining = service.remainingSessions || offer.remainingSessions;
+        const total = service.sessionsCount || offer.sessionsCount;
+        
+        servicesSelectionHTML = `
+            <div class="service-selection-info">
+                <div class="single-service">
+                    <strong>📦 الخدمة المشمولة:</strong>
+                    <div class="service-details">
+                        <span>${service.name}</span>
+                        <span>${service.duration} دقيقة</span>
+                        <span>${service.price.toFixed(2)} جنيه</span>
+                        <span class="sessions-info">🎫 ${remaining}/${total} جلسة متبقية</span>
+                    </div>
+                </div>
+                <button class="use-single-service-btn" onclick="selectOfferService('${offer.id}', 'all')">
+                    ✅ استخدام هذا العرض
+                </button>
+            </div>
+        `;
+    } else {
+        // عرض متعدد الخدمات - اختيار فردي أو كامل
+        servicesSelectionHTML = `
+            <div class="service-selection-info">
+                <div class="multiple-services">
+                    <strong>📦 الخدمات المشمولة (${offer.services.length}):</strong>
+                    <div class="services-list">
+                        ${offer.services.map((service, index) => {
+                            const remaining = service.remainingSessions || offer.remainingSessions;
+                            const total = service.sessionsCount || offer.sessionsCount;
+                            
+                            return `
+                                <div class="service-option" onclick="selectOfferService('${offer.id}', '${service.id}')">
+                                    <div class="service-info">
+                                        <span class="service-name">${service.name}</span>
+                                        <span class="service-duration">${service.duration} دقيقة</span>
+                                        <span class="service-price">${service.price.toFixed(2)} جنيه</span>
+                                        <span class="service-sessions">🎫 ${remaining}/${total} جلسة</span>
+                                    </div>
+                                    <div class="select-indicator">👉</div>
                                 </div>
-                            </div>
-                            <button class="use-single-service-btn" onclick="selectOfferService('${offer.id}', 'all')">
-                                ✅ استخدام هذا العرض
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    // عرض متعدد الخدمات - اختيار فردي أو كامل
-                    servicesSelectionHTML = `
-                        <div class="service-selection-info">
-                            <div class="multiple-services">
-                                <strong>📦 الخدمات المشمولة (${offer.services.length}):</strong>
-                                <div class="services-list">
-                                    ${offer.services.map((service, index) => `
-                                        <div class="service-option" onclick="selectOfferService('${offer.id}', '${service.id}')">
-                                            <div class="service-info">
-                                                <span class="service-name">${service.name}</span>
-                                                <span class="service-duration">${service.duration} دقيقة</span>
-                                                <span class="service-price">${service.price.toFixed(2)} جنيه</span>
-                                            </div>
-                                            <div class="select-indicator">👉</div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                                <div class="use-full-offer">
-                                    <button class="use-full-offer-btn" onclick="selectOfferService('${offer.id}', 'all')">
-                                        🎁 استخدام العرض كامل (جميع الخدمات)
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="use-full-offer">
+                        <button class="use-full-offer-btn" onclick="selectOfferService('${offer.id}', 'all')">
+                            🎁 استخدام العرض كامل (جميع الخدمات)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
                 }
             } else {
                 servicesSelectionHTML = `
@@ -567,7 +589,7 @@ async function displayCustomerOffers() {
 }
 
 
-// اختيار خدمة من العرض (محدث)
+// اختيار خدمة من العرض (محدث لدعم عدد الجلسات)
 window.selectOfferService = function(offerId, serviceSelection) {
     console.log('🔍 اختيار العرض:', offerId, 'الخدمة:', serviceSelection);
     
@@ -600,6 +622,12 @@ window.selectOfferService = function(offerId, serviceSelection) {
         selectionType = 'single';
     }
     
+    // ✅ إضافة معلومات عدد الجلسات لكل خدمة
+    selectedServiceItems = selectedServiceItems.map(service => ({
+        ...service,
+        sessionsCount: service.sessionsCount || offer.sessionsCount
+    }));
+    
     // تعيين الخدمات المختارة
     selectedServices = selectedServiceItems;
     
@@ -610,6 +638,7 @@ window.selectOfferService = function(offerId, serviceSelection) {
     console.log('📊 الخدمات المختارة:', selectedServiceItems);
     console.log('⏱️ المدة الكلية:', totalDuration);
     console.log('💰 التكلفة الأصلية:', totalCost);
+    console.log('🎫 عدد الجلسات لكل خدمة:', selectedServiceItems.map(s => `${s.name}: ${s.sessionsCount} جلسة`));
     
     // تحديث الواجهة
     document.getElementById('totalDuration').textContent = totalDuration;
@@ -624,8 +653,11 @@ window.selectOfferService = function(offerId, serviceSelection) {
     // تحديث وقت الانتهاء
     calculateEndTime();
     
-    // إظهار تأكيد الاختيار
-    const serviceNames = selectedServiceItems.map(s => s.name).join('، ');
+    // إظهار تأكيد الاختيار مع معلومات الجلسات
+    const serviceNames = selectedServiceItems.map(s => 
+        `${s.name} (${s.sessionsCount} جلسة)`
+    ).join('، ');
+    
     const message = selectionType === 'full' 
         ? `✅ تم اختيار العرض كامل (${selectedServiceItems.length} خدمة): ${serviceNames}` 
         : `✅ تم اختيار الخدمة: ${serviceNames}`;
@@ -637,12 +669,13 @@ window.selectOfferService = function(offerId, serviceSelection) {
         updateBalanceStatus(selectedCustomer.balance, 0);
     }
     
-    // حفظ معلومات العرض المختار
+    // حفظ معلومات العرض المختار مع عدد الجلسات
     currentSelectedOffer = {
         offerId: offerId,
         offerName: offer.offerName,
         selectionType: selectionType,
-        selectedServices: selectedServiceItems
+        selectedServices: selectedServiceItems,
+        totalSessions: offer.sessionsCount // ✅ حفظ عدد الجلسات الإجمالي
     };
 };
 
@@ -1811,30 +1844,42 @@ async function addNewBooking(e) {
     let selectedOfferName = null;
     
     // ✅ التحقق من الخدمات بناءً على نوع الحجز
-    if (bookingType === 'offer') {
-        // في حالة الحجز بالعرض، نستخدم الخدمات من العرض المختار
-        if (selectedServices.length === 0) {
-            alert('⚠️ يرجى اختيار خدمة من العرض أولاً!');
-            return;
-        }
-        
-        // التحقق من وجود عرض مختار
-        if (!currentSelectedOffer || !currentSelectedOffer.offerId) {
-            alert('⚠️ يرجى اختيار عرض أولاً!');
-            return;
-        }
-        
-        selectedOfferId = currentSelectedOffer.offerId;
-        const selectedOffer = customerOffers.find(o => o.id === selectedOfferId);
-        if (!selectedOffer) {
-            alert('❌ خطأ في اختيار العرض!');
-            return;
-        }
-        if (selectedOffer.remainingSessions <= 0) {
-            alert('⚠️ لا توجد جلسات متبقية في هذا العرض!');
-            return;
-        }
-        selectedOfferName = selectedOffer.offerName;
+// في دالة addNewBooking - قسم التحقق من صحة الحجز بالعرض
+if (bookingType === 'offer') {
+    // في حالة الحجز بالعرض، نستخدم الخدمات من العرض المختار
+    if (selectedServices.length === 0) {
+        alert('⚠️ يرجى اختيار خدمة من العرض أولاً!');
+        return;
+    }
+    
+    // التحقق من وجود عرض مختار
+    if (!currentSelectedOffer || !currentSelectedOffer.offerId) {
+        alert('⚠️ يرجى اختيار عرض أولاً!');
+        return;
+    }
+    
+    // ✅ التحقق من أن عدد الجلسات المتبقية كافي
+    const selectedOffer = customerOffers.find(o => o.id === currentSelectedOffer.offerId);
+    if (!selectedOffer) {
+        alert('❌ خطأ في اختيار العرض!');
+        return;
+    }
+    
+    if (selectedOffer.remainingSessions <= 0) {
+        alert('⚠️ لا توجد جلسات متبقية في هذا العرض!');
+        return;
+    }
+    
+    // ✅ التحقق من أن عدد الجلسات المطلوبة متوفر
+    const maxSessionsRequired = Math.max(...selectedServices.map(s => s.sessionsCount || 1));
+    if (selectedOffer.remainingSessions < maxSessionsRequired) {
+        alert(`⚠️ عدد الجلسات المتبقية (${selectedOffer.remainingSessions}) غير كافي للخدمات المطلوبة (${maxSessionsRequired} جلسة)`);
+        return;
+    }
+    
+    selectedOfferId = currentSelectedOffer.offerId;
+    selectedOfferName = selectedOffer.offerName;
+
         
     } else {
         // في الحالات الأخرى، يجب اختيار الخدمات يدوياً
@@ -2004,54 +2049,70 @@ window.confirmBooking = async function(bookingId, isNewCustomer, bookingData) {
             const bookingType = booking.bookingType || 'normal';
             
             // إذا كان الحجز بعرض، نخصم جلسة من العرض
-            if (bookingType === 'offer' && booking.offerId) {
-                await runTransaction(db, async (transaction) => {
-                    const offerRef = doc(db, "customerOffers", booking.offerId);
-                    const offerSnap = await transaction.get(offerRef);
-                    
-                    if (!offerSnap.exists()) {
-                        throw new Error('العرض غير موجود!');
-                    }
-                    
-                    const offerData = offerSnap.data();
-                    if (offerData.remainingSessions <= 0) {
-                        throw new Error('لا توجد جلسات متبقية في هذا العرض!');
-                    }
-                    
-                    // خصم جلسة من العرض
-                    transaction.update(offerRef, {
-                        remainingSessions: offerData.remainingSessions - 1,
-                        usedSessions: (offerData.usedSessions || 0) + 1,
-                        updatedAt: Timestamp.now()
-                    });
-                    
-                    // إضافة سجل استخدام العرض مع معلومات الخدمات المتعددة
-                    const offerUsageRef = doc(collection(db, "offerUsage"));
-                    transaction.set(offerUsageRef, {
-                        offerId: booking.offerId,
-                        customerId: booking.customerId,
-                        customerName: booking.customerName,
-                        bookingId: bookingId,
-                        sessionUsed: 1,
-                        remainingAfter: offerData.remainingSessions - 1,
-                        services: booking.services, // ✅ تخزين جميع الخدمات المستخدمة
-                        servicesCount: booking.services.length, // ✅ عدد الخدمات
-                        usedAt: Timestamp.now(),
-                        usedBy: currentUser.name,
-                        // ✅ إضافة هذا الحقل الهام
-                        createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
-                    });
-                    
-                    // تأكيد الحجز
-                    transaction.update(bookingRef, {
-                        status: 'confirmed',
-                        confirmedAt: Timestamp.now(),
-                        confirmedBy: currentUser.name
-                    });
-                });
-                
-                alert('✅ تم تأكيد الحجز وخصم جلسة من العرض بنجاح!');
-            } else {
+// في قسم معالجة العروض في confirmBooking - تحديث لدعم الخدمات المتعددة
+// في قسم معالجة العروض في confirmBooking - تحديث لخصم الجلسات من الخدمات
+if (bookingType === 'offer' && booking.offerId) {
+    await runTransaction(db, async (transaction) => {
+        const offerRef = doc(db, "customerOffers", booking.offerId);
+        const offerSnap = await transaction.get(offerRef);
+        
+        if (!offerSnap.exists()) {
+            throw new Error('العرض غير موجود!');
+        }
+        
+        const offerData = offerSnap.data();
+        
+        // ✅ التحديث المهم: خصم جلسة من الخدمات المحددة فقط
+        const updatedServices = offerData.services.map(service => {
+            // نتحقق إذا كانت هذه الخدمة مستخدمة في الحجز
+            const isServiceUsed = booking.services.some(s => s.id === service.id);
+            if (isServiceUsed && service.remainingSessions > 0) {
+                return {
+                    ...service,
+                    remainingSessions: service.remainingSessions - 1
+                };
+            }
+            return service;
+        });
+        
+        // ✅ حساب العدد الإجمالي للجلسات المتبقية
+        const totalRemainingSessions = updatedServices.reduce((sum, service) => sum + service.remainingSessions, 0);
+        
+        transaction.update(offerRef, {
+            services: updatedServices,
+            remainingSessions: totalRemainingSessions, // تحديث العدد الإجمالي
+            updatedAt: Timestamp.now()
+        });
+        
+        // إضافة سجل استخدام العرض مع معلومات الخدمات المتعددة
+        const offerUsageRef = doc(collection(db, "offerUsage"));
+        transaction.set(offerUsageRef, {
+            offerId: booking.offerId,
+            customerId: booking.customerId,
+            customerName: booking.customerName,
+            bookingId: bookingId,
+            sessionUsed: 1,
+            remainingAfter: totalRemainingSessions,
+            services: booking.services.map(service => ({
+                ...service,
+                remainingSessionsAfter: updatedServices.find(s => s.id === service.id)?.remainingSessions || 0
+            })),
+            servicesCount: booking.services.length,
+            usedAt: Timestamp.now(),
+            usedBy: currentUser.name,
+            createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
+        });
+        
+        // تأكيد الحجز
+        transaction.update(bookingRef, {
+            status: 'confirmed',
+            confirmedAt: Timestamp.now(),
+            confirmedBy: currentUser.name
+        });
+    });
+    
+    alert('✅ تم تأكيد الحجز وخصم جلسة من العرض بنجاح!');
+}else {
                 // الحجز بالرصيد العادي أو الليزر أو الجلدية
                 const customerRef = doc(db, "customers", booking.customerId);
                 const customerSnap = await getDoc(customerRef);
@@ -2142,8 +2203,8 @@ await shiftModule.addShiftAction(
     'تأكيد حجز', 
     `تأكيد حجز ${booking.customerName} - ${booking.services.map(s => s.name).join(' + ')} - ${booking.totalCost.toFixed(2)} جنيه`,
     booking.customerName,
-    0, // ✅ صفر للعملاء الحاليين
-    'تحويل داخلي', // ✅ نوع الدفع تحويل داخلي
+    booking.totalCost, // ✅ سجل المبلغ الفعلي
+    'تحويل داخلي',
     { 
         actionCategory: 'booking',
         services: booking.services.map(s => s.name),
@@ -2897,14 +2958,12 @@ window.processNewCustomerPayment = async function(bookingId) {
                 visitCount: 0,
                 createdAt: Timestamp.now(),
                 updatedAt: Timestamp.now(),
-                // ✅ إضافة هذا الحقل الهام
                 createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
             });
             
             transaction.set(phoneRef, {
                 customerDocId: docIdString,
                 createdAt: Timestamp.now(),
-                // ✅ إضافة هذا الحقل الهام
                 createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
             });
             
@@ -2926,7 +2985,6 @@ window.processNewCustomerPayment = async function(bookingId) {
             isNewCustomer: true,
             notes: `دفع مقابل خدمات - ${booking.services.map(s => s.name).join(', ')} - يوم ${new Date(booking.bookingDate.toDate()).toLocaleDateString('ar-EG')}`,
             createdAt: Timestamp.now(),
-            // ✅ إضافة هذا الحقل الهام
             createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
         });
         
@@ -2938,73 +2996,69 @@ window.processNewCustomerPayment = async function(bookingId) {
             paymentMethod,
             confirmedAt: Timestamp.now(),
             confirmedBy: currentUser.name,
-            // ✅ إضافة هذا الحقل الهام
             createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
         });
         
-        // ✅ تسجيل إجراءات الشيفت - النسخة المحسنة
-        try {
-            const shiftModule = await import('../shift-management/shift-management.js');
-            if (shiftModule && shiftModule.addShiftAction) {
-                // ✅ تسجيل عملية الشحن للعميل الجديد
-                await shiftModule.addShiftAction(
-                    'شحن رصيد', 
-                    `شحن ${amount.toFixed(2)} جنيه لـ ${booking.customerName} - عميل جديد - ${paymentMethod}`,
-                    booking.customerName,
-                    amount, // ✅ المبلغ المدفوع
-                    paymentMethod, // ✅ نقدي/فيزا/كاش
-                    { 
-                        actionCategory: 'deposit',
-                        balanceType: 'normal',
-                        isNewCustomer: true,
-                        services: booking.services.map(s => s.name),
-                        servicesCount: booking.services.length,
-                        // ✅ إضافة هذا الحقل الهام
-                        createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
-                    }
-                );
-                
-                // ✅ تسجيل عملية تأكيد الحجز للعميل الجديد
-                await shiftModule.addShiftAction(
-                    'تأكيد حجز عميل جديد', 
-                    `تأكيد حجز ${booking.customerName} - ${booking.services.length} خدمة - ${booking.services.map(s => s.name).join('، ')} - ${booking.totalCost.toFixed(2)} جنيه`,
-                    booking.customerName,
-                    0, // ✅ المبلغ صفر في التقرير لأن الدفع تم تسجيله مسبقاً
-                    'شحن رصيد', // ✅ نوع الدفع في التقرير
-                    { 
-                        actionCategory: 'booking',
-                        services: booking.services.map(s => s.name),
-                        servicesCount: booking.services.length,
-                        bookingType: 'normal',
-                        customerId: customerId,
-                        bookingId: bookingId,
-                        isNewCustomer: true,
-                        paidAmount: amount,
-                        originalAmount: booking.totalCost, // ✅ حفظ المبلغ الأصلي
-                        // ✅ إضافة هذا الحقل الهام
-                        createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
-                    }
-                );
-
-                // ✅ تسجيل إضافة العميل الجديد
-                await shiftModule.addShiftAction(
-                    'إضافة عميل', 
-                    `تم إضافة العميل ${booking.customerName} - رقم ${customerId}`,
-                    booking.customerName,
-                    0,
-                    null,
-                    { 
-                        actionCategory: 'customer',
-                        customerId: customerId,
-                        isNewCustomer: true,
-                        // ✅ إضافة هذا الحقل الهام
-                        createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
-                    }
-                );
+// ✅ تسجيل إجراءات الشيفت - النسخة المحسّنة
+try {
+    const shiftModule = await import('../shift-management/shift-management.js');
+    if (shiftModule && shiftModule.addShiftAction) {
+        // ✅ تسجيل عملية الشحن للعميل الجديد
+        await shiftModule.addShiftAction(
+            'شحن رصيد', 
+            `شحن ${amount.toFixed(2)} جنيه لـ ${booking.customerName} - عميل جديد - ${paymentMethod}`,
+            booking.customerName,
+            amount,
+            paymentMethod,
+            { 
+                actionCategory: 'deposit',
+                balanceType: 'normal',
+                isNewCustomer: true,
+                services: booking.services.map(s => s.name),
+                servicesCount: booking.services.length,
+                createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
             }
-        } catch (e) {
-            console.log('لا يمكن تسجيل في الشيفت:', e);
-        }
+        );
+        
+        // ✅ تسجيل تأكيد الحجز بمبلغ صفر (لأن المبلغ تم تسجيله في الشحن)
+        await shiftModule.addShiftAction(
+            'تأكيد حجز', 
+            `تأكيد حجز ${booking.customerName} - ${booking.services.map(s => s.name).join(' + ')} - عميل جديد`,
+            booking.customerName,
+            0, // ✅ صفر - لأن المبلغ تم تسجيله في الشحن
+            'تحويل داخلي', // ✅ من الرصيد المشحون
+            { 
+                actionCategory: 'booking',
+                services: booking.services.map(s => s.name),
+                servicesCount: booking.services.length,
+                bookingType: bookingType,
+                customerId: customerId,
+                bookingId: bookingId,
+                isNewCustomerBooking: true, // ✅ علامة للتمييز
+                alreadyPaidInRecharge: true, // ✅ المبلغ مدفوع في الشحن
+                createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
+            }
+        );
+        
+        // ✅ تسجيل إضافة العميل الجديد (بدون مبلغ)
+        await shiftModule.addShiftAction(
+            'إضافة عميل', 
+            `تم إضافة العميل ${booking.customerName} - رقم ${customerId}`,
+            booking.customerName,
+            0, // ✅ مبلغ صفر - لا يُحسب في الإيرادات
+            null,
+            { 
+                actionCategory: 'customer',
+                customerId: customerId,
+                isNewCustomer: true,
+                isSystemAction: true, // ✅ علامة أن هذا إجراء نظامي لا يُحسب في الإيرادات
+                createdBy: currentUser.name || currentUser.displayName || 'مستخدم غير معروف'
+            }
+        );
+    }
+} catch (e) {
+    console.log('لا يمكن تسجيل في الشيفت:', e);
+}
         
         alert(`✅ تم إنشاء الحساب بنجاح!\nرقم العميل: ${customerId}\nتم الدفع والتأكيد.`);
         document.getElementById('paymentModal').remove();

@@ -112,6 +112,17 @@ async function loadOffers() {
         
         querySnapshot.forEach(docSnap => {
             const offer = { id: docSnap.id, ...docSnap.data() };
+            
+            // ✅ التأكد من أن كل خدمة تحتوي على بيانات الجلسات
+            if (offer.services && offer.services.length > 0) {
+                offer.services = offer.services.map(service => ({
+                    ...service,
+                    // ✅ إذا لم تكن البيانات موجودة، ننشئها من بيانات العرض
+                    sessionsCount: service.sessionsCount || offer.sessionsCount || 1,
+                    remainingSessions: service.remainingSessions || service.sessionsCount || offer.sessionsCount || 1
+                }));
+            }
+            
             allOffers.push(offer);
         });
         
@@ -142,6 +153,9 @@ function setupEventListeners() {
         if (offerType === 'package') {
             sessionsGroup.classList.remove('hidden');
             document.getElementById('sessionsCount').required = true;
+            // تحديث التفسير
+            document.querySelector('#sessionsGroup .helper-text').textContent = 
+                'عدد الجلسات المخصصة لكل خدمة في الباكدج';
         } else {
             sessionsGroup.classList.add('hidden');
             document.getElementById('sessionsCount').required = false;
@@ -224,6 +238,7 @@ function calculateOriginalPrice() {
     }
     
     if (offerType === 'package' && sessionsCount > 0) {
+        // ✅ التعديل: ضرب في عدد الجلسات لكل خدمة
         originalPrice = originalPrice * sessionsCount;
     }
     
@@ -287,13 +302,15 @@ async function addNewOffer(e) {
         const service1 = allServices.find(s => s.id === serviceId1);
         const service2 = serviceId2 ? allServices.find(s => s.id === serviceId2) : null;
         
-        // إنشاء قائمة الخدمات
+        // ✅ التصحيح المهم: إضافة sessionsCount و remainingSessions لكل خدمة
         const services = [
             {
                 id: service1.id,
                 name: service1.name,
                 price: service1.price,
-                duration: service1.duration
+                duration: service1.duration,
+                sessionsCount: sessionsCount, // ✅ عدد الجلسات للخدمة الأولى
+                remainingSessions: sessionsCount // ✅ الجلسات المتبقية للخدمة الأولى
             }
         ];
         
@@ -302,7 +319,9 @@ async function addNewOffer(e) {
                 id: service2.id,
                 name: service2.name,
                 price: service2.price,
-                duration: service2.duration
+                duration: service2.duration,
+                sessionsCount: sessionsCount, // ✅ عدد الجلسات للخدمة الثانية
+                remainingSessions: sessionsCount // ✅ الجلسات المتبقية للخدمة الثانية
             });
         }
         
@@ -311,12 +330,12 @@ async function addNewOffer(e) {
         const offerData = {
             categoryId,
             categoryName: category.name,
-            services: services, // ✅ قائمة الخدمات
-            serviceName: serviceName, // ✅ اسم مجمع للعرض
+            services: services, // ✅ الآن تحتوي كل خدمة على جلساتها الخاصة
+            serviceName: serviceName,
             offerType,
             originalPrice,
             offerPrice,
-            sessionsCount: offerType === 'package' ? sessionsCount : 1,
+            sessionsCount: sessionsCount,
             startDate: Timestamp.fromDate(new Date(startDate)),
             endDate: Timestamp.fromDate(new Date(endDate)),
             notes,
@@ -396,6 +415,154 @@ function displayOffers(offers) {
     });
 }
 
+// ========== إعداد الأحداث ==========
+function setupEventListeners() {
+    // ... الكود الحالي ...
+    
+    // تغيير نوع العرض
+    document.getElementById('offerType').addEventListener('change', function() {
+        const offerType = this.value;
+        const sessionsGroup = document.getElementById('sessionsGroup');
+        
+        if (offerType === 'package') {
+            sessionsGroup.classList.remove('hidden');
+            document.getElementById('sessionsCount').required = true;
+            // تحديث التفسير
+            document.querySelector('#sessionsGroup .helper-text').textContent = 
+                'عدد الجلسات المخصصة لكل خدمة في الباكدج';
+        } else {
+            sessionsGroup.classList.add('hidden');
+            document.getElementById('sessionsCount').required = false;
+            document.getElementById('sessionsCount').value = '';
+        }
+        
+        calculateOriginalPrice();
+    });
+    
+    // ... باقي الأحداث ...
+}
+
+// ========== حساب السعر الأصلي ==========
+function calculateOriginalPrice() {
+    const serviceSelect1 = document.getElementById('offerService1');
+    const serviceSelect2 = document.getElementById('offerService2');
+    const offerType = document.getElementById('offerType').value;
+    const sessionsCount = parseInt(document.getElementById('sessionsCount').value) || 1;
+    
+    if (!serviceSelect1.value) {
+        updatePriceDisplay(0);
+        return;
+    }
+    
+    const selectedOption1 = serviceSelect1.options[serviceSelect1.selectedIndex];
+    const servicePrice1 = parseFloat(selectedOption1.dataset.price);
+    
+    let originalPrice = servicePrice1;
+    
+    // إضافة سعر الخدمة الثانية إذا تم اختيارها
+    if (serviceSelect2.value) {
+        const selectedOption2 = serviceSelect2.options[serviceSelect2.selectedIndex];
+        const servicePrice2 = parseFloat(selectedOption2.dataset.price);
+        originalPrice += servicePrice2;
+    }
+    
+    if (offerType === 'package' && sessionsCount > 0) {
+        // ✅ التعديل: ضرب في عدد الجلسات لكل خدمة
+        originalPrice = originalPrice * sessionsCount;
+    }
+    
+    updatePriceDisplay(originalPrice);
+    calculateDiscount();
+}
+
+// ========== إضافة عرض جديد ==========
+async function addNewOffer(e) {
+    e.preventDefault();
+    
+    const categoryId = document.getElementById('offerCategory').value;
+    const serviceId1 = document.getElementById('offerService1').value;
+    const serviceId2 = document.getElementById('offerService2').value;
+    const offerType = document.getElementById('offerType').value;
+    const sessionsCount = parseInt(document.getElementById('sessionsCount').value) || 1;
+    const originalPrice = parseFloat(document.querySelector('.price-value').textContent);
+    const offerPrice = parseFloat(document.getElementById('offerPrice').value);
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const notes = document.getElementById('offerNotes').value.trim();
+    
+    // التحقق من البيانات
+    if (offerPrice >= originalPrice) {
+        showMessage('⚠️ سعر العرض يجب أن يكون أقل من السعر الأصلي!', 'warning');
+        return;
+    }
+    
+    if (new Date(endDate) <= new Date(startDate)) {
+        showMessage('⚠️ تاريخ النهاية يجب أن يكون بعد تاريخ البداية!', 'warning');
+        return;
+    }
+    
+    try {
+        const category = allCategories.find(c => c.id === categoryId);
+        const service1 = allServices.find(s => s.id === serviceId1);
+        const service2 = serviceId2 ? allServices.find(s => s.id === serviceId2) : null;
+        
+        // إنشاء قائمة الخدمات مع عدد الجلسات لكل خدمة
+        const services = [
+            {
+                id: service1.id,
+                name: service1.name,
+                price: service1.price,
+                duration: service1.duration,
+                sessionsCount: offerType === 'package' ? sessionsCount : 1
+            }
+        ];
+        
+        if (service2) {
+            services.push({
+                id: service2.id,
+                name: service2.name,
+                price: service2.price,
+                duration: service2.duration,
+                sessionsCount: offerType === 'package' ? sessionsCount : 1
+            });
+        }
+        
+        const serviceName = services.map(s => s.name).join(' + ');
+        
+        const offerData = {
+            categoryId,
+            categoryName: category.name,
+            services: services,
+            serviceName: serviceName,
+            offerType,
+            originalPrice,
+            offerPrice,
+            sessionsCount: offerType === 'package' ? sessionsCount : 1,
+            startDate: Timestamp.fromDate(new Date(startDate)),
+            endDate: Timestamp.fromDate(new Date(endDate)),
+            notes,
+            isActive: true,
+            customersCount: 0,
+            createdAt: Timestamp.now(),
+            createdBy: currentUser.uid,
+            createdByName: currentUser.name
+        };
+        
+        await addDoc(collection(db, "offers"), offerData);
+        
+        showMessage('✅ تم إضافة العرض بنجاح!', 'success');
+        document.getElementById('addOfferForm').reset();
+        document.getElementById('discountPercentage').style.display = 'none';
+        updatePriceDisplay(0);
+        
+        await loadOffers();
+        
+    } catch (error) {
+        console.error("خطأ في إضافة العرض:", error);
+        showMessage('❌ حدث خطأ أثناء إضافة العرض', 'error');
+    }
+}
+
 function createOfferCard(offer) {
     const card = document.createElement('div');
     card.className = 'offer-card';
@@ -417,18 +584,43 @@ function createOfferCard(offer) {
     
     const discount = ((offer.originalPrice - offer.offerPrice) / offer.originalPrice) * 100;
     
-    // ✅ عرض الخدمات المتعددة
+    // ✅ التصحيح: عرض الجلسات لكل خدمة بشكل صحيح
     const services = offer.services || [];
     let servicesHTML = '';
     if (services.length > 0) {
         servicesHTML = `
             <div class="offer-services-list">
                 <strong>الخدمات المشمولة:</strong>
-                ${services.map(s => `
-                    <div class="service-item">
-                        🔸 ${s.name} (${s.duration} دقيقة - ${s.price.toFixed(2)} جنيه)
-                    </div>
-                `).join('')}
+                ${services.map(service => {
+                    // ✅ استخدام البيانات من الخدمة نفسها وليس من العرض
+                    const serviceSessionsCount = service.sessionsCount || offer.sessionsCount || 1;
+                    const serviceRemainingSessions = service.remainingSessions || serviceSessionsCount;
+                    
+                    return `
+                        <div class="service-item">
+                            <div class="service-info">
+                                <span class="service-name">🔸 ${service.name}</span>
+                                <span class="service-details">
+                                    (${service.duration} دقيقة - ${service.price.toFixed(2)} جنيه)
+                                    ${offer.offerType === 'package' ? 
+                                        `- 🎫 ${serviceSessionsCount} جلسة` : 
+                                        ''
+                                    }
+                                </span>
+                            </div>
+                            ${offer.offerType === 'package' ? `
+                                <div class="service-sessions-progress">
+                                    <div class="sessions-progress-bar">
+                                        <div class="sessions-progress-fill" 
+                                             style="width: ${(serviceRemainingSessions / serviceSessionsCount) * 100}%">
+                                        </div>
+                                    </div>
+                                    <span class="sessions-count">${serviceRemainingSessions}/${serviceSessionsCount}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
             </div>
         `;
     }

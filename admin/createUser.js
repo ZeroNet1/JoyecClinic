@@ -1,3 +1,4 @@
+// createUser.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getAuth, 
@@ -73,7 +74,8 @@ document.getElementById('createUserForm').addEventListener('submit', async (e) =
             name: name,
             email: email,
             role: role,
-            createdAt: new Date()
+            createdAt: new Date(), // <-- لا تنسى الفاصلة
+            deleted: false // مهم: نضيف هذا الحقل بحيث قواعد القراءة التي تعتمد عليه تعمل بشكل صحيح
         });
         
         console.log("تم إنشاء السجل في Firestore");
@@ -119,8 +121,8 @@ async function loadUsers() {
             return;
         }
         
-        querySnapshot.forEach((doc) => {
-            const user = doc.data();
+        querySnapshot.forEach((docSnap) => {
+            const user = docSnap.data();
             const userItem = document.createElement('div');
             userItem.className = 'user-item';
             userItem.innerHTML = `
@@ -129,7 +131,7 @@ async function loadUsers() {
                     <span class="user-email">${user.email}</span>
                     <span class="user-role">${user.role}</span>
                 </div>
-                <button class="delete-btn" onclick="deleteUser('${doc.id}')">حذف</button>
+                <button class="delete-btn" onclick="deleteUser('${docSnap.id}')">حذف</button>
             `;
             usersList.appendChild(userItem);
         });

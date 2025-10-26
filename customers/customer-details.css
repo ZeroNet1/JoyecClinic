@@ -816,6 +816,35 @@ body {
     padding: 26px;
 }
 
+/* ✅ أنماط زر السحب */
+.withdraw-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.withdraw-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+}
+
+.withdraw-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.withdraw-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 /* ========== Responsive Design ========== */
 
 @media (max-width: 991px) {
@@ -833,6 +862,10 @@ body {
     .container {
         padding: 12px;
     }
+
+    .withdraw-btn {
+    width: 100%;
+}
 
     .header {
         flex-direction: column;

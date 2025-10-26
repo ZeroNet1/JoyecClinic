@@ -235,6 +235,7 @@
                                 <button class="recharge-btn" id="rechargeBtn">💵 شحن الرصيد</button>
                                 <button class="transfer-btn" id="transferNormalBtn">🔄 تحويل لعميل آخر</button>
                                 <button class="convert-btn" id="convertNormalBtn">💱 تحويل لفئة أخرى</button>
+                                <button class="withdraw-btn hidden" id="withdrawNormalBtn">💸 سحب من الرصيد</button>
                             </div>
                         </div>
                         
@@ -315,6 +316,41 @@
                                 <div class="form-actions">
                                     <button type="submit" class="save-btn">✅ تأكيد التحويل</button>
                                     <button type="button" class="cancel-btn" id="cancelNormalConvert">❌ إلغاء</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- ✅ نموذج سحب الرصيد الأساسي (للأدمن فقط) -->
+                        <div class="transfer-form hidden" id="normalWithdrawForm">
+                            <h4>💸 سحب من الرصيد الأساسي</h4>
+                            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid #ffc107;">
+                                <strong style="color: #856404;">⚠️ تحذير:</strong>
+                                <p style="margin: 5px 0 0; color: #856404; font-size: 13px;">
+                                    عملية السحب ستقوم بخصم المبلغ من رصيد العميل بدون استرجاع. تأكد من المبلغ قبل التأكيد.
+                                </p>
+                            </div>
+                            <form id="withdrawNormalBalanceForm">
+                                <div class="input-group">
+                                    <label for="normalWithdrawAmount">المبلغ المراد سحبه:</label>
+                                    <input type="number" id="normalWithdrawAmount" step="0.01" min="0.01" required placeholder="أدخل المبلغ">
+                                </div>
+                                <div class="input-group">
+                                    <label for="normalWithdrawReason">سبب السحب:</label>
+                                    <select id="normalWithdrawReason" required>
+                                        <option value="">اختر السبب</option>
+                                        <option value="تصحيح رصيد">تصحيح رصيد</option>
+                                        <option value="استرداد">استرداد</option>
+                                        <option value="خطأ في الشحن">خطأ في الشحن</option>
+                                        <option value="أخرى">أخرى</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="normalWithdrawNotes">ملاحظات (مطلوبة):</label>
+                                    <textarea id="normalWithdrawNotes" required placeholder="يرجى توضيح سبب السحب بالتفصيل (إلزامي)"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="save-btn" style="background: #dc3545;">⚠️ تأكيد السحب</button>
+                                    <button type="button" class="cancel-btn" id="cancelNormalWithdraw">❌ إلغاء</button>
                                 </div>
                             </form>
                         </div>

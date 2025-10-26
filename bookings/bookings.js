@@ -1,4 +1,4 @@
-// bookings.js - النسخة المحدثة الكاملة
+// bookings.js - النسخة المحدثة المتوافقة مع قواعد Firestore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import {
     getFirestore,
@@ -67,17 +67,34 @@ function setupListeners() {
 /* تحميل قائمة الدكاترة */
 async function loadDoctors() {
     try {
-        const q = query(collection(db, "users"), orderBy("name"));
+        // هام: نضيف شرط deleted == false ليتوافق مع قواعد الأمان
+        const q = query(
+            collection(db, "users"),
+            where("role", "in", ["doctor", "skin_doctor"]),
+            where("deleted", "==", false), // مطابقة لقواعد Firestore التي تطلب deleted != true
+            orderBy("name")
+        );
+
         const snapshot = await getDocs(q);
         doctors = [];
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            if (data.role === 'doctor' || data.role === 'skin_doctor') {
-                doctors.push({ id: docSnap.id, ...data });
-            }
+            doctors.push({ id: docSnap.id, ...data });
         });
+
+        console.log(`[loadDoctors] fetched ${doctors.length} doctors.`);
     } catch (err) {
         console.error("خطأ في تحميل الدكاترة:", err);
+        // رصد طلب الـ index إن وجدت الرسالة
+        if (err.message && err.message.includes('requires an index')) {
+            console.error('Firestore requires a composite index for this query. افتح الرابط في رسالة الخطأ لإنشاء الـ index.');
+        }
+        if (err.code === 'permission-denied' || (err.message && err.message.toLowerCase().includes('permission'))) {
+            alert('❌ إذن مرفوض: لا يمكنك قراءة بيانات المستخدمين. تحقق من قواعد Firestore وصلاحية حسابك (role).');
+        } else {
+            alert('❌ حدث خطأ أثناء تحميل الدكاترة — راجع الكونسول.');
+        }
+        doctors = [];
     }
 }
 
@@ -182,7 +199,7 @@ async function fetchDoctorBookingStats(doctorId, dateStr) {
 /* الانتقال إلى صفحة جدول الدكتور */
 window.viewDoctorSchedule = function(doctorId, doctorName) {
     window.location.href = `doctor-schedule.html?doctorId=${doctorId}&doctorName=${doctorName}&date=${filterDate}`;
-};
+} ;
 
 /* دوال مساعدة */
 function getDoctorAvatar(role) {

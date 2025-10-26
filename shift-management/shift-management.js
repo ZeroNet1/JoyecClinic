@@ -442,12 +442,27 @@ export async function addShiftAction(actionType, description, customerName, amou
             $id('userName').textContent : 
             (currentShift.userName || 'مستخدم غير معروف');
         
-        // ✅ تسجيل جميع أنواع الإجراءات المهمة - الشرط الجديد
+        // ✅ التحقق من أنواع الإجراءات التي يجب تسجيلها
         let shouldRecord = false;
         
-        // 1. جميع عمليات الدفع (بما فيها الرصيد الداخلي)
+        // 1. جميع عمليات الدفع المباشرة (نقدي، كاش، فيزا)
         if (amount > 0) {
-            shouldRecord = true;
+            // ✅ استثناء التحويلات الداخلية وشحن الرصيد من الإيرادات
+            const isInternalTransfer = paymentMethod && (
+                paymentMethod.includes('رصيد') || 
+                paymentMethod.includes('داخلي') || 
+                paymentMethod.includes('internal') ||
+                paymentMethod.toLowerCase().includes('balance')
+            );
+            
+            const isRecharge = actionType.includes('شحن رصيد');
+            const isTransfer = actionType.includes('تحويل داخلي');
+            
+            if (!isInternalTransfer && !isRecharge && !isTransfer) {
+                shouldRecord = true;
+            } else {
+                console.log('⭕ تم تخطي تسجيل التحويل الداخلي/شحن الرصيد في الإيرادات');
+            }
         }
         
         // 2. عمليات إنشاء الحسابات الجديدة
@@ -459,12 +474,14 @@ export async function addShiftAction(actionType, description, customerName, amou
         if (actionType.includes('حجز') || description.includes('حجز')) {
             shouldRecord = true;
         }
-        
-        // 4. عمليات شحن الرصيد
+
+        // 4. عمليات شحن الرصيد (تسجيل بدون مبلغ في الإيرادات)
         if (actionType.includes('شحن') || description.includes('شحن')) {
             shouldRecord = true;
+            // ✅ إضافة خاصية لتحديد أن هذا شحن رصيد وليس إيراد
+            additionalDetails.isRecharge = true;
         }
-
+        
         // ✅ تسجيل جميع عمليات تأكيد الحجز حتى لو كانت بمبلغ 0
         if (actionType.includes('تأكيد حجز')) {
             shouldRecord = true;
@@ -486,7 +503,6 @@ export async function addShiftAction(actionType, description, customerName, amou
             userName: userName,
             userId: uid,
             createdAt: Timestamp.now(),
-            // ✅ إضافة هذا الحقل الهام لتتبع من أنشأ الإجراء
             createdBy: uid,
             ...additionalDetails
         };
@@ -607,7 +623,7 @@ function debugShiftActions() {
         console.log(`النوع: ${action.actionType}`);
         console.log(`الوصف: ${action.description}`);
         console.log(`العميل: ${action.customerName}`);
-        console.log(`المبلغ: ${action.amount}`);
+        console.log(`المبلغ: ${action.amount}`);        
         console.log(`طريقة الدفع: ${action.paymentMethod}`);
         console.log(`عميل جديد: ${action.isNewCustomer}`);
         console.log(`الخدمات: ${JSON.stringify(action.services)}`);
@@ -618,7 +634,9 @@ function debugShiftActions() {
 
 // استدع هذه الدالة قبل generateEnhancedShiftReport للتحقق من البيانات
 
-// ✅ الإصلاح الكامل لدالة generateEnhancedShiftReport
+// ✅ الإصلاح الكامل لدالة generateEnhancedShiftReport مع تقسيم أنواع الدفع الصحيح
+// ✅ الإصلاح الكامل لدالة generateEnhancedShiftReport مع تقسيم أنواع الدفع الصحيح
+// ✅ الإصلاح الكامل لدالة generateEnhancedShiftReport مع تقسيم أنواع الدفع الصحيح
 async function generateEnhancedShiftReport() {
     try {
         if (!currentShift) {
@@ -635,180 +653,241 @@ async function generateEnhancedShiftReport() {
         // جلب كل إجراءات الشيفت
         await loadShiftActions();
         
-        // تجميع البيانات المحسّنة - بدون تكرار
-        const reportData = [];
-        let totalCashRevenue = 0;
-        let totalInternalRevenue = 0;
-        let totalBookings = 0;
-        let totalCustomers = 0;
+        // تجميع البيانات المحسّنة حسب نوع الدفع
+        const cashPayments = [];       // نقدي - فلوس في ايد الموظف
+        const mobilePayments = [];     // كاش - فودافون كاش/انستاباي
+        const visaPayments = [];       // فيزا - بطاقات فيزا
+        const internalPayments = [];   // التحويلات الداخلية
         
-        // ✅ مجموعة جديدة لتتبع العملاء والمدفوعات
-        const customerPayments = new Map();
+        let totalCashRevenue = 0;      // الإيراد النقدي فقط
+        let totalMobileRevenue = 0;
+        let totalVisaRevenue = 0;
+        let totalInternalRevenue = 0;
+        
+        let totalCustomers = 0;
+        let totalBookings = 0;
+        let totalOperations = 0;
 
-        // ✅ أولاً: تحليل إجراءات الشيفت بشكل صحيح
+        // ✅ مجموعة لتتبع العملاء لمنع التكرار
+        const uniqueCustomers = new Set();
+
+        // ✅ تحليل إجراءات الشيفت وتصنيفها حسب نوع الدفع
         shiftActions.forEach(action => {
             if (!action.customerName) return;
 
-            const customerKey = action.customerName;
-            
-            if (!customerPayments.has(customerKey)) {
-                customerPayments.set(customerKey, {
-                    customerName: action.customerName,
-                    cashAmount: 0,
-                    internalAmount: 0,
-                    services: [],
-                    paymentMethod: '',
-                    isNewCustomer: false,
-                    customerId: action.customerId || null
-                });
-            }
-
-            const customer = customerPayments.get(customerKey);
-
-            // ✅ تحديد إذا كان عميل جديد من خلال actionType
-            if (action.actionType.includes('إنشاء حساب') || 
-                action.actionType.includes('عميل جديد') ||
-                action.actionType.includes('إضافة عميل')) {
-                customer.isNewCustomer = true;
-            }
-
-            // ✅ معالجة شحن الرصيد للعملاء الجدد - هذا هو الإصلاح الرئيسي
-            if ((action.actionType.includes('شحن رصيد') || 
-                 action.actionType.includes('إنشاء حساب')) && 
-                action.amount > 0) {
-                
-                // ✅ إذا كان عميل جديد وشحن رصيد، فهذا إيراد نقدي
-                if (customer.isNewCustomer) {
-                    customer.cashAmount += action.amount;
-                    customer.paymentMethod = action.paymentMethod || 'نقدي';
-                    
-                    // ✅ إضافة خدمة "إنشاء حساب" للعملاء الجدد
-                    if (!customer.services.includes('إنشاء حساب')) {
-                        customer.services.push('إنشاء حساب');
-                    }
-                }
-                // ✅ إذا كان عميل موجود وشحن رصيد، فهذا أيضاً إيراد نقدي
-                else if (action.actionType.includes('شحن رصيد')) {
-                    customer.cashAmount += action.amount;
-                    customer.paymentMethod = action.paymentMethod || 'نقدي';
-                    customer.services.push('شحن رصيد');
-                }
-            }
-
-            // ✅ معالجة الحجوزات - هذه تحويلات داخلية
-            if (action.actionType.includes('حجز') && action.amount === 0) {
-                customer.internalAmount += action.originalAmount || 0;
-                if (action.services && action.services.length > 0) {
-                    customer.services = [...customer.services, ...action.services];
-                }
-            }
-        });
-
-        // ✅ ثانياً: بناء بيانات التقرير النهائية
-        customerPayments.forEach((customer, customerName) => {
-            // ✅ فقط العملاء الذين لديهم مدفوعات فعلية
-            if (customer.cashAmount > 0 || customer.internalAmount > 0) {
-                const serviceName = customer.services.length > 0 ? 
-                    customer.services.join(' + ') : 'إنشاء حساب';
-                
-                // ✅ إذا كان هناك دفع نقدي (شحن رصيد)
-                if (customer.cashAmount > 0) {
-                    reportData.push({
-                        customerName: customerName,
-                        serviceName: serviceName,
-                        amount: customer.cashAmount,
-                        paymentMethod: customer.paymentMethod,
-                        isInternalTransfer: false,
-                        isNewCustomer: customer.isNewCustomer,
-                        originalAmount: customer.internalAmount > 0 ? customer.internalAmount : customer.cashAmount
-                    });
-
-                    totalCashRevenue += customer.cashAmount;
-                }
-                
-                // ✅ إذا كان هناك تحويل داخلي (حجز)
-                if (customer.internalAmount > 0) {
-                    reportData.push({
-                        customerName: customerName,
-                        serviceName: serviceName,
-                        amount: 0,
-                        paymentMethod: 'تحويل داخلي',
-                        isInternalTransfer: true,
-                        isNewCustomer: customer.isNewCustomer,
-                        originalAmount: customer.internalAmount
-                    });
-
-                    totalInternalRevenue += customer.internalAmount;
-                }
-
+            // ✅ حساب العملاء الفريديين
+            if (action.customerName && !uniqueCustomers.has(action.customerName)) {
+                uniqueCustomers.add(action.customerName);
                 totalCustomers++;
-                if (customer.internalAmount > 0) {
-                    totalBookings++;
+            }
+
+// ✅ حساب الحجوزات - فقط إضافة أو تأكيد الحجز (وليس إكمال الحجز)
+if (action.actionType.includes('إضافة حجز') || 
+    action.actionType.includes('تأكيد حجز') ||
+    action.actionType === 'حجز جديد') {
+    totalBookings++;
+}
+
+            // ✅ معالجة العمليات بناءً على المبلغ أو المبلغ الأصلي
+            const actualAmount = action.amount > 0 ? action.amount : (action.originalAmount || 0);
+            
+            if (actualAmount > 0 || action.paymentMethod) {
+                const paymentData = {
+                    customerName: action.customerName,
+                    serviceName: getServiceNameFromAction(action),
+                    amount: actualAmount,
+                    paymentMethod: action.paymentMethod,
+                    isNewCustomer: isNewCustomerAction(action),
+                    timestamp: action.timestamp,
+                    actionType: action.actionType,
+                    description: action.description,
+                    originalAmount: action.originalAmount || actualAmount
+                };
+
+                // ✅ التصنيف الدقيق حسب نوع الدفع - الترتيب مهم!
+                const paymentMethod = action.paymentMethod || '';
+                
+                // 1. ✅ كاش - فودافون كاش أو انستاباي (يجب أن يأتي أولاً)
+                if (paymentMethod.includes('فودافون') || 
+                    paymentMethod.includes('انستاباي') || 
+                    paymentMethod.includes('موبايل') || 
+                    paymentMethod === 'كاش' ||
+                    paymentMethod.toLowerCase().includes('vodafone') ||
+                    paymentMethod.toLowerCase().includes('instapay')) {
+                    mobilePayments.push(paymentData);
+                    totalMobileRevenue += actualAmount;
+                    totalOperations++;
+                    console.log(`📱 تم تصنيف كعملية كاش: ${paymentMethod} - ${actualAmount}`);
+                }
+                // 2. ✅ نقدي - فلوس في ايد الموظف
+                else if (paymentMethod.includes('نقدي') || 
+                         paymentMethod === 'cash' ||
+                         paymentMethod.toLowerCase().includes('cash')) {
+                    cashPayments.push(paymentData);
+                    totalCashRevenue += actualAmount;
+                    totalOperations++;
+                    console.log(`💵 تم تصنيف كعملية نقدي: ${paymentMethod} - ${actualAmount}`);
+                }
+                // 3. ✅ فيزا - بطاقات فيزا
+                else if (paymentMethod.includes('فيزا') || 
+                         paymentMethod.includes('Visa') || 
+                         paymentMethod.includes('بطاقة') ||
+                         paymentMethod.toLowerCase().includes('visa') ||
+                         paymentMethod.toLowerCase().includes('card')) {
+                    visaPayments.push(paymentData);
+                    totalVisaRevenue += actualAmount;
+                    totalOperations++;
+                    console.log(`💳 تم تصنيف كعملية فيزا: ${paymentMethod} - ${actualAmount}`);
+                }
+                // 4. ✅ تحويل داخلي - رصيد داخلي
+                else if (paymentMethod.includes('رصيد') || 
+                         paymentMethod.includes('داخلي') || 
+                         paymentMethod.includes('internal') ||
+                         paymentMethod.toLowerCase().includes('balance') ||
+                         paymentMethod.includes('تحويل داخلي')) {
+                    internalPayments.push(paymentData);
+                    totalInternalRevenue += actualAmount;
+                    totalOperations++;
+                    console.log(`🔄 تم تصنيف كعملية داخلية: ${paymentMethod} - ${actualAmount}`);
+                }
+                else if (actualAmount > 0) {
+                    // إذا لم يكن محدد، نعتبره نقدي (الافتراضي)
+                    cashPayments.push(paymentData);
+                    totalCashRevenue += actualAmount;
+                    totalOperations++;
+                    console.log(`⚡ تم تصنيف كنقدي (افتراضي): ${paymentMethod} - ${actualAmount}`);
                 }
             }
         });
 
-        // ✅ بناء جدول التقرير المصحح
-        let tableHTML = '';
-        
-        if (reportData.length > 0) {
-            tableHTML = `
-                <table class="report-table" style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: Arial, sans-serif;">
-                    <thead>
-                        <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
-                            <th style="padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6; font-weight: bold; width: 20%;">اسم العميل</th>
-                            <th style="padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6; font-weight: bold; width: 35%;">الخدمة</th>
-                            <th style="padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6; font-weight: bold; width: 20%;">نوع الدفع</th>
-                            <th style="padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6; font-weight: bold; width: 25%;">المبلغ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${reportData.map(item => `
-                            <tr style="border-bottom: 1px solid #e9ecef;">
-                                <td style="padding: 12px; text-align: right; font-weight: 500;">
-                                    ${item.customerName}
-                                    ${item.isNewCustomer ? '<br><small style="color: #28a745;">(عميل جديد)</small>' : ''}
-                                </td>
-                                <td style="padding: 12px; text-align: right;">
-                                    ${item.serviceName}
-                                </td>
-                                <td style="padding: 12px; text-align: right; color: ${item.isInternalTransfer ? '#6c757d' : '#007bff'}; font-weight: 500;">
-                                    ${item.paymentMethod}
-                                </td>
-                                <td style="padding: 12px; text-align: right; font-weight: bold; color: ${item.amount === 0 ? '#6c757d' : '#28a745'};">
-                                    ${item.amount === 0 ? 
-                                        `0 (تحويل داخلي)` : 
-                                        `${item.amount.toFixed(2)} جنيه`}
-                                    ${item.originalAmount > 0 && item.amount === 0 ? 
-                                        `<br><small style="color: #999;">(قيمة الخدمة: ${item.originalAmount.toFixed(2)} جنيه)</small>` : 
-                                        ''}
-                                    ${item.originalAmount > 0 && item.amount > 0 ? 
-                                        `<br><small style="color: #999;">(بالإضافة لخدمات بقيمة ${item.originalAmount.toFixed(2)} جنيه)</small>` : 
-                                        ''}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else {
-            tableHTML = `
-                <div style="text-align: center; color: #999; padding: 60px 20px; background: #f8f9fa; border-radius: 10px; margin: 20px 0;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">📝</div>
-                    <h3 style="margin: 0 0 10px 0; color: #6c757d;">لا توجد عمليات في هذا الشيفت</h3>
-                    <p style="margin: 0; color: #999;">لم يتم تسجيل أي مدفوعات أو حجوزات خلال هذا الشيفت</p>
+        // ✅ دالة مساعدة لاستخراج اسم الخدمة
+        function getServiceNameFromAction(action) {
+            if (action.actionType.includes('إنشاء حساب') || action.description.includes('إنشاء حساب')) {
+                return 'إنشاء حساب جديد';
+            }
+            if (action.actionType.includes('شحن رصيد')) {
+                return 'شحن رصيد';
+            }
+            if (action.services && action.services.length > 0) {
+                return action.services.map(s => typeof s === 'string' ? s : s.name).join(' + ');
+            }
+            if (action.description) {
+                const serviceMatch = action.description.match(/(?:حجز|تأكيد|إكمال).*?-\s*(.+?)(?:\s*-|$)/);
+                if (serviceMatch && serviceMatch[1]) {
+                    return serviceMatch[1].trim();
+                }
+            }
+            return action.actionType || 'خدمة';
+        }
+
+        // ✅ دالة مساعدة للتحقق من عميل جديد
+        function isNewCustomerAction(action) {
+            return action.actionType.includes('إنشاء حساب') || 
+                   action.actionType.includes('عميل جديد') ||
+                   action.description.includes('عميل جديد');
+        }
+
+        // ✅ دالة لإنشاء جدول لكل نوع دفع
+        function createPaymentTable(payments, title, paymentType, totalAmount) {
+            if (payments.length === 0) {
+                return `
+                    <div style="margin: 20px 0; padding: 30px; background: #f8f9fa; border-radius: 10px; text-align: center;">
+                        <div style="color: #999; font-size: 16px; margin-bottom: 10px;">🔭</div>
+                        <div style="color: #999; font-size: 16px;">لا توجد عمليات ${title}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div style="margin: 25px 0;">
+                    <div style="background: ${getPaymentTypeColor(paymentType)}; color: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h3 style="margin: 0; font-size: 18px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>${title}</span>
+                            <span>${totalAmount.toFixed(2)} جنيه</span>
+                        </h3>
+                        <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">
+                            ${payments.length} عملية
+                        </div>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6; width: 30%;">اسم العميل</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6; width: 45%;">الخدمة</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6; width: 25%;">المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${payments.map(payment => `
+                                    <tr style="border-bottom: 1px solid #e9ecef;">
+                                        <td style="padding: 12px; text-align: right; vertical-align: top;">
+                                            <div style="font-weight: 500;">${payment.customerName}</div>
+                                            ${payment.isNewCustomer ? 
+                                                '<div style="font-size: 11px; color: #28a745; margin-top: 4px;">🆕 عميل جديد</div>' : 
+                                                ''
+                                            }
+                                        </td>
+                                        <td style="padding: 12px; text-align: right; vertical-align: top;">
+                                            <div style="font-size: 14px; color: #333;">${payment.serviceName}</div>
+                                            ${payment.description ? 
+                                                `<div style="font-size: 12px; color: #666; margin-top: 4px;">${payment.description}</div>` : 
+                                                ''
+                                            }
+                                            <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                                                ${payment.paymentMethod}
+                                            </div>
+                                        </td>
+                                        <td style="padding: 12px; text-align: right; vertical-align: top;">
+                                            <div style="font-weight: bold; color: #28a745; font-size: 16px;">
+                                                ${payment.amount.toFixed(2)} جنيه
+                                            </div>
+                                            <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                                                ${payment.actionType}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `;
         }
 
-        // ✅ حساب الإجماليات النهائية بدقة
-        const actualOperations = reportData.length;
-        const actualBookings = totalBookings;
-        const actualCustomers = totalCustomers;
+        // ✅ دالة مساعدة لألوان أنواع الدفع
+        function getPaymentTypeColor(type) {
+            const colors = {
+                'cash': 'linear-gradient(135deg, #28a745, #20c997)',      // أخضر للنقدي
+                'mobile': 'linear-gradient(135deg, #17a2b8, #138496)',    // أزرق فاتح للكاش
+                'visa': 'linear-gradient(135deg, #6f42c1, #5a2d9c)',      // بنفسجي للفيزا
+                'internal': 'linear-gradient(135deg, #6c757d, #495057)'   // رمادي للداخلي
+            };
+            return colors[type] || '#333';
+        }
+
+        // ✅ تسجيل الإحصائيات في الكونسول للتصحيح
+        console.log('=== إحصائيات التقرير ===');
+        console.log(`💵 نقدي: ${cashPayments.length} عملية - ${totalCashRevenue.toFixed(2)} جنيه`);
+        console.log(`📱 كاش: ${mobilePayments.length} عملية - ${totalMobileRevenue.toFixed(2)} جنيه`);
+        console.log(`💳 فيزا: ${visaPayments.length} عملية - ${totalVisaRevenue.toFixed(2)} جنيه`);
+        console.log(`🔄 داخلي: ${internalPayments.length} عملية - ${totalInternalRevenue.toFixed(2)} جنيه`);
+
+        // ✅ بناء التقرير مع الأقسام المنفصلة
+        const reportSections = `
+            ${createPaymentTable(cashPayments, '💵 المدفوعات النقدية (فلوس في الإيد)', 'cash', totalCashRevenue)}
+            ${createPaymentTable(mobilePayments, '📱 المدفوعات بكاش (فودافون كاش/انستاباي)', 'mobile', totalMobileRevenue)}
+            ${createPaymentTable(visaPayments, '💳 المدفوعات بفيزا', 'visa', totalVisaRevenue)}
+            ${createPaymentTable(internalPayments, '🔄 التحويلات الداخلية (رصيد)', 'internal', totalInternalRevenue)}
+        `;
+
+        // ✅ الإيراد النقدي فقط (النقدي + الكاش + الفيزا)
+        const totalReceivedRevenue = totalCashRevenue + totalMobileRevenue + totalVisaRevenue;
 
         reportContentEl.innerHTML = `
             <div style="padding: 30px; background: white; border-radius: 15px; box-shadow: 0 2px 20px rgba(0,0,0,0.1);">
-                <!-- اسم الموظف في الأعلى على اليمين -->
+                <!-- رأس التقرير -->
                 <div style="text-align: right; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e9ecef;">
                     <h3 style="margin: 0; color: #667eea; font-size: 28px; font-weight: bold;">
                         👤 ${currentShift.userName || 'غير محدد'}
@@ -818,47 +897,65 @@ async function generateEnhancedShiftReport() {
                     </p>
                 </div>
                 
-                <!-- إحصائيات سريعة - مصححة -->
+                <!-- إحصائيات سريعة -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
                     <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #1976d2; margin-bottom: 8px;">${actualCustomers}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #1976d2; margin-bottom: 8px;">${totalCustomers}</div>
                         <div style="color: #1565c0; font-size: 14px;">عملاء</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32; margin-bottom: 8px;">${actualBookings}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32; margin-bottom: 8px;">${totalBookings}</div>
                         <div style="color: #1b5e20; font-size: 14px;">حجوزات</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #fff3e0, #ffcc80); padding: 20px; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #f57c00; margin-bottom: 8px;">${actualOperations}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #f57c00; margin-bottom: 8px;">${totalOperations}</div>
                         <div style="color: #e65100; font-size: 14px;">عمليات</div>
                     </div>
                 </div>
 
-                <!-- ملخص الإيرادات - مصحح -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #4caf50;">
-                        <div style="font-size: 20px; font-weight: bold; color: #2e7d32; margin-bottom: 5px;">💰 الإيراد النقدي</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #1b5e20;">${totalCashRevenue.toFixed(2)} جنيه</div>
-                        <small style="color: #666;">(مبالغ مستلمة نقداً من عملاء)</small>
+                <!-- تفصيل الإيرادات حسب النوع -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #28a745;">
+                        <div style="font-size: 18px; font-weight: bold; color: #155724; margin-bottom: 5px;">💵 نقدي</div>
+                        <div style="font-size: 22px; font-weight: bold; color: #155724;">${totalCashRevenue.toFixed(2)} ج.م</div>
+                        <small style="color: #666;">${cashPayments.length} عملية</small>
                     </div>
-                    <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #2196f3;">
-                        <div style="font-size: 20px; font-weight: bold; color: #1976d2; margin-bottom: 5px;">🔄 التحويلات الداخلية</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #0d47a1;">${totalInternalRevenue.toFixed(2)} جنيه</div>
-                        <small style="color: #666;">(مخصومة من رصيد العملاء)</small>
+                    <div style="background: linear-gradient(135deg, #d1ecf1, #bee5eb); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #17a2b8;">
+                        <div style="font-size: 18px; font-weight: bold; color: #0c5460; margin-bottom: 5px;">📱 كاش</div>
+                        <div style="font-size: 22px; font-weight: bold; color: #0c5460;">${totalMobileRevenue.toFixed(2)} ج.م</div>
+                        <small style="color: #666;">${mobilePayments.length} عملية</small>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e2e3ff, #cbcbfd); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #6f42c1;">
+                        <div style="font-size: 18px; font-weight: bold; color: #382e5c; margin-bottom: 5px;">💳 فيزا</div>
+                        <div style="font-size: 22px; font-weight: bold; color: #382e5c;">${totalVisaRevenue.toFixed(2)} ج.م</div>
+                        <small style="color: #666;">${visaPayments.length} عملية</small>
                     </div>
                 </div>
-                
-                <!-- جدول التقرير -->
-                ${tableHTML}
-                
-                <!-- إجمالي المصاريف -->
-                <div style="margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-radius: 12px; text-align: center; border: 2px solid #4caf50;">
-                    <h3 style="margin: 0 0 15px 0; color: #2e7d32; font-size: 20px; font-weight: bold;">💰 إجمالي الإيرادات المستلمة</h3>
-                    <div style="font-size: 36px; font-weight: bold; color: #1b5e20;">
-                        ${totalCashRevenue.toFixed(2)} جنيه
+
+                <!-- الأقسام المفصلة -->
+                ${reportSections}
+
+                <!-- إجمالي الإيرادات المستلمة (النقدي + الكاش + الفيزا) -->
+                <div style="margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-radius: 12px; text-align: center; border: 2px solid #28a745;">
+                    <h3 style="margin: 0 0 15px 0; color: #155724; font-size: 20px; font-weight: bold;">💰 إجمالي الإيرادات المستلمة</h3>
+                    <div style="font-size: 36px; font-weight: bold; color: #155724;">
+                        ${totalReceivedRevenue.toFixed(2)} جنيه
                     </div>
-                    <div style="margin-top: 12px; font-size: 15px; color: #2e7d32;">
-                        العملاء: ${actualCustomers} عميل | الحجوزات: ${actualBookings} حجز
+                    <div style="margin-top: 12px; font-size: 15px; color: #155724;">
+                        (نقدي: ${totalCashRevenue.toFixed(2)} ج.م + كاش: ${totalMobileRevenue.toFixed(2)} ج.م + فيزا: ${totalVisaRevenue.toFixed(2)} ج.م)
+                    </div>
+                    <div style="margin-top: 8px; font-size: 14px; color: #666;">
+                        العملاء: ${totalCustomers} | الحجوزات: ${totalBookings} | العمليات: ${totalOperations}
+                    </div>
+                </div>
+
+                <!-- ملاحظة هامة -->
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-right: 4px solid #ffc107;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">💡</span>
+                        <div>
+                            <strong>ملاحظة:</strong> الإيراد يشمل جميع المدفوعات المستلمة (نقدي + كاش + فيزا). التحويلات الداخلية لا تدخل في الإيراد.
+                        </div>
                     </div>
                 </div>
             </div>

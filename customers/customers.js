@@ -27,18 +27,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 let currentUserName = "نظام";
 
-checkUserRoleWithShift().then(userData => {
-  if (userData) {
-    const userNameEl = document.getElementById('userName');
-    if (userNameEl) userNameEl.textContent = userData.name || '';
-    currentUserName = userData.name || "نظام";
-    loadStats();
-    setupCustomerForm();
-  }
-}).catch(err => {
-  console.error('خطأ في التحقق من صلاحية المستخدم:', err);
-});
-
+// ✅ استدعاء واحد فقط للتحقق من المستخدم
 checkUserRoleWithShift().then(userData => {
     if (userData) {
         const userNameEl = document.getElementById('userName');
@@ -78,6 +67,12 @@ async function setupCustomerForm() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // ✅ إضافة تعطيل الزر أثناء المعالجة
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'جاري الحفظ...';
+
     const name = (document.getElementById('customerName')?.value || '').trim();
     let phone = (document.getElementById('customerPhone')?.value || '').trim();
     const paymentMethod = (document.getElementById('customerPaymentMethod')?.value || 'نقدي');
@@ -96,20 +91,28 @@ async function setupCustomerForm() {
 
     if (!name || !phone) {
       showMessage('⚠️ يرجى ملء جميع الحقول الإلزامية!', 'error');
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
       return;
     }
     if (!isValidPhone(phoneKey)) {
       showMessage('⚠️ رقم الهاتف غير صحيح! تأكد من شكل 010/011/012/015XXXXXXXX', 'error');
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
       return;
     }
 
     if (primaryBalance < 0 || offersBalance < 0 || laserBalance < 0 || dermaBalance < 0) {
       showMessage('⚠️ لا يمكن أن تكون قيم الأرصدة سالبة!', 'error');
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
       return;
     }
 
     if (primaryBalance > 100000 || offersBalance > 100000 || laserBalance > 100000 || dermaBalance > 100000) {
       showMessage('⚠️ قيمة الرصيد كبيرة جداً! يرجى إدخال مبلغ أقل من 100,000 جنيه', 'error');
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
       return;
     }
 
@@ -168,10 +171,8 @@ async function setupCustomerForm() {
       const totalPaidAmount = primaryBalance + offersBalance + laserBalance + dermaBalance;
 
       // ✅ 3. تسجيل المعاملات المالية بالتفصيل
-      const transactionsToCreate = [];
-
       if (primaryBalance > 0) {
-        const primaryTransactionRef = await addDoc(collection(db, "transactions"), {
+        await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -184,11 +185,10 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
-        console.log('✅ تم تسجيل معاملة الرصيد الأساسي:', primaryTransactionRef.id);
       }
 
       if (offersBalance > 0) {
-        const offersTransactionRef = await addDoc(collection(db, "transactions"), {
+        await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -201,11 +201,10 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
-        console.log('✅ تم تسجيل معاملة رصيد العروض:', offersTransactionRef.id);
       }
 
       if (laserBalance > 0) {
-        const laserTransactionRef = await addDoc(collection(db, "transactions"), {
+        await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -218,11 +217,10 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
-        console.log('✅ تم تسجيل معاملة رصيد الليزر:', laserTransactionRef.id);
       }
 
       if (dermaBalance > 0) {
-        const dermaTransactionRef = await addDoc(collection(db, "transactions"), {
+        await addDoc(collection(db, "transactions"), {
           customerId: String(generatedNumericId),
           customerName: name,
           type: 'deposit',
@@ -235,96 +233,52 @@ async function setupCustomerForm() {
           createdAt: Timestamp.now(),
           createdBy: currentUserName
         });
-        console.log('✅ تم تسجيل معاملة رصيد الجلدية:', dermaTransactionRef.id);
       }
 
-// ✅ 4. تسجيل في الشيفت (آخر خطوة) - النسخة المصححة
-try {
-    const shiftModule = await import('../shift-management/shift-management.js');
-    if (shiftModule && shiftModule.addShiftAction) {
-        // التحقق من وجود شيفت نشط أولاً
-        const hasActiveShift = await shiftModule.hasActiveShift();
-        
-        if (hasActiveShift && totalPaidAmount > 0) {
-            // ✅ الإصلاح: تسجيل كل رصيد على حدة كإيراد نقدي
-            if (primaryBalance > 0) {
-                await shiftModule.addShiftAction(
-                    'إنشاء حساب عميل جديد',
-                    `تم تسجيل عميل جديد: ${name} - شحن رصيد أساسي: ${primaryBalance.toFixed(2)} جنيه - ${paymentMethod} - ID: ${generatedNumericId}`,
-                    name,
-                    primaryBalance, // ✅ المبلغ الفعلي المستلم
-                    paymentMethod,
-                    {
-                        actionCategory: 'customer',
-                        customerId: String(generatedNumericId),
-                        isNewCustomer: true,
-                        services: ['إنشاء حساب + شحن رصيد'],
-                        originalAmount: primaryBalance
-                    }
-                );
-            }
+      // ✅ 4. تسجيل في الشيفت (فقط إذا كان هناك مبلغ مدفوع)
+      if (totalPaidAmount > 0) {
+        try {
+          const shiftModule = await import('../shift-management/shift-management.js');
+          if (shiftModule && shiftModule.addShiftAction && shiftModule.hasActiveShift) {
+            const hasActiveShift = await shiftModule.hasActiveShift();
             
-            if (offersBalance > 0) {
-                await shiftModule.addShiftAction(
-                    'إنشاء حساب عميل جديد', 
-                    `تم تسجيل عميل جديد: ${name} - شحن رصيد عروض: ${offersBalance.toFixed(2)} جنيه - ${paymentMethod} - ID: ${generatedNumericId}`,
-                    name,
-                    offersBalance,
-                    paymentMethod,
-                    {
-                        actionCategory: 'customer',
-                        customerId: String(generatedNumericId),
-                        isNewCustomer: true,
-                        services: ['إنشاء حساب + شحن رصيد عروض'],
-                        originalAmount: offersBalance
-                    }
-                );
-            }
-            
-            if (laserBalance > 0) {
-                await shiftModule.addShiftAction(
-                    'إنشاء حساب عميل جديد',
-                    `تم تسجيل عميل جديد: ${name} - شحن رصيد ليزر: ${laserBalance.toFixed(2)} جنيه - ${paymentMethod} - ID: ${generatedNumericId}`,
-                    name,
-                    laserBalance,
-                    paymentMethod,
-                    {
-                        actionCategory: 'customer',
-                        customerId: String(generatedNumericId),
-                        isNewCustomer: true,
-                        services: ['إنشاء حساب + شحن رصيد ليزر'],
-                        originalAmount: laserBalance
-                    }
-                );
-            }
-            
-            if (dermaBalance > 0) {
-                await shiftModule.addShiftAction(
-                    'إنشاء حساب عميل جديد',
-                    `تم تسجيل عميل جديد: ${name} - شحن رصيد جلدية: ${dermaBalance.toFixed(2)} جنيه - ${paymentMethod} - ID: ${generatedNumericId}`,
-                    name,
-                    dermaBalance,
-                    paymentMethod,
-                    {
-                        actionCategory: 'customer',
-                        customerId: String(generatedNumericId),
-                        isNewCustomer: true,
-                        services: ['إنشاء حساب + شحن رصيد جلدية'],
-                        originalAmount: dermaBalance
-                    }
-                );
-            }
-            
-            console.log('✅ تم تسجيل العميل الجديد في الشيفت بنجاح');
-        } else {
-            console.log('⚠️ لا يوجد شيفت نشط أو لا توجد مدفوعات - تم تخطي تسجيل العميل في الشيفت');
-        }
-    }
-} catch (shiftError) {
-    console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError.message);
-}
+            if (hasActiveShift) {
+              // تسجيل كل رصيد على حدة
+              const balances = [
+                { type: 'primary', amount: primaryBalance, label: 'رصيد أساسي' },
+                { type: 'offers', amount: offersBalance, label: 'رصيد عروض' },
+                { type: 'laser', amount: laserBalance, label: 'رصيد ليزر' },
+                { type: 'derma', amount: dermaBalance, label: 'رصيد جلدية' }
+              ];
 
-      // ✅ بناء رسالة النجاح مع تفاصيل الأرصدة
+              for (const balance of balances) {
+                if (balance.amount > 0) {
+                  await shiftModule.addShiftAction(
+                    'إنشاء حساب عميل جديد',
+                    `تم تسجيل عميل جديد: ${name} - شحن ${balance.label}: ${balance.amount.toFixed(2)} جنيه - ${paymentMethod} - ID: ${generatedNumericId}`,
+                    name,
+                    balance.amount,
+                    paymentMethod,
+                    {
+                      actionCategory: 'customer',
+                      customerId: String(generatedNumericId),
+                      isNewCustomer: true,
+                      services: [`إنشاء حساب + شحن ${balance.label}`],
+                      originalAmount: balance.amount
+                    }
+                  );
+                }
+              }
+              console.log('✅ تم تسجيل العميل الجديد في الشيفت بنجاح');
+            }
+          }
+        } catch (shiftError) {
+          console.log('⚠️ لا يمكن تسجيل إجراء الشيفت:', shiftError.message);
+          // لا نوقف العملية إذا فشل تسجيل الشيفت
+        }
+      }
+
+      // ✅ 5. بناء رسالة النجاح
       let successMessage = `✅ تم تسجيل العميل بنجاح!\n\n`;
       successMessage += `📋 رقم العميل: ${generatedNumericId}\n`;
       successMessage += `👤 الاسم: ${name}\n`;
@@ -350,12 +304,16 @@ try {
       loadStats();
 
     } catch (error) {
+      console.error("خطأ في إضافة العميل:", error);
       if (error && error.message === 'PHONE_EXISTS') {
         showMessage('⚠️ رقم الهاتف مسجل مسبقاً!', 'error');
       } else {
-        console.error("خطأ في إضافة العميل:", error);
         showMessage('❌ حدث خطأ أثناء حفظ العميل: ' + (error.message || error), 'error');
       }
+    } finally {
+      // ✅ إعادة تمكين الزر في جميع الحالات
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
     }
   });
 }

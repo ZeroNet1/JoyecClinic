@@ -12,6 +12,199 @@ body {
     direction: rtl;
 }
 
+/* أنماط جديدة للعروض متعددة الخدمات مع عدد الجلسات */
+.service-selection-info {
+    margin: 15px 0;
+}
+
+.single-service, .multiple-services {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.services-list {
+    margin: 10px 0;
+}
+
+.service-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.service-option:hover {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.service-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.service-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+.service-duration, .service-price, .service-sessions {
+    font-size: 0.8em;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.service-sessions {
+    color: #ff6b35;
+    font-weight: 600;
+}
+
+.select-indicator {
+    font-size: 1.3em;
+    opacity: 0;
+    transition: opacity 0.3s;
+    color: #2196f3;
+}
+
+.service-option:hover .select-indicator {
+    opacity: 1;
+}
+
+.use-single-service-btn, .use-full-offer-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 15px;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.use-single-service-btn:hover, .use-full-offer-btn:hover {
+    background: linear-gradient(135deg, #218838, #1e9e8a);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.use-full-offer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px dashed #ccc;
+}
+
+.use-full-offer-btn {
+    background: linear-gradient(135deg, #ff6b35, #ff8e53);
+}
+
+.use-full-offer-btn:hover {
+    background: linear-gradient(135deg, #e55a2b, #ff7b3a);
+}
+
+.no-services-warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #ffeaa7;
+    font-weight: 600;
+}
+
+/* تحسين عرض بطاقات العروض */
+.offer-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 15px 0;
+    border: 2px solid #e9ecef;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.offer-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+}
+
+.offer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.offer-title h4 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.offer-category {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.offer-sessions {
+    text-align: center;
+}
+
+.sessions-count {
+    display: block;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    width: 100px;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.offer-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f8f9fa;
+}
+
 .container {
     max-width: 1600px;
     margin: 0 auto;

@@ -29,6 +29,39 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// دالة لحذف المستخدم من Authentication (تتطلب Cloud Functions)
+export async function deleteUserFromAuth(userId) {
+    try {
+        // إذا كان المستخدم الحالي هو من يحذف نفسه
+        if (auth.currentUser && auth.currentUser.uid === userId) {
+            await auth.currentUser.delete();
+            return true;
+        } else {
+            // إذا كان أدمن يحذف مستخدم آخر - نحتاج Cloud Functions
+            console.warn('لا يمكن حذف مستخدم آخر من Authentication من العميل مباشرة');
+            console.warn('يجب استخدام Cloud Functions مع Admin SDK لهذه العملية');
+            return false;
+        }
+    } catch (error) {
+        console.error('خطأ في حذف المستخدم من Authentication:', error);
+        throw error;
+    }
+}
+
+// دالة للتحقق من وجود البريد في Authentication
+export async function checkEmailInAuth(email) {
+    try {
+        // محاولة تسجيل دخول مؤقت للتحقق من وجود الحساب
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        return methods.length > 0;
+    } catch (error) {
+        if (error.code === 'auth/user-not-found') {
+            return false;
+        }
+        throw error;
+    }
+}
+
 // ✅ دالة للتحقق من وجود أي شيفت نشط في النظام (لأي موظف)
 export async function checkAnyActiveShift() {
     try {

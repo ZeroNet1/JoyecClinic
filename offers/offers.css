@@ -75,6 +75,94 @@ body {
     background: var(--gradient-success);
     color: white;
 }
+.offer-services-list {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+}
+
+/* أنماط جديدة لعرض تقدم الجلسات لكل خدمة */
+.service-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.service-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.service-name {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.service-details {
+    font-size: 0.85rem;
+    color: #666;
+    direction: ltr;
+}
+
+.service-sessions-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 120px;
+}
+
+.sessions-progress-bar {
+    width: 60px;
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.sessions-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.sessions-count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #28a745;
+    min-width: 40px;
+    text-align: center;
+}
+
+.service-item {
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.service-item:last-child {
+    margin-bottom: 0;
+}
+
+.service-details {
+    font-size: 0.85rem;
+    color: #666;
+    direction: ltr;
+}
 
 .message-container.error {
     background: var(--gradient-danger);

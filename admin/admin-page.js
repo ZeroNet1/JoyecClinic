@@ -1,4 +1,4 @@
-// admin-page.js - الكود الكامل مع نظام حساب إيرادات موظف الاستقبال
+// admin-page.js - الكود الكامل مع التعديلات لحساب إيرادات الموظفين من عمليات الشحن فقط
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { 
     getAuth,
@@ -273,7 +273,6 @@ async function saveSalary(e) {
 }
 
 // فتح حساب الأرباح
-// ✅ فتح حساب الأرباح مع إضافة خيارات التاريخ
 window.openProfitCalculation = async function() {
     if (!selectedEmployee) return;
     
@@ -332,8 +331,6 @@ window.openProfitCalculation = async function() {
     profitModal.classList.remove('hidden');
 };
 
-// ========== الدوال الجديدة لحل مشكلة التكرار اللانهائي ==========
-
 // ✅ دالة تحميل بيانات الأرباح حسب التاريخ المحدد - النسخة المصححة
 window.loadEmployeeProfitWithDate = async function() {
     const monthSelect = document.getElementById('profitMonth');
@@ -378,7 +375,7 @@ window.loadEmployeeProfitWithDate = async function() {
     }
 };
 
-// ✅ دالة جديدة لحساب أرباح الموظفين حسب التاريخ
+// ✅ دالة جديدة لحساب أرباح الموظفين حسب التاريخ - المحدثة لاستبعاد التحويل الداخلي
 async function loadEmployeeProfitByDate(month, year) {
     if (!selectedEmployee) return;
     
@@ -677,8 +674,8 @@ function displayEmployeeProfitByDate(totalRevenue, totalBookings, totalOffers, r
             <div class="profit-stats">
                 ${statsHTML}
             </div>
-            <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #666;">
-                <strong>ملاحظة:</strong> يتم حساب الإيرادات من ${fromShifts ? 'الشيفتات' : 'الحجوزات والعروض'} التي أنشأها الموظف
+            <div style="margin-top: 15px; padding: 12px; background: #e8f4fd; border-radius: 8px; font-size: 13px; color: #1976d2;">
+                <strong>ملاحظة:</strong> يتم حساب الإيرادات من عمليات الشحن فقط (تم استبعاد التحويل الداخلي والعروض)
             </div>
         </div>
         
@@ -758,102 +755,220 @@ function displayEmployeeProfitByDate(totalRevenue, totalBookings, totalOffers, r
     `;
 }
 
-// ✅ دوال مساعدة إضافية
+// ✅ تحديث دالة loadEmployeeProfitFromShiftsByDate لمنع حساب المبالغ المكررة
 async function loadEmployeeProfitFromShiftsByDate(month, year, totalRevenue, revenueDetails) {
     if (!selectedEmployee) return;
-    
+
     const startOfMonth = new Date(year, month, 1);
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
-    
+
     console.log(`🔍 جلب شيفتات ${selectedEmployee.name} من ${startOfMonth.toLocaleDateString('ar-EG')} إلى ${endOfMonth.toLocaleDateString('ar-EG')}`);
-    
+
     try {
-        // جلب الشيفتات التي فتحها الموظف خلال الشهر المحدد
         const shiftsQuery = query(
             collection(db, "shifts"),
             where("userId", "==", selectedEmployee.id),
             where("startTime", ">=", Timestamp.fromDate(startOfMonth)),
             where("startTime", "<=", Timestamp.fromDate(endOfMonth))
         );
-        
+
         const shiftsSnapshot = await getDocs(shiftsQuery);
-        
         console.log(`📊 عدد الشيفتات الموجودة: ${shiftsSnapshot.size}`);
-        
+
         let totalShiftsRevenue = 0;
-        
+
         for (const shiftDoc of shiftsSnapshot.docs) {
             const shift = shiftDoc.data();
             const shiftId = shiftDoc.id;
-            
+
             console.log(`🔄 معالجة الشيفت: ${shiftId}`, {
                 نوع_الشيفت: shift.shiftType,
                 وقت_البدء: shift.startTime?.toDate().toLocaleString('ar-EG'),
                 إيراد_مسجل: shift.totalRevenue || 0
             });
-            
+
             let shiftRevenue = 0;
-            
-            // ✅ الطريقة 1: استخدام totalRevenue المباشر من الشيفت إذا كان موجوداً
-            if (shift.totalRevenue && shift.totalRevenue > 0) {
-                shiftRevenue = shift.totalRevenue;
-                console.log(`💰 استخدام الإيراد المباشر: ${shiftRevenue}`);
-            } 
-            // ✅ الطريقة 2: حساب الإيراد من إجراءات الشيفت (shiftActions)
-            else {
-                try {
-                    const shiftActionsQuery = query(
-                        collection(db, "shiftActions"),
-                        where("shiftId", "==", shiftId),
-                        where("amount", ">", 0) // فقط الإجراءات التي تحتوي على مبالغ موجبة
-                    );
+            const processedTransactions = new Set(); // ✅ لتجنب المعاملات المكررة
+
+            // ✅ الطريقة 2: حساب الإيراد من إجراءات الشيفت (shiftActions) مع تجنب المبالغ المكررة
+            try {
+                const shiftActionsQuery = query(
+                    collection(db, "shiftActions"),
+                    where("shiftId", "==", shiftId),
+                    where("amount", ">", 0)
+                );
+
+                const shiftActionsSnapshot = await getDocs(shiftActionsQuery);
+                console.log(`📝 عدد إجراءات الشيفت: ${shiftActionsSnapshot.size}`);
+
+                // ✅ تجميع الإجراءات حسب المبلغ والعميل للكشف عن التكرار
+                const actionsByAmountAndCustomer = new Map();
+
+                shiftActionsSnapshot.forEach(actionDoc => {
+                    const action = actionDoc.data();
+                    const key = `${action.amount}-${action.customerName}`;
                     
-                    const shiftActionsSnapshot = await getDocs(shiftActionsQuery);
-                    console.log(`📝 عدد إجراءات الشيفت: ${shiftActionsSnapshot.size}`);
+                    if (!actionsByAmountAndCustomer.has(key)) {
+                        actionsByAmountAndCustomer.set(key, []);
+                    }
+                    actionsByAmountAndCustomer.get(key).push(action);
+                });
+
+                // ✅ معالجة الإجراءات وتجنب التكرار
+                actionsByAmountAndCustomer.forEach((actions, key) => {
+                    const [amount, customerName] = key.split('-');
                     
-                    shiftActionsSnapshot.forEach(actionDoc => {
-                        const action = actionDoc.data();
-                        if (action.amount > 0) {
-                            shiftRevenue += action.amount;
-                            console.log(`➕ إضافة مبلغ من إجراء: ${action.amount} - ${action.actionType} - ${action.customerName}`);
+                    // ✅ إذا كان هناك أكثر من إجراء بنفس المبلغ والعميل
+                    if (actions.length > 1) {
+                        console.log(`🔍 اكتشاف ${actions.length} إجراء مكرر للمبلغ ${amount} والعميل ${customerName}:`, 
+                            actions.map(a => `${a.paymentMethod} - ${a.actionCategory}`));
+                        
+                        // ✅ نفضل إجراءات الشحن (deposit) على إجراءات الحجز (booking)
+                        const depositAction = actions.find(a => 
+                            a.actionCategory === 'deposit' || 
+                            a.paymentMethod?.includes('نقدي') ||
+                            a.paymentMethod?.includes('كاش')
+                        );
+                        
+                        if (depositAction) {
+                            // ✅ نستخدم إجراء الشحن فقط
+                            processSingleAction(depositAction);
+                            console.log(`✅ استخدام إجراء الشحن فقط: ${depositAction.amount} - ${depositAction.paymentMethod}`);
+                        } else {
+                            // ✅ إذا لم يكن هناك شحن، نستخدم أول إجراء غير محجوز
+                            const nonBookingAction = actions.find(a => 
+                                !a.actionCategory?.includes('booking') && 
+                                !a.paymentMethod?.includes('حجز')
+                            );
+                            if (nonBookingAction) {
+                                processSingleAction(nonBookingAction);
+                            }
                         }
-                    });
-                    
-                } catch (actionsError) {
-                    console.error('❌ خطأ في جلب إجراءات الشيفت:', actionsError);
+                    } else {
+                        // ✅ إجراء واحد فقط - معالجته بشكل طبيعي
+                        processSingleAction(actions[0]);
+                    }
+                });
+
+                // ✅ دالة معالجة الإجراء الواحد
+                function processSingleAction(action) {
+                    // ✅ استبعاد جميع أنواع التحويل الداخلي والعروض
+                    const isExcludedPayment = 
+                        action.paymentMethod?.includes('تحويل') ||
+                        action.paymentMethod?.includes('رصيد') ||
+                        action.paymentMethod?.includes('عرض') ||
+                        action.paymentMethod === 'رصيد العروض' ||
+                        action.paymentMethod === 'رصيد داخلي' ||
+                        action.paymentMethod === 'تحويل داخلي' ||
+                        action.paymentMethod === 'عرض' ||
+                        // ✅ استبعاد عمليات الحجز (booking) عندما يكون هناك شحن بنفس المبلغ
+                        (action.paymentMethod === 'حجز مسبق' && actionsByAmountAndCustomer.has(`${action.amount}-${action.customerName}`)) ||
+                        // ✅ استبعاد عمليات الحجز للعملاء الجدد
+                        (action.paymentMethod === 'تحويل داخلي' && action.isNewCustomer === true) ||
+                        // ✅ استبعاد تأكيد الحجز للعملاء الحاليين
+                        (action.paymentMethod === 'تحويل داخلي' && action.actionCategory === 'booking');
+
+                    // ✅ فقط عمليات الشحن المسموح بها
+                    const isAllowedPayment = 
+                        action.paymentMethod?.includes('نقدي') ||
+                        action.paymentMethod?.includes('كاش') ||
+                        action.paymentMethod?.includes('فيزا') ||
+                        action.paymentMethod?.includes('ماستر') ||
+                        action.paymentMethod?.includes('شيك') ||
+                        action.paymentMethod?.includes('بطاقة') ||
+                        (action.paymentMethod && 
+                         !action.paymentMethod.includes('رصيد') && 
+                         !action.paymentMethod.includes('تحويل') && 
+                         !action.paymentMethod.includes('عرض'));
+
+                    // ✅ استبعاد عمليات تأكيد الحجز التي تستخدم الرصيد الداخلي
+                    const isInternalBookingPayment = action.paymentMethod === 'تحويل داخلي' && 
+                                                   (action.actionCategory === 'booking' || 
+                                                    action.notes?.includes('تأكيد حجز'));
+
+                    if (action.amount > 0 && !isExcludedPayment && isAllowedPayment && !isInternalBookingPayment) {
+                        shiftRevenue += action.amount;
+                        console.log(`➕ إضافة مبلغ من إجراء: ${action.amount} - ${action.paymentMethod} - ${action.customerName} - ${action.actionCategory}`);
+                    } else {
+                        console.log(`⏭️ تخطي إجراء: ${action.amount} - ${action.paymentMethod} - ${action.customerName} - ${action.actionCategory}`);
+                    }
                 }
+
+            } catch (actionsError) {
+                console.error('❌ خطأ في جلب إجراءات الشيفت:', actionsError);
             }
-            
-            // ✅ الطريقة 3: إذا لم نجد إيرادات، نحاول جلبها من transactions المرتبطة بالشيفت
+
+            // ✅ الطريقة 3: جلب المعاملات المالية مع استبعاد عمليات السحب الداخلية
             if (shiftRevenue === 0) {
                 try {
                     const transactionsQuery = query(
                         collection(db, "transactions"),
-                        where("shiftId", "==", shiftId),
-                        where("type", "==", "deposit") // فقط عمليات الإيداع
+                        where("shiftId", "==", shiftId)
                     );
-                    
+
                     const transactionsSnapshot = await getDocs(transactionsQuery);
                     console.log(`💳 عدد المعاملات المالية: ${transactionsSnapshot.size}`);
-                    
+
                     transactionsSnapshot.forEach(transactionDoc => {
                         const transaction = transactionDoc.data();
-                        if (transaction.amount > 0) {
+                        const transactionKey = `${transaction.amount}-${transaction.customerName}-${transaction.type}`;
+                        
+                        // ✅ تجنب المعاملات المكررة
+                        if (processedTransactions.has(transactionKey)) {
+                            console.log(`⏭️ تخطي معاملة مكررة: ${transaction.amount} - ${transaction.customerName} - ${transaction.type}`);
+                            return;
+                        }
+                        processedTransactions.add(transactionKey);
+                        
+                        // ✅ استبعاد السحوبات الداخلية والعروض والتحويلات
+                        const isExcludedTransaction = 
+                            transaction.paymentMethod?.includes('تحويل') ||
+                            transaction.paymentMethod?.includes('رصيد') ||
+                            transaction.paymentMethod?.includes('عرض') ||
+                            transaction.internalTransfer === true ||
+                            transaction.balanceType !== 'normal' ||
+                            // ✅ استبعاد عمليات السحب المصاحبة لحجز عميل جديد
+                            (transaction.type === 'withdrawal' && transaction.isNewCustomer === true) ||
+                            // ✅ استبعاد عمليات السحب الداخلية للحجوزات
+                            (transaction.type === 'withdrawal' && transaction.paymentMethod === 'رصيد داخلي');
+
+                        // ✅ فقط عمليات الإيداع المسموح بها (الشحن الحقيقي)
+                        const isAllowedTransaction = 
+                            transaction.type === 'deposit' && (
+                            transaction.paymentMethod?.includes('نقدي') ||
+                            transaction.paymentMethod?.includes('كاش') ||
+                            transaction.paymentMethod?.includes('فيزا') ||
+                            transaction.paymentMethod?.includes('ماستر') ||
+                            transaction.paymentMethod?.includes('شيك') ||
+                            transaction.paymentMethod?.includes('بطاقة') ||
+                            (transaction.paymentMethod && 
+                             !transaction.paymentMethod.includes('رصيد') && 
+                             !transaction.paymentMethod.includes('تحويل') && 
+                             !transaction.paymentMethod.includes('عرض'))
+                            );
+
+                        if (transaction.amount > 0 && 
+                            !isExcludedTransaction && 
+                            isAllowedTransaction &&
+                            transaction.balanceType === 'normal') {
+                            
                             shiftRevenue += transaction.amount;
-                            console.log(`💵 إضافة مبلغ من معاملة: ${transaction.amount} - ${transaction.paymentMethod}`);
+                            console.log(`💵 إضافة مبلغ من معاملة: ${transaction.amount} - ${transaction.paymentMethod} - ${transaction.type} - ${transaction.balanceType}`);
+                        } else {
+                            console.log(`⏭️ تخطي معاملة: ${transaction.amount} - ${transaction.paymentMethod} - ${transaction.type} - ${transaction.balanceType}`);
                         }
                     });
-                    
+
                 } catch (transactionsError) {
                     console.error('❌ خطأ في جلب المعاملات:', transactionsError);
                 }
             }
-            
-            console.log(`🎯 الإيراد النهائي للشيفت: ${shiftRevenue}`);
-            
+
+            console.log(`🎯 الإيراد النهائي للشيفت (عمليات الشحن فقط): ${shiftRevenue}`);
+
             if (shiftRevenue > 0) {
                 totalShiftsRevenue += shiftRevenue;
-                
+
                 revenueDetails.push({
                     type: 'shift',
                     startTime: shift.startTime?.toDate() || new Date(),
@@ -863,29 +978,26 @@ async function loadEmployeeProfitFromShiftsByDate(month, year, totalRevenue, rev
                     shiftId: shiftId,
                     shiftType: shift.shiftType || 'عام',
                     source: 'شيفت',
-                    details: `شيفت ${shift.shiftType} - ${shiftRevenue.toFixed(2)} جنيه`
+                    details: `شيفت ${shift.shiftType} - عمليات الشحن فقط - ${shiftRevenue.toFixed(2)} جنيه`
                 });
-                
-                console.log(`✅ تم إضافة شيفت بإيراد: ${shiftRevenue}`);
+
+                console.log(`✅ تم إضافة شيفت بإيراد من الشحن فقط: ${shiftRevenue}`);
             } else {
-                console.log(`⭕ شيفت بدون إيرادات: ${shiftId}`);
+                console.log(`⭕ شيفت بدون إيرادات من الشحن: ${shiftId}`);
             }
         }
-        
-        console.log(`💰 إجمالي الإيرادات من الشيفتات: ${totalShiftsRevenue}`);
-        
-        // ✅ تحديث الإجمالي
+
+        console.log(`💰 إجمالي الإيرادات من الشيفتات (عمليات الشحن فقط): ${totalShiftsRevenue}`);
         totalRevenue += totalShiftsRevenue;
-        
         displayEmployeeProfitByDate(totalRevenue, 0, 0, revenueDetails, month, year, true);
-        
+
     } catch (error) {
         console.error("❌ خطأ كبير في تحميل أرباح الشيفتات:", error);
-        // عرض رسالة خطأ مع البيانات المتاحة
         displayEmployeeProfitByDate(totalRevenue, 0, 0, revenueDetails, month, year, true);
     }
 }
 
+// ✅ دالة مساعدة لفحص هيكل بيانات الشيفتات
 async function debugShiftDataByDate(employeeId, month, year) {
     console.log('=== بدء فحص بيانات الشيفتات ===');
     
@@ -1240,15 +1352,15 @@ window.retryLoadEmployeeProfit = function() {
     }
 };
 
-// ✅ حساب الإيرادات من الشيفتات - النسخة المحسنة والمصححة
+// ✅ حساب الإيرادات من الشيفتات - النسخة المحسنة والمصححة مع استبعاد التحويل الداخلي والعروض
 async function loadEmployeeProfitFromShifts(totalRevenue, revenueDetails) {
     if (!selectedEmployee) return;
-    
+
     const startOfMonth = new Date(currentYear, currentMonth, 1);
     const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
-    
+
     console.log(`🔍 جلب شيفتات ${selectedEmployee.name} من ${startOfMonth.toLocaleDateString('ar-EG')} إلى ${endOfMonth.toLocaleDateString('ar-EG')}`);
-    
+
     try {
         // جلب الشيفتات التي فتحها الموظف خلال الشهر
         const shiftsQuery = query(
@@ -1257,31 +1369,32 @@ async function loadEmployeeProfitFromShifts(totalRevenue, revenueDetails) {
             where("startTime", ">=", Timestamp.fromDate(startOfMonth)),
             where("startTime", "<=", Timestamp.fromDate(endOfMonth))
         );
-        
+
         const shiftsSnapshot = await getDocs(shiftsQuery);
-        
+
         console.log(`📊 عدد الشيفتات الموجودة: ${shiftsSnapshot.size}`);
-        
+
         let totalShiftsRevenue = 0;
-        
+
         for (const shiftDoc of shiftsSnapshot.docs) {
             const shift = shiftDoc.data();
             const shiftId = shiftDoc.id;
-            
+
             console.log(`🔄 معالجة الشيفت: ${shiftId}`, {
                 نوع_الشيفت: shift.shiftType,
                 وقت_البدء: shift.startTime?.toDate().toLocaleString('ar-EG'),
                 إيراد_مسجل: shift.totalRevenue || 0
             });
-            
+
             let shiftRevenue = 0;
-            
+
             // ✅ الطريقة 1: استخدام totalRevenue المباشر من الشيفت إذا كان موجوداً
             if (shift.totalRevenue && shift.totalRevenue > 0) {
-                shiftRevenue = shift.totalRevenue;
-                console.log(`💰 استخدام الإيراد المباشر: ${shiftRevenue}`);
+                // ❌ لا نستخدم الإيراد المباشر لأنه قد يحتوي على تحويلات داخلية
+                console.log(`⚠️ تخطي الإيراد المباشر لأنه قد يحتوي على تحويلات داخلية: ${shift.totalRevenue}`);
             } 
-            // ✅ الطريقة 2: حساب الإيراد من إجراءات الشيفت (shiftActions)
+            
+            // ✅ الطريقة 2: حساب الإيراد من إجراءات الشيفت (shiftActions) مع استبعاد التحويل الداخلي والعروض
             else {
                 try {
                     const shiftActionsQuery = query(
@@ -1289,24 +1402,50 @@ async function loadEmployeeProfitFromShifts(totalRevenue, revenueDetails) {
                         where("shiftId", "==", shiftId),
                         where("amount", ">", 0) // فقط الإجراءات التي تحتوي على مبالغ موجبة
                     );
-                    
+
                     const shiftActionsSnapshot = await getDocs(shiftActionsQuery);
                     console.log(`📝 عدد إجراءات الشيفت: ${shiftActionsSnapshot.size}`);
-                    
+
                     shiftActionsSnapshot.forEach(actionDoc => {
                         const action = actionDoc.data();
-                        if (action.amount > 0) {
+                        
+                        // ✅ استبعاد جميع أنواع التحويل الداخلي والعروض - النسخة المحسنة
+                        const isExcludedPayment = 
+                            action.paymentMethod?.includes('تحويل') ||
+                            action.paymentMethod?.includes('رصيد') ||
+                            action.paymentMethod?.includes('عرض') ||
+                            action.paymentMethod === 'رصيد العروض' ||
+                            action.paymentMethod === 'رصيد داخلي' ||
+                            action.paymentMethod === 'تحويل داخلي' ||
+                            action.paymentMethod === 'عرض';
+                        
+                        // ✅ فقط عمليات الشحن المسموح بها
+                        const isAllowedPayment = 
+                            action.paymentMethod?.includes('نقدي') ||
+                            action.paymentMethod?.includes('كاش') ||
+                            action.paymentMethod?.includes('فيزا') ||
+                            action.paymentMethod?.includes('ماستر') ||
+                            action.paymentMethod?.includes('شيك') ||
+                            action.paymentMethod?.includes('بطاقة') ||
+                            (action.paymentMethod && 
+                             !action.paymentMethod.includes('رصيد') && 
+                             !action.paymentMethod.includes('تحويل') && 
+                             !action.paymentMethod.includes('عرض'));
+
+                        if (action.amount > 0 && !isExcludedPayment && isAllowedPayment) {
                             shiftRevenue += action.amount;
-                            console.log(`➕ إضافة مبلغ من إجراء: ${action.amount} - ${action.actionType} - ${action.customerName}`);
+                            console.log(`➕ إضافة مبلغ من إجراء: ${action.amount} - ${action.paymentMethod} - ${action.customerName}`);
+                        } else {
+                            console.log(`⏭️ تخطي إجراء (تحويل داخلي/عرض): ${action.amount} - ${action.paymentMethod} - ${action.customerName}`);
                         }
                     });
-                    
+
                 } catch (actionsError) {
                     console.error('❌ خطأ في جلب إجراءات الشيفت:', actionsError);
                 }
             }
-            
-            // ✅ الطريقة 3: إذا لم نجد إيرادات، نحاول جلبها من transactions المرتبطة بالشيفت
+
+            // ✅ الطريقة 3: إذا لم نجد إيرادات، نحاول جلبها من transactions المرتبطة بالشيفت مع استبعاد التحويل الداخلي والعروض
             if (shiftRevenue === 0) {
                 try {
                     const transactionsQuery = query(
@@ -1314,28 +1453,56 @@ async function loadEmployeeProfitFromShifts(totalRevenue, revenueDetails) {
                         where("shiftId", "==", shiftId),
                         where("type", "==", "deposit") // فقط عمليات الإيداع
                     );
-                    
+
                     const transactionsSnapshot = await getDocs(transactionsQuery);
                     console.log(`💳 عدد المعاملات المالية: ${transactionsSnapshot.size}`);
-                    
+
                     transactionsSnapshot.forEach(transactionDoc => {
                         const transaction = transactionDoc.data();
-                        if (transaction.amount > 0) {
+                        
+                        // ✅ استبعاد السحوبات الداخلية والعروض والتحويلات - النسخة المحسنة
+                        const isExcludedTransaction = 
+                            transaction.paymentMethod?.includes('تحويل') ||
+                            transaction.paymentMethod?.includes('رصيد') ||
+                            transaction.paymentMethod?.includes('عرض') ||
+                            transaction.internalTransfer === true ||
+                            transaction.balanceType !== 'normal'; // فقط الرصيد العادي
+
+                        // ✅ فقط عمليات الشحن المسموح بها
+                        const isAllowedTransaction = 
+                            transaction.paymentMethod?.includes('نقدي') ||
+                            transaction.paymentMethod?.includes('كاش') ||
+                            transaction.paymentMethod?.includes('فيزا') ||
+                            transaction.paymentMethod?.includes('ماستر') ||
+                            transaction.paymentMethod?.includes('شيك') ||
+                            transaction.paymentMethod?.includes('بطاقة') ||
+                            (transaction.paymentMethod && 
+                             !transaction.paymentMethod.includes('رصيد') && 
+                             !transaction.paymentMethod.includes('تحويل') && 
+                             !transaction.paymentMethod.includes('عرض'));
+
+                        if (transaction.amount > 0 && 
+                            !isExcludedTransaction && 
+                            isAllowedTransaction &&
+                            transaction.balanceType === 'normal') { // ✅ فقط الرصيد العادي
+                            
                             shiftRevenue += transaction.amount;
-                            console.log(`💵 إضافة مبلغ من معاملة: ${transaction.amount} - ${transaction.paymentMethod}`);
+                            console.log(`💵 إضافة مبلغ من معاملة: ${transaction.amount} - ${transaction.paymentMethod} - ${transaction.balanceType}`);
+                        } else {
+                            console.log(`⏭️ تخطي معاملة (تحويل داخلي/عرض): ${transaction.amount} - ${transaction.paymentMethod} - ${transaction.balanceType}`);
                         }
                     });
-                    
+
                 } catch (transactionsError) {
                     console.error('❌ خطأ في جلب المعاملات:', transactionsError);
                 }
             }
-            
-            console.log(`🎯 الإيراد النهائي للشيفت: ${shiftRevenue}`);
-            
+
+            console.log(`🎯 الإيراد النهائي للشيفت (عمليات الشحن فقط): ${shiftRevenue}`);
+
             if (shiftRevenue > 0) {
                 totalShiftsRevenue += shiftRevenue;
-                
+
                 revenueDetails.push({
                     type: 'shift',
                     startTime: shift.startTime?.toDate() || new Date(),
@@ -1345,22 +1512,22 @@ async function loadEmployeeProfitFromShifts(totalRevenue, revenueDetails) {
                     shiftId: shiftId,
                     shiftType: shift.shiftType || 'عام',
                     source: 'شيفت',
-                    details: `شيفت ${shift.shiftType} - ${shiftRevenue.toFixed(2)} جنيه`
+                    details: `شيفت ${shift.shiftType} - عمليات الشحن فقط - ${shiftRevenue.toFixed(2)} جنيه`
                 });
-                
-                console.log(`✅ تم إضافة شيفت بإيراد: ${shiftRevenue}`);
+
+                console.log(`✅ تم إضافة شيفت بإيراد من الشحن فقط: ${shiftRevenue}`);
             } else {
-                console.log(`⭕ شيفت بدون إيرادات: ${shiftId}`);
+                console.log(`⭕ شيفت بدون إيرادات من الشحن: ${shiftId}`);
             }
         }
-        
-        console.log(`💰 إجمالي الإيرادات من الشيفتات: ${totalShiftsRevenue}`);
-        
+
+        console.log(`💰 إجمالي الإيرادات من الشيفتات (عمليات الشحن فقط): ${totalShiftsRevenue}`);
+
         // ✅ تحديث الإجمالي
         totalRevenue += totalShiftsRevenue;
-        
+
         displayEmployeeProfit(totalRevenue, 0, 0, revenueDetails, true);
-        
+
     } catch (error) {
         console.error("❌ خطأ كبير في تحميل أرباح الشيفتات:", error);
         // عرض رسالة خطأ مع البيانات المتاحة
@@ -1516,8 +1683,8 @@ function displayEmployeeProfit(totalRevenue, totalBookings, totalOffers, revenue
             <div class="profit-stats">
                 ${statsHTML}
             </div>
-            <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #666;">
-                <strong>ملاحظة:</strong> يتم حساب الإيرادات من ${fromShifts ? 'الشيفتات' : 'الحجوزات والعروض'} التي أنشأها الموظف
+            <div style="margin-top: 15px; padding: 12px; background: #e8f4fd; border-radius: 8px; font-size: 13px; color: #1976d2;">
+                <strong>ملاحظة:</strong> يتم حساب الإيرادات من عمليات الشحن فقط (تم استبعاد التحويل الداخلي والعروض)
             </div>
         </div>
         
