@@ -671,7 +671,7 @@ async function generateEnhancedShiftReport() {
         // ✅ مجموعة لتتبع العملاء لمنع التكرار
         const uniqueCustomers = new Set();
 
-        // ✅ تحليل إجراءات الشيفت وتصنيفها حسب نوع الدفع
+// ✅ تحليل إجراءات الشيفت وتصنيفها حسب نوع الدفع
         shiftActions.forEach(action => {
             if (!action.customerName) return;
 
@@ -681,14 +681,14 @@ async function generateEnhancedShiftReport() {
                 totalCustomers++;
             }
 
-// ✅ حساب الحجوزات - فقط إضافة أو تأكيد الحجز (وليس إكمال الحجز)
-if (action.actionType.includes('إضافة حجز') || 
-    action.actionType.includes('تأكيد حجز') ||
-    action.actionType === 'حجز جديد') {
-    totalBookings++;
-}
+            // ✅ حساب الحجوزات - يحدث دائماً بغض النظر عن المبلغ
+            if (action.actionType.includes('إضافة حجز') || 
+                action.actionType.includes('تأكيد حجز') ||
+                action.actionType === 'حجز جديد') {
+                totalBookings++;
+            }
 
-            // ✅ معالجة العمليات بناءً على المبلغ أو المبلغ الأصلي
+            // ✅ معالجة العمليات المالية بناءً على المبلغ أو المبلغ الأصلي
             const actualAmount = action.amount > 0 ? action.amount : (action.originalAmount || 0);
             
             if (actualAmount > 0 || action.paymentMethod) {
